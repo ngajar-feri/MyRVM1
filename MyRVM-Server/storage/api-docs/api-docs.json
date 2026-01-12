@@ -1,0 +1,469 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "MyRVM API Documentation",
+        "version": "1.0.0",
+        "description": "API documentation for MyReverseVendingMachine Server",
+        "contact": {
+            "email": "admin@myrvm.com"
+        }
+    },
+    "servers": [
+        {
+            "url": "http://localhost:8000",
+            "description": "Demo API Server"
+        }
+    ],
+    "paths": {
+        "/api/v1/register": {
+            "post": {
+                "tags": ["Auth"],
+                "summary": "Register new user",
+                "operationId": "registerUser",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": ["name","email","password","password_confirmation"],
+                                "properties": {
+                                    "name": { "type": "string", "example": "John Doe" },
+                                    "email": { "type": "string", "format": "email", "example": "user@example.com" },
+                                    "password": { "type": "string", "format": "password", "example": "secret" },
+                                    "password_confirmation": { "type": "string", "format": "password", "example": "secret" }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": { "description": "User registered successfully" },
+                    "400": { "description": "Bad Request - Invalid input data" },
+                    "422": { "description": "Unprocessable Entity - Validation error" },
+                    "500": { "description": "Internal Server Error" }
+                }
+            }
+        },
+        "/api/v1/login": {
+            "post": {
+                "tags": ["Auth"],
+                "summary": "Login user and return token",
+                "operationId": "loginUser",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": ["email", "password", "device_name"],
+                                "properties": {
+                                    "email": { "type": "string", "format": "email", "example": "user@example.com" },
+                                    "password": { "type": "string", "format": "password", "example": "secret" },
+                                    "device_name": { "type": "string", "example": "MyDevice" }
+                                }
+                            },
+                            "examples": {
+                                "Super Admin": {
+                                    "value": { "email": "superadmin@myrvm.com", "password": "password123", "device_name": "MyDevice" }
+                                },
+                                "Admin": {
+                                    "value": { "email": "admin@myrvm.com", "password": "password123", "device_name": "MyDevice" }
+                                },
+                                "Operator": {
+                                    "value": { "email": "operator@myrvm.com", "password": "password123", "device_name": "MyDevice" }
+                                },
+                                "Technician": {
+                                    "value": { "email": "tech@myrvm.com", "password": "password123", "device_name": "MyDevice" }
+                                },
+                                "Tenant": {
+                                    "value": { "email": "tenant@starbucks.com", "password": "password123", "device_name": "MyDevice" }
+                                },
+                                "User 1": {
+                                    "value": { "email": "john@example.com", "password": "password123", "device_name": "MyDevice" }
+                                },
+                                "User 2": {
+                                    "value": { "email": "jane@example.com", "password": "password123", "device_name": "MyDevice" }
+                                },
+                                "User 3": {
+                                    "value": { "email": "bob@example.com", "password": "password123", "device_name": "MyDevice" }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": { "description": "Successful login" },
+                    "401": { "description": "Unauthorized - Invalid credentials" },
+                    "422": { "description": "Unprocessable Entity - Validation error" },
+                    "500": { "description": "Internal Server Error" }
+                }
+            }
+        },
+        "/api/v1/transactions/start": {
+            "post": {
+                "tags": ["Transactions"],
+                "summary": "Start a new transaction session",
+                "operationId": "startTransactionSession",
+                "security": [{"bearerAuth": []}],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": ["rvm_id"],
+                                "properties": {
+                                    "rvm_id": { "type": "integer", "example": 1 }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": { "description": "Session started" },
+                    "400": { "description": "Bad Request" },
+                    "401": { "description": "Unauthorized" },
+                    "422": { "description": "Unprocessable Entity" },
+                    "500": { "description": "Internal Server Error" }
+                }
+            }
+        },
+        "/api/v1/transactions/item": {
+            "post": {
+                "tags": ["Transactions"],
+                "summary": "Deposit item to current session",
+                "operationId": "depositTransactionItem",
+                "security": [{"bearerAuth": []}],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": ["transaction_id","waste_type","weight","points"],
+                                "properties": {
+                                    "transaction_id": { "type": "integer", "example": 1 },
+                                    "waste_type": { "type": "string", "example": "plastic_bottle" },
+                                    "weight": { "type": "number", "format": "float", "example": 0.45 },
+                                    "points": { "type": "integer", "example": 10 }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": { "description": "Item deposited" },
+                    "400": { "description": "Bad Request - Transaction not pending or mismatch" },
+                    "401": { "description": "Unauthorized" },
+                    "404": { "description": "Transaction Not Found" },
+                    "422": { "description": "Unprocessable Entity" },
+                    "500": { "description": "Internal Server Error" }
+                }
+            }
+        },
+        "/api/v1/transactions/commit": {
+            "post": {
+                "tags": ["Transactions"],
+                "summary": "Commit transaction session",
+                "operationId": "commitTransaction",
+                "security": [{"bearerAuth": []}],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": ["transaction_id"],
+                                "properties": {
+                                    "transaction_id": { "type": "integer", "example": 1 }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": { "description": "Transaction completed" },
+                    "400": { "description": "Bad Request" },
+                    "401": { "description": "Unauthorized" },
+                    "404": { "description": "Transaction Not Found" },
+                    "500": { "description": "Internal Server Error" }
+                }
+            }
+        },
+        "/api/v1/redemption/redeem": {
+            "post": {
+                "tags": ["Redemption"],
+                "summary": "Redeem voucher with points",
+                "operationId": "redeemVoucher",
+                "security": [{"bearerAuth": []}],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": ["voucher_id"],
+                                "properties": {
+                                    "voucher_id": { "type": "integer", "example": 1 }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": { "description": "Voucher redeemed" },
+                    "400": { "description": "Bad Request - Insufficient points" },
+                    "401": { "description": "Unauthorized" },
+                    "404": { "description": "Voucher Not Found" },
+                    "500": { "description": "Internal Server Error" }
+                }
+            }
+        },
+        "/api/v1/tenant/redemption/validate": {
+            "post": {
+                "tags": ["Tenant"],
+                "summary": "Validate user voucher (Tenant)",
+                "operationId": "validateUserVoucher",
+                "security": [{"bearerAuth": []}],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": ["code"],
+                                "properties": {
+                                    "code": { "type": "string", "example": "ABCD1234" }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": { "description": "Voucher valid" },
+                    "400": { "description": "Voucher invalid, expired, or already used" },
+                    "401": { "description": "Unauthorized" },
+                    "403": { "description": "Forbidden - Not Voucher Owner" },
+                    "500": { "description": "Internal Server Error" }
+                }
+            }
+        },
+        "/api/v1/technician/assignments": {
+            "get": {
+                "tags": ["Technician"],
+                "summary": "List technician assignments",
+                "operationId": "listTechnicianAssignments",
+                "security": [{"bearerAuth": []}],
+                "responses": {
+                    "200": { "description": "Assignments list" },
+                    "401": { "description": "Unauthorized" },
+                    "500": { "description": "Internal Server Error" }
+                }
+            }
+        },
+        "/api/v1/technician/generate-pin": {
+            "post": {
+                "tags": ["Technician"],
+                "summary": "Generate PIN for machine access",
+                "operationId": "generateTechnicianPin",
+                "security": [{"bearerAuth": []}],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": ["assignment_id"],
+                                "properties": {
+                                    "assignment_id": { "type": "integer", "example": 1 }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": { "description": "PIN generated" },
+                    "400": { "description": "Bad Request" },
+                    "401": { "description": "Unauthorized" },
+                    "403": { "description": "Forbidden - Not Assigned Technician" },
+                    "404": { "description": "Assignment Not Found" },
+                    "500": { "description": "Internal Server Error" }
+                }
+            }
+        },
+        "/api/v1/technician/validate-pin": {
+            "post": {
+                "tags": ["Technician"],
+                "summary": "Validate PIN (called by machine)",
+                "operationId": "validateTechnicianPin",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": ["serial_number","pin"],
+                                "properties": {
+                                    "serial_number": { "type": "string", "example": "RVM-JKT-001" },
+                                    "pin": { "type": "string", "example": "123456" }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": { "description": "Access granted" },
+                    "400": { "description": "Bad Request" },
+                    "401": { "description": "Invalid or expired PIN" },
+                    "404": { "description": "Machine Not Found" },
+                    "500": { "description": "Internal Server Error" }
+                }
+            }
+        },
+        "/api/v1/me": {
+            "get": {
+                "tags": ["Auth"],
+                "summary": "Get user profile",
+                "operationId": "getProfile",
+                "security": [{"bearerAuth": []}],
+                "responses": {
+                    "200": { "description": "User profile" },
+                    "401": { "description": "Unauthorized" },
+                    "500": { "description": "Internal Server Error" }
+                }
+            }
+        },
+        "/api/v1/logout": {
+            "post": {
+                "tags": ["Auth"],
+                "summary": "Logout user",
+                "operationId": "logoutUser",
+                "security": [{"bearerAuth": []}],
+                "responses": {
+                    "200": { "description": "Successful logout" },
+                    "401": { "description": "Unauthorized" },
+                    "500": { "description": "Internal Server Error" }
+                }
+            }
+        },
+        "/api/v1/rvm-machines": {
+            "get": {
+                "tags": ["RVM Machines"],
+                "summary": "List all RVM machines",
+                "operationId": "getRvmMachines",
+                "security": [{"bearerAuth": []}],
+                "responses": {
+                    "200": { "description": "List of machines" },
+                    "401": { "description": "Unauthorized" },
+                    "500": { "description": "Internal Server Error" }
+                }
+            },
+            "post": {
+                "tags": ["RVM Machines"],
+                "summary": "Create new RVM machine",
+                "operationId": "createRvmMachine",
+                "security": [{"bearerAuth": []}],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": ["name","location","serial_number"],
+                                "properties": {
+                                    "name": { "type": "string", "example": "RVM Station 1" },
+                                    "location": { "type": "string", "example": "Mall Central Park" },
+                                    "serial_number": { "type": "string", "example": "RVM-JKT-001" },
+                                    "status": { "type": "string", "enum": ["online","offline","maintenance"], "example": "offline" }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": { "description": "Machine created successfully" },
+                    "400": { "description": "Bad Request" },
+                    "401": { "description": "Unauthorized" },
+                    "422": { "description": "Unprocessable Entity - Validation Error" },
+                    "500": { "description": "Internal Server Error" }
+                }
+            }
+        },
+        "/api/v1/tenant/vouchers": {
+            "get": {
+                "tags": ["Tenant"],
+                "summary": "List all vouchers owned by authenticated tenant",
+                "operationId": "getTenantVouchers",
+                "security": [{"bearerAuth": []}],
+                "responses": {
+                    "200": { "description": "List of vouchers" },
+                    "401": { "description": "Unauthorized" },
+                    "403": { "description": "Forbidden - Tenant Role Required" },
+                    "500": { "description": "Internal Server Error" }
+                }
+            }
+        },
+        "/api/v1/vouchers": {
+            "get": {
+                "tags": ["Vouchers"],
+                "summary": "Get list of active vouchers (Public)",
+                "operationId": "getVouchersList",
+                "responses": {
+                    "200": { "description": "Successful operation" },
+                    "500": { "description": "Internal Server Error" }
+                }
+            }
+        },
+        "/api/v1/devices/{id}/telemetry": {
+            "post": {
+                "tags": ["Edge Device"],
+                "summary": "Send telemetry data",
+                "operationId": "sendTelemetry",
+                "security": [{"bearerAuth": []}],
+                "parameters": [
+                    { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": ["plastic_weight","aluminum_weight","total_items"],
+                                "properties": {
+                                    "plastic_weight": { "type": "number", "format": "float" },
+                                    "aluminum_weight": { "type": "number", "format": "float" },
+                                    "total_items": { "type": "integer" }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": { "description": "Telemetry recorded" },
+                    "400": { "description": "Bad Request" },
+                    "401": { "description": "Unauthorized - Invalid API Key" },
+                    "404": { "description": "Device Not Found" },
+                    "422": { "description": "Unprocessable Entity" },
+                    "500": { "description": "Internal Server Error" }
+                }
+            }
+        },
+        "/api/v1/logs": {
+            "get": {
+                "tags": ["Logs"],
+                "summary": "Read system logs (Admin Only)",
+                "operationId": "getSystemLogs",
+                "security": [{"bearerAuth": []}],
+                "parameters": [
+                    { "name": "date", "in": "query", "description": "YYYY-MM-DD", "schema": { "type": "string" } }
+                ],
+                "responses": {
+                    "200": { "description": "Log content" },
+                    "302": { "description": "Redirect - Unauthorized access redirected to login" },
+                    "401": { "description": "Unauthorized" },
+                    "403": { "description": "Forbidden - Admin Role Required" },
+                    "500": { "description": "Internal Server Error" }
+                }
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer"
+            }
+        }
+    }
+}

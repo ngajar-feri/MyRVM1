@@ -1,0 +1,41 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # HAProxy stats
+  - job_name: 'haproxy'
+    static_configs:
+      - targets: ['loadbalancer:8080']
+    metrics_path: '/stats'
+    params:
+      format: ['prometheus']
+
+  # Vuexy application instances
+  - job_name: 'vuexy-apps'
+    static_configs:
+      - targets: 
+        - 'vuexy-app-1:80'
+        - 'vuexy-app-2:80'
+        - 'vuexy-app-3:80'
+    metrics_path: '/health'
+    scrape_interval: 30s
+
+  # Redis monitoring
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+
+  # Docker containers monitoring (if node-exporter is added)
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']

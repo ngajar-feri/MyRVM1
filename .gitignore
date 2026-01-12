@@ -1,0 +1,6 @@
+Backups/
+*.zip
+*.rar
+.vscode/
+Thumbs.db
+.DS_Store
