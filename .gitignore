@@ -4,3 +4,5 @@ Backups/
 .vscode/
 Thumbs.db
 .DS_Store
+MyRVM-Server/public/vendor/node_modules/
+MyRVM-Server/public/vendor/node_modules/@iconify/json/json/fluent-emoji.json
