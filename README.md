@@ -95,11 +95,11 @@ Pusat informasi teknis dan manajerial proyek.
 
 ```mermaid
 graph TD
-    User[User Apps] -->|API| Server[MyRVM Server (Laravel)]
-    RVM[RVM Edge (Jetson)] -->|VPN/API| Server
+    User[User Apps] -->|API| Server[MyRVM Server Laravel 12]
+    RVM[RVM Edge Jetson Nano Orin] -->|VPN/API| Server
     Server -->|Store| DB[(PostgreSQL)]
     Server -->|Cache| Redis
-    Server -->|Logs| MinIO
+    Server -->|Objects| MinIO
     Admin[Web Dashboard] -->|Inertia/Vue| Server
 ```
 
