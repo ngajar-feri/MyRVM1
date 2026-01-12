@@ -1,7 +1,9 @@
 Backups/
 *.zip
 *.rar
+.trae/
 .vscode/
+templates-dashboard/
 Thumbs.db
 .DS_Store
 MyRVM-Server/public/vendor/node_modules/
