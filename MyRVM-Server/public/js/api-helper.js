@@ -88,6 +88,16 @@ const apiHelper = {
     },
 
     /**
+     * PATCH request
+     */
+    async patch(url, data) {
+        return this.fetch(url, {
+            method: 'PATCH',
+            body: JSON.stringify(data)
+        });
+    },
+
+    /**
      * DELETE request  
      */
     async delete(url) {

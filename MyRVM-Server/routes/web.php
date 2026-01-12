@@ -110,6 +110,10 @@ Route::middleware('auth')->group(function () {
         // Logs Management
         Route::get('/logs', [App\Http\Controllers\Dashboard\LogsController::class, 'index'])->name('logs');
         Route::get('/logs/content', [App\Http\Controllers\Dashboard\LogsController::class, 'content']);
+
+        // Assignment Management
+        Route::get('/assignments', [App\Http\Controllers\Dashboard\AssignmentController::class, 'index'])->name('assignments');
+        Route::get('/assignments/content', [App\Http\Controllers\Dashboard\AssignmentController::class, 'indexContent']);
     });
 
     // Dashboard API endpoints (use web auth instead of Sanctum)

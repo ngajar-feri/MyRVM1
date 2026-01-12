@@ -53,6 +53,7 @@ Route::middleware('auth:sanctum')->prefix('v1/admin')->middleware('role:admin,su
 
     // Assignment Management (RVM Installation Assignments)
     Route::apiResource('assignments', AssignmentController::class);
+    Route::patch('/assignments/{id}/status', [AssignmentController::class, 'updateStatus']);
 });
 
 // Protected Routes

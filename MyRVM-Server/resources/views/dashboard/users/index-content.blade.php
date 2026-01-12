@@ -5,9 +5,16 @@
                 <h5 class="card-title mb-0">
                     <i class="ti tabler-users me-2"></i>User & Tenants Management
                 </h5>
-                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal">
-                    <i class="ti tabler-plus me-1"></i>Add User
-                </button>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-outline-primary"
+                        onclick="window.spaNavigator.loadPage('assignments', '/dashboard/assignments')">
+                        <i class="bx bx-task me-1"></i>Assignments
+                    </button>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                        data-bs-target="#createUserModal">
+                        <i class="ti tabler-plus me-1"></i>Add User
+                    </button>
+                </div>
             </div>
 
             <div class="card-body">

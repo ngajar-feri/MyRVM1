@@ -34,6 +34,8 @@
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <!-- Tag Autocomplete CSS -->
     <link rel="stylesheet" href="{{ asset('css/tag-autocomplete.css') }}" />
+    <!-- Assignments CSS -->
+    <link rel="stylesheet" href="{{ asset('css/assignments.css') }}" />
     <!-- Helpers -->
     <script src="/vendor/assets/vendor/js/helpers.js"></script>
     <script src="/vendor/assets/js/config.js"></script>

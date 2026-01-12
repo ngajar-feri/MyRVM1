@@ -58,7 +58,7 @@ class AssignmentController extends Controller
                 'user_ids' => 'required|array|min:1',
                 'user_ids.*' => 'exists:users,id',
                 'machine_ids' => 'required|array|min:1',
-                'machine_ids.*' => 'exists:machines,id',
+                'machine_ids.*' => 'exists:rvm_machines,id',
                 'latitude' => 'nullable|numeric|between:-90,90',
                 'longitude' => 'nullable|numeric|between:-180,180',
                 'address' => 'nullable|string|max:500',
@@ -196,6 +196,52 @@ class AssignmentController extends Controller
         } catch (\Exception $e) {
             Log::error('Failed to cancel assignment: ' . $e->getMessage());
             return response()->json(['error' => 'Failed to cancel assignment'], 500);
+        }
+    }
+
+    /**
+     * Update assignment status
+     */
+    public function updateStatus(Request $request, string $id)
+    {
+        try {
+            $validated = $request->validate([
+                'status' => 'required|in:pending,in_progress,completed,cancelled',
+            ]);
+
+            $assignment = Assignment::findOrFail($id);
+            $oldStatus = $assignment->status;
+            $assignment->status = $validated['status'];
+
+            // Auto-set completed_at if status is completed
+            if ($validated['status'] === 'completed' && !$assignment->completed_at) {
+                $assignment->completed_at = now();
+            }
+
+            $assignment->save();
+
+            // Log status change
+            Log::info('Assignment status updated', [
+                'assignment_id' => $id,
+                'old_status' => $oldStatus,
+                'new_status' => $validated['status'],
+                'updated_by' => auth()->id(),
+            ]);
+
+            return response()->json([
+                'message' => 'Assignment status updated successfully',
+                'assignment' => $assignment->load(['user', 'machine', 'assignedBy'])
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'error' => 'Validation failed',
+                'details' => $e->errors()
+            ], 422);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to update assignment status: ' . $e->getMessage());
+            return response()->json(['error' => 'Failed to update assignment status'], 500);
         }
     }
 }

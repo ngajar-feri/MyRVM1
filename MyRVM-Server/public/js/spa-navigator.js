@@ -199,7 +199,8 @@ class SPANavigator {
             'machines': '/js/modules/machines.js',
             'edge-devices': '/js/modules/devices.js',
             'cv-servers': '/js/modules/cv-servers.js',
-            'logs': '/js/modules/logs.js'
+            'logs': '/js/modules/logs.js',
+            'assignments': '/js/modules/assignments.js'
         };
 
         // IMPORTANT: Initialize Bootstrap components FIRST before module scripts run
@@ -323,6 +324,11 @@ class SPANavigator {
                     logsManagement.setupEventListeners();
                     logsManagement.loadLogs();
                     logsManagement.loadStats();
+                }
+                break;
+            case 'assignments':
+                if (typeof assignmentManager !== 'undefined') {
+                    assignmentManager.init();
                 }
                 break;
         }
