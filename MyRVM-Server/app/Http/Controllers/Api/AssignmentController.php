@@ -37,6 +37,12 @@ class AssignmentController extends Controller
             $assignments = $query->orderBy('assigned_at', 'desc')
                 ->paginate($request->per_page ?? 15);
 
+            // Append team attribute to each assignment
+            $assignments->getCollection()->transform(function ($assignment) {
+                $assignment->append('team');
+                return $assignment;
+            });
+
             return response()->json($assignments);
 
         } catch (\Exception $e) {
@@ -70,32 +76,40 @@ class AssignmentController extends Controller
             $assignments = [];
             $assignedBy = auth()->id();
 
-            // Create assignment for each user-machine combination
-            foreach ($validated['user_ids'] as $userId) {
-                foreach ($validated['machine_ids'] as $machineId) {
-                    $assignment = Assignment::create([
-                        'user_id' => $userId,
-                        'machine_id' => $machineId,
-                        'assigned_by' => $assignedBy,
-                        'latitude' => $validated['latitude'] ?? null,
-                        'longitude' => $validated['longitude'] ?? null,
-                        'address' => $validated['address'] ?? null,
-                        'notes' => $validated['notes'] ?? null,
-                    ]);
+            // Generate a batch_id to group all assignments from this request
+            $batchId = \Illuminate\Support\Str::uuid()->toString();
 
-                    // Load relationships
-                    $assignment->load(['user', 'machine', 'assignedBy']);
+            // Create assignment for each machine (grouped by batch_id)
+            // All users share the same batch_id for each machine
+            foreach ($validated['machine_ids'] as $machineId) {
+                $assignment = Assignment::create([
+                    'batch_id' => $batchId,
+                    'user_id' => $validated['user_ids'][0], // Primary user (first in list)
+                    'team_user_ids' => $validated['user_ids'], // All team members
+                    'machine_id' => $machineId,
+                    'assigned_by' => $assignedBy,
+                    'latitude' => $validated['latitude'] ?? null,
+                    'longitude' => $validated['longitude'] ?? null,
+                    'address' => $validated['address'] ?? null,
+                    'notes' => $validated['notes'] ?? null,
+                ]);
 
-                    // Send notification to assigned user
+                // Load relationships
+                $assignment->load(['user', 'machine', 'assignedBy']);
+
+                // Send notification to ALL assigned users
+                foreach ($validated['user_ids'] as $userId) {
                     try {
-                        $assignment->user->notify(new AssignmentCreated($assignment));
+                        $user = \App\Models\User::find($userId);
+                        if ($user) {
+                            $user->notify(new AssignmentCreated($assignment));
+                        }
                     } catch (\Exception $e) {
                         Log::warning('Failed to send notification: ' . $e->getMessage());
-                        // Continue even if notification fails
                     }
-
-                    $assignments[] = $assignment;
                 }
+
+                $assignments[] = $assignment;
             }
 
             DB::commit();
@@ -103,6 +117,7 @@ class AssignmentController extends Controller
             return response()->json([
                 'message' => 'Assignments created successfully',
                 'count' => count($assignments),
+                'batch_id' => $batchId,
                 'assignments' => $assignments
             ], 201);
 

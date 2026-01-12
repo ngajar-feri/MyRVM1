@@ -13,6 +13,8 @@ class UserManagement {
             status: ''
         };
         this.bootstrapReady = false;
+        this.selectedUserIds = [];
+        this.currentUserRole = null;
         this.init();
     }
 
@@ -102,6 +104,9 @@ class UserManagement {
         // Cleanup any stale modals from previous SPA navigation
         this.cleanupModals();
 
+        // Fetch current user role
+        this.fetchCurrentUserRole();
+
         // Search with debounce
         const searchInput = document.getElementById('user-search');
         if (searchInput) {
@@ -149,6 +154,62 @@ class UserManagement {
                 this.updateUser(new FormData(editForm));
             });
         }
+
+        // Select all checkbox
+        const selectAllCheckbox = document.getElementById('select-all');
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', (e) => {
+                this.toggleSelectAll(e.target.checked);
+            });
+        }
+    }
+
+    async fetchCurrentUserRole() {
+        try {
+            const response = await apiHelper.get('/api/v1/me');
+            if (response.ok) {
+                const result = await response.json();
+                // API returns { status: 'success', data: { role: '...' } }
+                this.currentUserRole = result.data?.role || null;
+                console.log('Current user role:', this.currentUserRole);
+            }
+        } catch (error) {
+            console.error('Failed to fetch current user role:', error);
+        }
+    }
+
+    toggleSelectAll(checked) {
+        const checkboxes = document.querySelectorAll('#users-table-body input[type="checkbox"]');
+        checkboxes.forEach(cb => {
+            cb.checked = checked;
+        });
+        this.updateSelectedUsers();
+    }
+
+    updateSelectedUsers() {
+        const checkboxes = document.querySelectorAll('#users-table-body input[type="checkbox"]:checked');
+        this.selectedUserIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
+
+        // Update UI
+        const deleteBtn = document.getElementById('delete-selected-btn');
+        const countSpan = document.getElementById('selected-count');
+
+        if (deleteBtn && countSpan) {
+            countSpan.textContent = this.selectedUserIds.length;
+            if (this.selectedUserIds.length > 0) {
+                deleteBtn.classList.remove('d-none');
+            } else {
+                deleteBtn.classList.add('d-none');
+            }
+        }
+
+        // Update select-all checkbox state
+        const selectAll = document.getElementById('select-all');
+        const allCheckboxes = document.querySelectorAll('#users-table-body input[type="checkbox"]');
+        if (selectAll && allCheckboxes.length > 0) {
+            selectAll.checked = checkboxes.length === allCheckboxes.length;
+            selectAll.indeterminate = checkboxes.length > 0 && checkboxes.length < allCheckboxes.length;
+        }
     }
 
     async loadUsers() {
@@ -178,22 +239,12 @@ class UserManagement {
 
     async loadStats() {
         try {
-            const response = await apiHelper.get('/api/v1/admin/users');
+            const response = await apiHelper.get('/api/v1/admin/users/stats');
 
             if (!response.ok) throw new Error('Failed to load stats');
 
-            const data = await response.json();
-            const users = data.data;
-
-            // Calculate stats
-            const total = users.length;
-            const active = users.filter(u => u.status === 'active' || !u.status).length;
-            const tenants = users.filter(u => u.role === 'tenan' || u.role === 'tenant').length;
-            const newToday = users.filter(u => {
-                const created = new Date(u.created_at);
-                const today = new Date();
-                return created.toDateString() === today.toDateString();
-            }).length;
+            const result = await response.json();
+            const stats = result.data;
 
             // Update UI
             const totalEl = document.getElementById('total-users');
@@ -201,10 +252,10 @@ class UserManagement {
             const tenantsEl = document.getElementById('total-tenants');
             const newEl = document.getElementById('new-today');
 
-            if (totalEl) totalEl.textContent = total;
-            if (activeEl) activeEl.textContent = active;
-            if (tenantsEl) tenantsEl.textContent = tenants;
-            if (newEl) newEl.textContent = newToday;
+            if (totalEl) totalEl.textContent = stats.total || 0;
+            if (activeEl) activeEl.textContent = stats.active || 0;
+            if (tenantsEl) tenantsEl.textContent = stats.tenants || 0;
+            if (newEl) newEl.textContent = stats.new_today || 0;
 
         } catch (error) {
             console.error('Error loading stats:', error);
@@ -232,7 +283,7 @@ class UserManagement {
 
         tbody.innerHTML = users.map(user => `
             <tr>
-                <td><input type="checkbox" class="form-check-input" value="${user.id}"></td>
+                <td><input type="checkbox" class="form-check-input" value="${user.id}" onchange="userManagement.updateSelectedUsers()"></td>
                 <td>
                     <div class="d-flex align-items-center">
                         <img src="${user.photo_url || '/vendor/assets/img/avatars/1.png'}" 
@@ -274,7 +325,7 @@ class UserManagement {
                             </a></li>
                             ` : ''}
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item text-danger cursor-pointer" onclick="userManagement.deleteUser(${user.id})">
+                            <li><a class="dropdown-item text-danger cursor-pointer" onclick="userManagement.showDeleteModal(${user.id}, '${this.escapeHtml(user.name).replace(/'/g, "\\'")}')">
                                 <i class="ti tabler-trash me-2"></i>Delete
                             </a></li>
                         </ul>
@@ -543,25 +594,138 @@ class UserManagement {
         }
     }
 
-    async deleteUser(userId) {
-        if (!confirm('Are you sure you want to permanently delete this user? This action cannot be undone.')) return;
+    // ====== REFRESH DATA ======
+
+    refreshData() {
+        this.loadUsers();
+        this.loadStats();
+        this.showSuccess('Data refreshed');
+    }
+
+    // ====== DELETE FUNCTIONALITY WITH PASSWORD CONFIRMATION ======
+
+    showDeleteModal(userId, userName = '') {
+        // Check if user has permission
+        if (!['super_admin', 'admin'].includes(this.currentUserRole)) {
+            this.showError('You do not have permission to delete users');
+            return;
+        }
+
+        // Set up modal for single delete
+        document.getElementById('delete-user-ids').value = userId;
+        document.getElementById('delete-mode').value = 'single';
+        document.getElementById('delete-confirm-message').innerHTML =
+            `Are you sure you want to delete user <strong>${userName || 'this user'}</strong>?`;
+        document.getElementById('delete-confirm-password').value = '';
+        document.getElementById('delete-confirm-password').classList.remove('is-invalid');
+
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+        modal.show();
+    }
+
+    showBulkDeleteModal() {
+        // Check if user has permission
+        if (!['super_admin', 'admin'].includes(this.currentUserRole)) {
+            this.showError('You do not have permission to delete users');
+            return;
+        }
+
+        if (this.selectedUserIds.length === 0) {
+            this.showError('Please select at least one user to delete');
+            return;
+        }
+
+        // Set up modal for bulk delete
+        document.getElementById('delete-user-ids').value = this.selectedUserIds.join(',');
+        document.getElementById('delete-mode').value = 'bulk';
+        document.getElementById('delete-confirm-message').innerHTML =
+            `Are you sure you want to delete <strong>${this.selectedUserIds.length} user(s)</strong>?`;
+        document.getElementById('delete-confirm-password').value = '';
+        document.getElementById('delete-confirm-password').classList.remove('is-invalid');
+
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+        modal.show();
+    }
+
+    async confirmDelete() {
+        const password = document.getElementById('delete-confirm-password').value;
+        const mode = document.getElementById('delete-mode').value;
+        const userIdsStr = document.getElementById('delete-user-ids').value;
+
+        if (!password) {
+            document.getElementById('delete-confirm-password').classList.add('is-invalid');
+            document.getElementById('password-error').textContent = 'Password is required';
+            return;
+        }
+
+        const confirmBtn = document.getElementById('confirm-delete-btn');
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Deleting...';
 
         try {
-            const response = await apiHelper.delete(`/api/v1/admin/users/${userId}`);
+            let response;
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Failed to delete user');
+            if (mode === 'single') {
+                const userId = userIdsStr;
+                response = await apiHelper.request(`/api/v1/admin/users/${userId}`, {
+                    method: 'DELETE',
+                    body: JSON.stringify({ password }),
+                    skipAuthRedirect: true // Don't redirect on 401 - show password error instead
+                });
+            } else {
+                const userIds = userIdsStr.split(',').map(id => parseInt(id));
+                response = await apiHelper.request('/api/v1/admin/users/bulk', {
+                    method: 'DELETE',
+                    body: JSON.stringify({
+                        user_ids: userIds,
+                        password
+                    }),
+                    skipAuthRedirect: true // Don't redirect on 401 - show password error instead
+                });
             }
 
-            this.showSuccess('User deleted successfully');
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Failed to delete user(s)');
+            }
+
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal'));
+            if (modal) modal.hide();
+
+            // Show success
+            this.showSuccess(data.message || 'User(s) deleted successfully');
+
+            // Reset selection
+            this.selectedUserIds = [];
+            document.getElementById('select-all').checked = false;
+            this.updateSelectedUsers();
+
+            // Reload data
             this.loadUsers();
             this.loadStats();
 
         } catch (error) {
-            console.error('Error deleting user:', error);
-            this.showError(error.message || 'Failed to delete user');
+            console.error('Error deleting user(s):', error);
+
+            if (error.message.includes('Invalid password')) {
+                document.getElementById('delete-confirm-password').classList.add('is-invalid');
+                document.getElementById('password-error').textContent = 'Invalid password. Please try again.';
+            } else {
+                this.showError(error.message || 'Failed to delete user(s)');
+            }
+        } finally {
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = '<i class="ti tabler-trash me-1"></i>Delete';
         }
+    }
+
+    // Legacy deleteUser method - now shows modal
+    async deleteUser(userId) {
+        this.showDeleteModal(userId);
     }
 
     // ====== ASSIGNMENT FEATURE ======

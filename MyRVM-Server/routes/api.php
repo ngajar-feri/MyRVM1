@@ -43,12 +43,19 @@ Route::middleware('auth:sanctum')->prefix('v1/admin')->middleware('role:admin,su
 
     Route::post('/users', [UserController::class, 'createUser']);
     Route::put('/users/{id}', [UserController::class, 'updateUserAdmin']);
+
+    // Secure operations with password verification - MUST be before {id} route
+    Route::post('/verify-password', [UserController::class, 'verifyPassword']);
+    Route::delete('/users/bulk', [UserController::class, 'deleteMultipleUsers']);
+
+    // Single user delete (with {id} parameter) - MUST be after /bulk route
     Route::delete('/users/{id}', [UserController::class, 'deleteUser']);
 });
 
 // Management Routes (Role: Admin, Super Admin, Teknisi, Operator)
 Route::middleware('auth:sanctum')->prefix('v1/admin')->middleware('role:admin,super_admin,teknisi,operator')->group(function () {
     Route::get('/users', [UserController::class, 'getAllUsers']);
+    Route::get('/users/stats', [UserController::class, 'getGlobalStats']);
     Route::get('/users/{id}/stats', [UserController::class, 'getUserStats']);
 
     // Assignment Management (RVM Installation Assignments)

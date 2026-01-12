@@ -15,9 +15,14 @@ const apiHelper = {
     /**
      * Make authenticated API call
      * Uses Bearer Token (from session) for authentication
+     * @param {string} url - The API endpoint URL
+     * @param {object} options - Fetch options
+     * @param {boolean} options.skipAuthRedirect - If true, don't redirect on 401/403 (for password verification)
      */
     async fetch(url, options = {}) {
         const token = window.API_TOKEN || localStorage.getItem('api_token') || '';
+        const skipAuthRedirect = options.skipAuthRedirect || false;
+        delete options.skipAuthRedirect; // Remove from options before passing to fetch
 
         const defaultOptions = {
             headers: {
@@ -47,8 +52,8 @@ const apiHelper = {
         try {
             const response = await fetch(url, mergedOptions);
 
-            // Handle 401/403 - redirect to login
-            if (response.status === 401 || response.status === 403) {
+            // Handle 401/403 - redirect to login (unless skipAuthRedirect is true)
+            if ((response.status === 401 || response.status === 403) && !skipAuthRedirect) {
                 window.location.href = '/login';
                 return null;
             }
@@ -100,8 +105,19 @@ const apiHelper = {
     /**
      * DELETE request  
      */
-    async delete(url) {
-        return this.fetch(url, { method: 'DELETE' });
+    async delete(url, data = null) {
+        const options = { method: 'DELETE' };
+        if (data) {
+            options.body = JSON.stringify(data);
+        }
+        return this.fetch(url, options);
+    },
+
+    /**
+     * Generic request method
+     */
+    async request(url, options = {}) {
+        return this.fetch(url, options);
     }
 };
 

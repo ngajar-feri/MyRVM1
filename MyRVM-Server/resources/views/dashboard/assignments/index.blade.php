@@ -7,7 +7,7 @@
         @include('dashboard.assignments.index-content')
     </div>
 
-    @push('scripts')
+    @section('page-script')
         <script src="{{ asset('js/modules/assignments.js') }}"></script>
-    @endpush
+    @endsection
 @endsection

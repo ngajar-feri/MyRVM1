@@ -9,35 +9,72 @@ class AssignmentManager {
         this.currentPage = 1;
         this.perPage = 15;
         this.currentFilter = 'all';
-        this.toasts = {
-            location: null,
-            status: null
-        };
     }
 
+    /**
+     * Initialize the assignment manager
+     */
     /**
      * Initialize the assignment manager
      */
     init() {
         console.log('[AssignmentManager] Initializing...');
 
-        // Initialize Bootstrap tooltips
-        this.initTooltips();
+        // Wait for page loaded event (SPA Navigation)
+        document.addEventListener('pageLoaded', (e) => {
+            if (e.detail.page === 'assignments') {
+                this.initializeModule();
+            }
+        });
 
-        // Initialize toasts
-        this.toasts.location = new bootstrap.Toast(document.getElementById('locationToast'));
-        this.toasts.status = new bootstrap.Toast(document.getElementById('statusToast'));
-
-        // Setup filter buttons
-        this.setupFilterButtons();
-
-        // Load assignments
-        this.loadAssignments();
+        // Initialize immediately if directly on page
+        if (window.location.pathname.includes('/dashboard/assignments')) {
+            this.initializeModule();
+        }
     }
 
     /**
-     * Setup status filter buttons
+     * Core initialization logic
      */
+    initializeModule() {
+        this.waitForBootstrap().then(() => {
+            // Initialize Bootstrap tooltips
+            this.initTooltips();
+
+            // Initialize toasts
+            const statusToast = document.getElementById('statusToast');
+            if (statusToast) this.toasts.status = new bootstrap.Toast(statusToast);
+
+            // Setup filter buttons
+            this.setupFilterButtons();
+
+            // Load assignments
+            this.loadAssignments();
+        });
+    }
+
+    // Wait for Bootstrap to be fully loaded
+    waitForBootstrap() {
+        return new Promise((resolve) => {
+            if (typeof bootstrap !== 'undefined' && bootstrap.Toast) {
+                resolve();
+                return;
+            }
+
+            const checkBootstrap = setInterval(() => {
+                if (typeof bootstrap !== 'undefined' && bootstrap.Toast) {
+                    clearInterval(checkBootstrap);
+                    resolve();
+                }
+            }, 100);
+
+            // Timeout after 5 seconds
+            setTimeout(() => {
+                clearInterval(checkBootstrap);
+                resolve();
+            }, 5000);
+        });
+    }
     setupFilterButtons() {
         const filterButtons = document.querySelectorAll('[data-filter]');
         filterButtons.forEach(btn => {
@@ -135,7 +172,7 @@ class AssignmentManager {
                     <small class="text-muted">${this.escapeHtml(assignment.machine?.serial_number || '')}</small>
                 </td>
                 <td>
-                    ${this.renderAvatarGroup(assignment.user)}
+                    ${this.renderAvatarGroup(assignment.team || assignment.user)}
                 </td>
                 <td>
                     <span class="badge bg-label-${statusClass}">${statusLabel}</span>
@@ -162,33 +199,58 @@ class AssignmentManager {
     /**
      * Render avatar group (with initials fallback)
      */
-    renderAvatarGroup(user) {
-        if (!user) {
+    renderAvatarGroup(userOrUsers) {
+        if (!userOrUsers) {
             return '<span class="text-muted">-</span>';
         }
 
-        const initials = this.getUserInitials(user);
-        const avatarColor = this.getAvatarColor(user.id);
+        // Normalize to array
+        const users = Array.isArray(userOrUsers) ? userOrUsers : [userOrUsers];
 
-        if (user.avatar_url) {
+        if (users.length === 0) {
+            return '<span class="text-muted">-</span>';
+        }
+
+        // Build avatar HTML items
+        const avatars = users.slice(0, 3).map(user => {
+            const initials = this.getUserInitials(user);
+            const color = this.getAvatarColor(user.id);
+
+            if (user.avatar_url) {
+                return `
+                    <span class="avatar avatar-sm me-1" data-bs-toggle="tooltip" title="${this.escapeHtml(user.name)}">
+                        <img src="${user.avatar_url}" alt="${initials}" class="rounded-circle" style="width: 32px; height: 32px;">
+                    </span>
+                `;
+            }
+
+            // Initials avatar with proper styling
             return `
-                <div class="avatar avatar-sm">
-                    <img src="${user.avatar_url}" alt="${this.escapeHtml(user.name)}" 
-                         class="rounded-circle" 
-                         data-bs-toggle="tooltip" 
-                         title="${this.escapeHtml(user.name)}">
-                </div>
+                <span class="avatar avatar-sm me-1" data-bs-toggle="tooltip" title="${this.escapeHtml(user.name)}">
+                    <span class="avatar-initial rounded-circle bg-label-${color}" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600;">
+                        ${initials}
+                    </span>
+                </span>
+            `;
+        }).join('');
+
+        // Add counter if more than 3 users
+        let counter = '';
+        if (users.length > 3) {
+            const remainingNames = users.slice(3).map(u => u.name).join(', ');
+            counter = `
+                <span class="avatar avatar-sm" data-bs-toggle="tooltip" title="${this.escapeHtml(remainingNames)}">
+                    <span class="avatar-initial rounded-circle bg-secondary text-white" style="width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600;">
+                        +${users.length - 3}
+                    </span>
+                </span>
             `;
         }
 
-        // Fallback to initials
         return `
-            <div class="avatar avatar-sm">
-                <span class="avatar-initial rounded-circle bg-avatar-${avatarColor}" 
-                      data-bs-toggle="tooltip" 
-                      title="${this.escapeHtml(user.name)}">
-                    ${initials}
-                </span>
+            <div class="d-flex align-items-center">
+                ${avatars}
+                ${counter}
             </div>
         `;
     }
@@ -216,7 +278,8 @@ class AssignmentManager {
      * Get consistent avatar color based on user ID
      */
     getAvatarColor(userId) {
-        return ((userId % 8) + 1);
+        const colors = ['primary', 'secondary', 'success', 'danger', 'warning', 'info', 'dark'];
+        return colors[userId % colors.length];
     }
 
     /**
@@ -230,10 +293,10 @@ class AssignmentManager {
         return `
             <button type="button" 
                     class="btn btn-icon btn-outline-primary btn-sm btn-location" 
-                    onclick="window.assignmentManager.openLocation(${assignment.latitude}, ${assignment.longitude}, '${this.escapeHtml(assignment.address || 'Location')}')"
+                    onclick="event.stopPropagation(); window.assignmentManager.openLocation(${assignment.latitude}, ${assignment.longitude}, '${this.escapeHtml(assignment.address || 'Location')}')"
                     data-bs-toggle="tooltip" 
                     title="View on Map">
-                <i class="bx bx-map"></i>
+                <i class="ti tabler-map-pin"></i>
             </button>
         `;
     }
@@ -247,25 +310,25 @@ class AssignmentManager {
                 <button type="button" class="btn p-0 dropdown-toggle hide-arrow" 
                         data-bs-toggle="dropdown" 
                         onclick="event.stopPropagation();">
-                    <i class="bx bx-dots-vertical-rounded"></i>
+                    <i class="ti tabler-dots-vertical"></i>
                 </button>
                 <div class="dropdown-menu">
                     <a class="dropdown-item" href="javascript:void(0);" 
                        onclick="event.stopPropagation(); window.assignmentManager.updateStatus(${assignment.id}, 'pending')">
-                        <i class="bx bx-time-five me-1"></i> Set Pending
+                        <i class="ti tabler-clock me-1"></i> Set Pending
                     </a>
                     <a class="dropdown-item" href="javascript:void(0);" 
                        onclick="event.stopPropagation(); window.assignmentManager.updateStatus(${assignment.id}, 'in_progress')">
-                        <i class="bx bx-play-circle me-1"></i> Set In Progress
+                        <i class="ti tabler-player-play me-1"></i> Set In Progress
                     </a>
                     <a class="dropdown-item" href="javascript:void(0);" 
                        onclick="event.stopPropagation(); window.assignmentManager.updateStatus(${assignment.id}, 'completed')">
-                        <i class="bx bx-check-circle me-1"></i> Set Completed
+                        <i class="ti tabler-check me-1"></i> Set Completed
                     </a>
                     <div class="dropdown-divider"></div>
                     <a class="dropdown-item text-danger" href="javascript:void(0);" 
                        onclick="event.stopPropagation(); window.assignmentManager.updateStatus(${assignment.id}, 'cancelled')">
-                        <i class="bx bx-x-circle me-1"></i> Cancel
+                        <i class="ti tabler-ban me-1"></i> Cancel
                     </a>
                 </div>
             </div>
@@ -277,28 +340,28 @@ class AssignmentManager {
      */
     renderAssignmentDetails(assignment) {
         return `
-            <div class="assignment-details">
+            <div class="assignment-details p-3">
                 <div class="row">
                     <div class="col-md-6">
-                        <h6>Location & Machine Details</h6>
+                        <h6 class="text-primary">Location & Machine Details</h6>
                         <p class="mb-1"><strong>Machine:</strong> ${this.escapeHtml(assignment.machine?.name || 'N/A')}</p>
                         <p class="mb-1"><strong>Serial:</strong> ${this.escapeHtml(assignment.machine?.serial_number || 'N/A')}</p>
-                        <p class="mb-1"><strong>Address:</strong> ${this.escapeHtml(assignment.address || 'Not specified')}</p>
+                        <p class="mb-1" style="word-wrap: break-word; white-space: normal;"><strong>Address:</strong> ${this.escapeHtml(assignment.address || 'Not specified')}</p>
                         <p class="mb-1"><strong>Assigned:</strong> ${this.formatDate(assignment.assigned_at)}</p>
                         ${assignment.completed_at ? `<p class="mb-0"><strong>Completed:</strong> ${this.formatDate(assignment.completed_at)}</p>` : ''}
                     </div>
                     <div class="col-md-6">
-                        <h6>Notes & Instructions</h6>
+                        <h6 class="text-primary">Notes & Instructions</h6>
                         ${assignment.notes ? `
-                            <div class="alert alert-warning mb-0" role="alert">
-                                <i class="bx bx-note me-1"></i> ${this.escapeHtml(assignment.notes)}
+                            <div class="alert alert-warning mb-0" role="alert" style="word-wrap: break-word; white-space: normal;">
+                                <i class="ti tabler-note me-1"></i> ${this.escapeHtml(assignment.notes)}
                             </div>
                         ` : '<p class="text-muted">No notes provided</p>'}
                     </div>
                 </div>
                 <div class="mt-3 text-end">
                     <button class="btn btn-sm btn-primary" onclick="window.assignmentManager.openLocation(${assignment.latitude}, ${assignment.longitude}, '${this.escapeHtml(assignment.address || 'Location')}')">
-                        <i class="bx bx-map me-1"></i> View on Map
+                        <i class="ti tabler-map-pin me-1"></i> View on Map
                     </button>
                 </div>
             </div>
@@ -315,12 +378,10 @@ class AssignmentManager {
             });
 
             if (rawResponse && rawResponse.ok) {
-                await rawResponse.json(); // Consume body even if not used, or just check ok
+                await rawResponse.json(); // Consume body
 
                 // Show success toast
-                const toastBody = document.querySelector('#statusToast .toast-body');
-                toastBody.textContent = `Status updated to "${this.getStatusLabel(newStatus)}"`;
-                this.toasts.status.show();
+                this.showSuccess(`Status updated to "<strong>${this.getStatusLabel(newStatus)}</strong>"`);
 
                 // Reload assignments
                 await this.loadAssignments(this.currentPage);
@@ -334,14 +395,60 @@ class AssignmentManager {
     /**
      * Open location in Google Maps
      */
+    /**
+     * Show success notification
+     */
+    showSuccess(message) {
+        this.showToast(message, 'success');
+    }
+
+    /**
+     * Show error notification
+     */
+    showError(message) {
+        this.showToast(message, 'danger');
+    }
+
+    /**
+     * Show dynamic toast notification
+     */
+    showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = 'position-fixed top-0 end-0 p-3';
+        toast.style.zIndex = '9999';
+        toast.innerHTML = `
+            <div class="toast show" role="alert">
+                <div class="toast-header bg-${type} text-white">
+                    <i class="ti tabler-${type === 'success' ? 'check' : 'alert-circle'} me-2"></i>
+                    <strong class="me-auto">${type === 'success' ? 'Success' : 'Notification'}</strong>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" onclick="this.closest('.position-fixed').remove()"></button>
+                </div>
+                <div class="toast-body bg-white">
+                    ${message}
+                </div>
+            </div>
+        `;
+        document.body.appendChild(toast);
+
+        // Auto remove after 3 seconds
+        setTimeout(() => {
+            if (toast && toast.parentNode) {
+                toast.remove();
+            }
+        }, 3000);
+    }
+
+    /**
+     * Open location in Google Maps
+     */
     openLocation(lat, lng, name) {
         if (!lat || !lng) {
             this.showError('No location data available');
             return;
         }
 
-        // Show toast
-        this.toasts.location.show();
+        // Show success toast (Green, Top Right)
+        this.showSuccess(`Opening Google Maps for <strong>${name}</strong>...`);
 
         // Open Google Maps in new tab
         setTimeout(() => {
@@ -364,7 +471,7 @@ class AssignmentManager {
             <li class="page-item ${response.current_page === 1 ? 'disabled' : ''}">
                 <a class="page-link" href="javascript:void(0);" 
                    onclick="window.assignmentManager.loadAssignments(${response.current_page - 1})">
-                    <i class="tf-icon bx bx-chevrons-left"></i>
+                    <i class="ti tabler-chevron-left"></i>
                 </a>
             </li>
         `;
@@ -387,7 +494,7 @@ class AssignmentManager {
             <li class="page-item ${response.current_page === response.last_page ? 'disabled' : ''}">
                 <a class="page-link" href="javascript:void(0);" 
                    onclick="window.assignmentManager.loadAssignments(${response.current_page + 1})">
-                    <i class="tf-icon bx bx-chevrons-right"></i>
+                    <i class="ti tabler-chevron-right"></i>
                 </a>
             </li>
         `;
@@ -493,6 +600,15 @@ class AssignmentManager {
 
 // Initialize global instance
 window.assignmentManager = new AssignmentManager();
+
+// Auto-init if on assignments page directly
+if (window.location.pathname.includes('/dashboard/assignments')) {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => window.assignmentManager.init());
+    } else {
+        window.assignmentManager.init();
+    }
+}
 
 // Export for module systems
 if (typeof module !== 'undefined' && module.exports) {

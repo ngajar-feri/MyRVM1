@@ -6,9 +6,13 @@
                     <i class="ti tabler-users me-2"></i>User & Tenants Management
                 </h5>
                 <div class="btn-group">
+                    <button type="button" class="btn btn-outline-danger d-none" id="delete-selected-btn"
+                        onclick="userManagement.showBulkDeleteModal()">
+                        <i class="ti tabler-trash me-1"></i>Delete Selected (<span id="selected-count">0</span>)
+                    </button>
                     <button type="button" class="btn btn-outline-primary"
                         onclick="window.spaNavigator.loadPage('assignments', '/dashboard/assignments')">
-                        <i class="bx bx-task me-1"></i>Assignments
+                        <i class="ti tabler-subtask me-1"></i>Assignments
                     </button>
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal"
                         data-bs-target="#createUserModal">
@@ -45,7 +49,8 @@
                         </select>
                     </div>
                     <div class="col-md-2">
-                        <button type="button" class="btn btn-label-secondary w-100" onclick="window.refreshPage()">
+                        <button type="button" class="btn btn-label-secondary w-100"
+                            onclick="userManagement.refreshData()">
                             <i class="ti tabler-refresh"></i>
                         </button>
                     </div>
@@ -380,6 +385,47 @@
                 <button type="button" class="btn btn-primary" id="submit-assignment-btn"
                     onclick="userManagement.submitAssignment()">
                     <i class="ti tabler-check me-1"></i>Create Assignment
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteConfirmModalLabel">
+                    <i class="ti tabler-alert-triangle me-2"></i>Confirm Delete
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning mb-3">
+                    <i class="ti tabler-alert-circle me-1"></i>
+                    <strong>Warning:</strong> This action cannot be undone.
+                </div>
+
+                <p id="delete-confirm-message">Are you sure you want to delete this user?</p>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Enter your password to confirm:</label>
+                    <input type="password" id="delete-confirm-password" class="form-control"
+                        placeholder="Your admin password" autocomplete="new-password">
+                    <div class="invalid-feedback" id="password-error">Invalid password</div>
+                </div>
+
+                <input type="hidden" id="delete-user-ids" value="">
+                <input type="hidden" id="delete-mode" value="single">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirm-delete-btn"
+                    onclick="userManagement.confirmDelete()">
+                    <i class="ti tabler-trash me-1"></i>Delete
                 </button>
             </div>
         </div>

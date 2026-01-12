@@ -188,16 +188,67 @@ class UserController extends Controller
 
     /**
      * Get all users for admin dashboard.
+     * Supports search, role filter, status filter, and pagination.
      */
     public function getAllUsers(Request $request)
     {
-        $users = \App\Models\User::select('id', 'name', 'email', 'role', 'points_balance', 'created_at')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $query = \App\Models\User::select('id', 'name', 'email', 'role', 'points_balance', 'created_at');
+
+        // Search filter (name or email)
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'ILIKE', "%{$search}%")
+                    ->orWhere('email', 'ILIKE', "%{$search}%");
+            });
+        }
+
+        // Role filter
+        if ($request->filled('role')) {
+            $query->where('role', $request->role);
+        }
+
+        // Status filter - only apply if DB has status column
+        // TODO: Add status column to users table migration
+        // if ($request->filled('status')) {
+        //     $query->where('status', $request->status);
+        // }
+
+        // Order by created_at descending
+        $query->orderBy('created_at', 'desc');
+
+        // Paginate results
+        $perPage = $request->input('per_page', 15);
+        $users = $query->paginate($perPage);
+
+        return response()->json($users);
+    }
+
+    /**
+     * Get global user statistics for dashboard.
+     */
+    public function getGlobalStats()
+    {
+        $total = \App\Models\User::count();
+
+        // Active users - since status column doesn't exist yet, assume all are active
+        // TODO: After adding status column, update to: $active = User::where('status', 'active')->count();
+        $active = $total;
+
+        // Count tenants
+        $tenants = \App\Models\User::whereIn('role', ['tenan', 'tenant'])->count();
+
+        // New users today
+        $newToday = \App\Models\User::whereDate('created_at', today())->count();
 
         return response()->json([
             'status' => 'success',
-            'data' => $users
+            'data' => [
+                'total' => $total,
+                'active' => $active,
+                'tenants' => $tenants,
+                'new_today' => $newToday
+            ]
         ]);
     }
 
@@ -328,17 +379,48 @@ class UserController extends Controller
 
     /**
      * Delete user permanently (Admin only).
+     * Requires password verification for security.
      */
     public function deleteUser(Request $request, $id)
     {
+        // Check if user has delete permission (super_admin or admin only)
+        $currentUser = $request->user();
+        if (!in_array($currentUser->role, ['super_admin', 'admin'])) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'You do not have permission to delete users'
+            ], 403);
+        }
+
+        // Validate password
+        $request->validate([
+            'password' => 'required|string',
+        ]);
+
+        // Verify password
+        if (!Hash::check($request->password, $currentUser->password)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Invalid password. Please enter your correct password.'
+            ], 401);
+        }
+
         $user = \App\Models\User::findOrFail($id);
 
         // Prevent self-deletion
-        if ($user->id === $request->user()->id) {
+        if ($user->id === $currentUser->id) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Cannot delete your own account'
             ], 400);
+        }
+
+        // Prevent deleting super_admin by non-super_admin
+        if ($user->role === 'super_admin' && $currentUser->role !== 'super_admin') {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Only Super Admin can delete other Super Admin accounts'
+            ], 403);
         }
 
         $userName = $user->name;
@@ -347,11 +429,107 @@ class UserController extends Controller
         // Hard delete
         $user->delete();
 
-        ActivityLog::log('User', 'Delete', "Admin {$request->user()->name} deleted user: {$userName} ({$userEmail})", $request->user()->id);
+        ActivityLog::log('User', 'Delete', "Admin {$currentUser->name} deleted user: {$userName} ({$userEmail})", $currentUser->id);
 
         return response()->json([
             'status' => 'success',
             'message' => 'User deleted successfully'
+        ]);
+    }
+
+    /**
+     * Verify admin password (for secure operations).
+     */
+    public function verifyPassword(Request $request)
+    {
+        $request->validate([
+            'password' => 'required|string',
+        ]);
+
+        $currentUser = $request->user();
+
+        if (!Hash::check($request->password, $currentUser->password)) {
+            return response()->json([
+                'status' => 'error',
+                'valid' => false,
+                'message' => 'Invalid password'
+            ], 401);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'valid' => true,
+            'message' => 'Password verified'
+        ]);
+    }
+
+    /**
+     * Delete multiple users (Admin only).
+     * Requires password verification for security.
+     */
+    public function deleteMultipleUsers(Request $request)
+    {
+        // Check if user has delete permission (super_admin or admin only)
+        $currentUser = $request->user();
+        if (!in_array($currentUser->role, ['super_admin', 'admin'])) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'You do not have permission to delete users'
+            ], 403);
+        }
+
+        // Validate request
+        $request->validate([
+            'user_ids' => 'required|array|min:1',
+            'user_ids.*' => 'exists:users,id',
+            'password' => 'required|string',
+        ]);
+
+        // Verify password
+        if (!Hash::check($request->password, $currentUser->password)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Invalid password. Please enter your correct password.'
+            ], 401);
+        }
+
+        $userIds = $request->user_ids;
+        $deletedCount = 0;
+        $skipped = [];
+
+        foreach ($userIds as $userId) {
+            $user = \App\Models\User::find($userId);
+
+            if (!$user) {
+                continue;
+            }
+
+            // Prevent self-deletion
+            if ($user->id === $currentUser->id) {
+                $skipped[] = ['id' => $userId, 'reason' => 'Cannot delete own account'];
+                continue;
+            }
+
+            // Prevent deleting super_admin by non-super_admin
+            if ($user->role === 'super_admin' && $currentUser->role !== 'super_admin') {
+                $skipped[] = ['id' => $userId, 'name' => $user->name, 'reason' => 'Insufficient permission'];
+                continue;
+            }
+
+            $userName = $user->name;
+            $userEmail = $user->email;
+
+            $user->delete();
+            $deletedCount++;
+
+            ActivityLog::log('User', 'BulkDelete', "Admin {$currentUser->name} deleted user: {$userName} ({$userEmail})", $currentUser->id);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "{$deletedCount} user(s) deleted successfully",
+            'deleted_count' => $deletedCount,
+            'skipped' => $skipped
         ]);
     }
 }

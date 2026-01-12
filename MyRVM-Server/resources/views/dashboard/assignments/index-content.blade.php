@@ -17,7 +17,7 @@
         <div class="col-md-4 text-end">
             <button class="btn btn-icon btn-primary" onclick="window.assignmentManager.loadAssignments()"
                 title="Refresh">
-                <i class="bx bx-refresh"></i>
+                <i class="ti tabler-refresh"></i>
             </button>
         </div>
     </div>
@@ -62,39 +62,5 @@
         </div>
     </div>
 
-    {{-- Toast Container for Notifications --}}
-    <div class="toast-container position-fixed bottom-0 end-0 p-3">
-        <div id="locationToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="toast-header">
-                <i class="bx bx-map rounded me-2 text-primary"></i>
-                <strong class="me-auto">Navigation</strong>
-                <small>Now</small>
-                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-            <div class="toast-body">
-                Opening Google Maps...
-            </div>
-        </div>
-
-        <div id="statusToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="toast-header">
-                <i class="bx bx-check-circle rounded me-2 text-success"></i>
-                <strong class="me-auto">Status Updated</strong>
-                <small>Now</small>
-                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-            <div class="toast-body">
-                Assignment status updated successfully!
-            </div>
-        </div>
-    </div>
 </div>
-
-<script>
-    // Initialize on page load
-    document.addEventListener('DOMContentLoaded', function () {
-        if (window.assignmentManager) {
-            window.assignmentManager.init();
-        }
-    });
-</script>
+</div>
