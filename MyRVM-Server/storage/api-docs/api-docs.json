@@ -17,7 +17,9 @@
     "paths": {
         "/api/v1/register": {
             "post": {
-                "tags": ["Auth"],
+                "tags": [
+                    "Auth"
+                ],
                 "summary": "Register new user",
                 "operationId": "registerUser",
                 "requestBody": {
@@ -25,28 +27,58 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": ["name","email","password","password_confirmation"],
+                                "required": [
+                                    "name",
+                                    "email",
+                                    "password",
+                                    "password_confirmation"
+                                ],
                                 "properties": {
-                                    "name": { "type": "string", "example": "John Doe" },
-                                    "email": { "type": "string", "format": "email", "example": "user@example.com" },
-                                    "password": { "type": "string", "format": "password", "example": "secret" },
-                                    "password_confirmation": { "type": "string", "format": "password", "example": "secret" }
+                                    "name": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "user@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "secret"
+                                    },
+                                    "password_confirmation": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "secret"
+                                    }
                                 }
                             }
                         }
                     }
                 },
                 "responses": {
-                    "201": { "description": "User registered successfully" },
-                    "400": { "description": "Bad Request - Invalid input data" },
-                    "422": { "description": "Unprocessable Entity - Validation error" },
-                    "500": { "description": "Internal Server Error" }
+                    "201": {
+                        "description": "User registered successfully"
+                    },
+                    "400": {
+                        "description": "Bad Request - Invalid input data"
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity - Validation error"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
                 }
             }
         },
         "/api/v1/login": {
             "post": {
-                "tags": ["Auth"],
+                "tags": [
+                    "Auth"
+                ],
                 "summary": "Login user and return token",
                 "operationId": "loginUser",
                 "requestBody": {
@@ -54,239 +86,451 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": ["email", "password", "device_name"],
+                                "required": [
+                                    "email",
+                                    "password",
+                                    "device_name"
+                                ],
                                 "properties": {
-                                    "email": { "type": "string", "format": "email", "example": "user@example.com" },
-                                    "password": { "type": "string", "format": "password", "example": "secret" },
-                                    "device_name": { "type": "string", "example": "MyDevice" }
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "user@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "secret"
+                                    },
+                                    "device_name": {
+                                        "type": "string",
+                                        "example": "MyDevice"
+                                    }
                                 }
                             },
                             "examples": {
                                 "Super Admin": {
-                                    "value": { "email": "superadmin@myrvm.com", "password": "password123", "device_name": "MyDevice" }
+                                    "value": {
+                                        "email": "superadmin@myrvm.com",
+                                        "password": "password123",
+                                        "device_name": "MyDevice"
+                                    }
                                 },
                                 "Admin": {
-                                    "value": { "email": "admin@myrvm.com", "password": "password123", "device_name": "MyDevice" }
+                                    "value": {
+                                        "email": "admin@myrvm.com",
+                                        "password": "password123",
+                                        "device_name": "MyDevice"
+                                    }
                                 },
                                 "Operator": {
-                                    "value": { "email": "operator@myrvm.com", "password": "password123", "device_name": "MyDevice" }
+                                    "value": {
+                                        "email": "operator@myrvm.com",
+                                        "password": "password123",
+                                        "device_name": "MyDevice"
+                                    }
                                 },
                                 "Technician": {
-                                    "value": { "email": "tech@myrvm.com", "password": "password123", "device_name": "MyDevice" }
+                                    "value": {
+                                        "email": "tech@myrvm.com",
+                                        "password": "password123",
+                                        "device_name": "MyDevice"
+                                    }
                                 },
                                 "Tenant": {
-                                    "value": { "email": "tenant@starbucks.com", "password": "password123", "device_name": "MyDevice" }
+                                    "value": {
+                                        "email": "tenant@starbucks.com",
+                                        "password": "password123",
+                                        "device_name": "MyDevice"
+                                    }
                                 },
                                 "User 1": {
-                                    "value": { "email": "john@example.com", "password": "password123", "device_name": "MyDevice" }
+                                    "value": {
+                                        "email": "john@example.com",
+                                        "password": "password123",
+                                        "device_name": "MyDevice"
+                                    }
                                 },
                                 "User 2": {
-                                    "value": { "email": "jane@example.com", "password": "password123", "device_name": "MyDevice" }
+                                    "value": {
+                                        "email": "jane@example.com",
+                                        "password": "password123",
+                                        "device_name": "MyDevice"
+                                    }
                                 },
                                 "User 3": {
-                                    "value": { "email": "bob@example.com", "password": "password123", "device_name": "MyDevice" }
+                                    "value": {
+                                        "email": "bob@example.com",
+                                        "password": "password123",
+                                        "device_name": "MyDevice"
+                                    }
                                 }
                             }
                         }
                     }
                 },
                 "responses": {
-                    "200": { "description": "Successful login" },
-                    "401": { "description": "Unauthorized - Invalid credentials" },
-                    "422": { "description": "Unprocessable Entity - Validation error" },
-                    "500": { "description": "Internal Server Error" }
+                    "200": {
+                        "description": "Successful login"
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid credentials"
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity - Validation error"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
                 }
             }
         },
         "/api/v1/transactions/start": {
             "post": {
-                "tags": ["Transactions"],
+                "tags": [
+                    "Transactions"
+                ],
                 "summary": "Start a new transaction session",
                 "operationId": "startTransactionSession",
-                "security": [{"bearerAuth": []}],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": ["rvm_id"],
+                                "required": [
+                                    "rvm_id"
+                                ],
                                 "properties": {
-                                    "rvm_id": { "type": "integer", "example": 1 }
+                                    "rvm_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    }
                                 }
                             }
                         }
                     }
                 },
                 "responses": {
-                    "201": { "description": "Session started" },
-                    "400": { "description": "Bad Request" },
-                    "401": { "description": "Unauthorized" },
-                    "422": { "description": "Unprocessable Entity" },
-                    "500": { "description": "Internal Server Error" }
+                    "201": {
+                        "description": "Session started"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
                 }
             }
         },
         "/api/v1/transactions/item": {
             "post": {
-                "tags": ["Transactions"],
+                "tags": [
+                    "Transactions"
+                ],
                 "summary": "Deposit item to current session",
                 "operationId": "depositTransactionItem",
-                "security": [{"bearerAuth": []}],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": ["transaction_id","waste_type","weight","points"],
+                                "required": [
+                                    "transaction_id",
+                                    "waste_type",
+                                    "weight",
+                                    "points"
+                                ],
                                 "properties": {
-                                    "transaction_id": { "type": "integer", "example": 1 },
-                                    "waste_type": { "type": "string", "example": "plastic_bottle" },
-                                    "weight": { "type": "number", "format": "float", "example": 0.45 },
-                                    "points": { "type": "integer", "example": 10 }
+                                    "transaction_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "waste_type": {
+                                        "type": "string",
+                                        "example": "plastic_bottle"
+                                    },
+                                    "weight": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 0.45
+                                    },
+                                    "points": {
+                                        "type": "integer",
+                                        "example": 10
+                                    }
                                 }
                             }
                         }
                     }
                 },
                 "responses": {
-                    "200": { "description": "Item deposited" },
-                    "400": { "description": "Bad Request - Transaction not pending or mismatch" },
-                    "401": { "description": "Unauthorized" },
-                    "404": { "description": "Transaction Not Found" },
-                    "422": { "description": "Unprocessable Entity" },
-                    "500": { "description": "Internal Server Error" }
+                    "200": {
+                        "description": "Item deposited"
+                    },
+                    "400": {
+                        "description": "Bad Request - Transaction not pending or mismatch"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Transaction Not Found"
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
                 }
             }
         },
         "/api/v1/transactions/commit": {
             "post": {
-                "tags": ["Transactions"],
+                "tags": [
+                    "Transactions"
+                ],
                 "summary": "Commit transaction session",
                 "operationId": "commitTransaction",
-                "security": [{"bearerAuth": []}],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": ["transaction_id"],
+                                "required": [
+                                    "transaction_id"
+                                ],
                                 "properties": {
-                                    "transaction_id": { "type": "integer", "example": 1 }
+                                    "transaction_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    }
                                 }
                             }
                         }
                     }
                 },
                 "responses": {
-                    "200": { "description": "Transaction completed" },
-                    "400": { "description": "Bad Request" },
-                    "401": { "description": "Unauthorized" },
-                    "404": { "description": "Transaction Not Found" },
-                    "500": { "description": "Internal Server Error" }
+                    "200": {
+                        "description": "Transaction completed"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Transaction Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
                 }
             }
         },
         "/api/v1/redemption/redeem": {
             "post": {
-                "tags": ["Redemption"],
+                "tags": [
+                    "Redemption"
+                ],
                 "summary": "Redeem voucher with points",
                 "operationId": "redeemVoucher",
-                "security": [{"bearerAuth": []}],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": ["voucher_id"],
+                                "required": [
+                                    "voucher_id"
+                                ],
                                 "properties": {
-                                    "voucher_id": { "type": "integer", "example": 1 }
+                                    "voucher_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    }
                                 }
                             }
                         }
                     }
                 },
                 "responses": {
-                    "200": { "description": "Voucher redeemed" },
-                    "400": { "description": "Bad Request - Insufficient points" },
-                    "401": { "description": "Unauthorized" },
-                    "404": { "description": "Voucher Not Found" },
-                    "500": { "description": "Internal Server Error" }
+                    "200": {
+                        "description": "Voucher redeemed"
+                    },
+                    "400": {
+                        "description": "Bad Request - Insufficient points"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Voucher Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
                 }
             }
         },
         "/api/v1/tenant/redemption/validate": {
             "post": {
-                "tags": ["Tenant"],
+                "tags": [
+                    "Tenant"
+                ],
                 "summary": "Validate user voucher (Tenant)",
                 "operationId": "validateUserVoucher",
-                "security": [{"bearerAuth": []}],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": ["code"],
+                                "required": [
+                                    "code"
+                                ],
                                 "properties": {
-                                    "code": { "type": "string", "example": "ABCD1234" }
+                                    "code": {
+                                        "type": "string",
+                                        "example": "ABCD1234"
+                                    }
                                 }
                             }
                         }
                     }
                 },
                 "responses": {
-                    "200": { "description": "Voucher valid" },
-                    "400": { "description": "Voucher invalid, expired, or already used" },
-                    "401": { "description": "Unauthorized" },
-                    "403": { "description": "Forbidden - Not Voucher Owner" },
-                    "500": { "description": "Internal Server Error" }
+                    "200": {
+                        "description": "Voucher valid"
+                    },
+                    "400": {
+                        "description": "Voucher invalid, expired, or already used"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden - Not Voucher Owner"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
                 }
             }
         },
         "/api/v1/technician/assignments": {
             "get": {
-                "tags": ["Technician"],
+                "tags": [
+                    "Technician"
+                ],
                 "summary": "List technician assignments",
                 "operationId": "listTechnicianAssignments",
-                "security": [{"bearerAuth": []}],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
                 "responses": {
-                    "200": { "description": "Assignments list" },
-                    "401": { "description": "Unauthorized" },
-                    "500": { "description": "Internal Server Error" }
+                    "200": {
+                        "description": "Assignments list"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
                 }
             }
         },
         "/api/v1/technician/generate-pin": {
             "post": {
-                "tags": ["Technician"],
+                "tags": [
+                    "Technician"
+                ],
                 "summary": "Generate PIN for machine access",
                 "operationId": "generateTechnicianPin",
-                "security": [{"bearerAuth": []}],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": ["assignment_id"],
+                                "required": [
+                                    "assignment_id"
+                                ],
                                 "properties": {
-                                    "assignment_id": { "type": "integer", "example": 1 }
+                                    "assignment_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    }
                                 }
                             }
                         }
                     }
                 },
                 "responses": {
-                    "200": { "description": "PIN generated" },
-                    "400": { "description": "Bad Request" },
-                    "401": { "description": "Unauthorized" },
-                    "403": { "description": "Forbidden - Not Assigned Technician" },
-                    "404": { "description": "Assignment Not Found" },
-                    "500": { "description": "Internal Server Error" }
+                    "200": {
+                        "description": "PIN generated"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden - Not Assigned Technician"
+                    },
+                    "404": {
+                        "description": "Assignment Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
                 }
             }
         },
         "/api/v1/technician/validate-pin": {
             "post": {
-                "tags": ["Technician"],
+                "tags": [
+                    "Technician"
+                ],
                 "summary": "Validate PIN (called by machine)",
                 "operationId": "validateTechnicianPin",
                 "requestBody": {
@@ -294,166 +538,812 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": ["serial_number","pin"],
+                                "required": [
+                                    "serial_number",
+                                    "pin"
+                                ],
                                 "properties": {
-                                    "serial_number": { "type": "string", "example": "RVM-JKT-001" },
-                                    "pin": { "type": "string", "example": "123456" }
+                                    "serial_number": {
+                                        "type": "string",
+                                        "example": "RVM-JKT-001"
+                                    },
+                                    "pin": {
+                                        "type": "string",
+                                        "example": "123456"
+                                    }
                                 }
                             }
                         }
                     }
                 },
                 "responses": {
-                    "200": { "description": "Access granted" },
-                    "400": { "description": "Bad Request" },
-                    "401": { "description": "Invalid or expired PIN" },
-                    "404": { "description": "Machine Not Found" },
-                    "500": { "description": "Internal Server Error" }
+                    "200": {
+                        "description": "Access granted"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Invalid or expired PIN"
+                    },
+                    "404": {
+                        "description": "Machine Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
                 }
             }
         },
         "/api/v1/me": {
             "get": {
-                "tags": ["Auth"],
+                "tags": [
+                    "Auth"
+                ],
                 "summary": "Get user profile",
                 "operationId": "getProfile",
-                "security": [{"bearerAuth": []}],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
                 "responses": {
-                    "200": { "description": "User profile" },
-                    "401": { "description": "Unauthorized" },
-                    "500": { "description": "Internal Server Error" }
+                    "200": {
+                        "description": "User profile"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
                 }
             }
         },
         "/api/v1/logout": {
             "post": {
-                "tags": ["Auth"],
+                "tags": [
+                    "Auth"
+                ],
                 "summary": "Logout user",
                 "operationId": "logoutUser",
-                "security": [{"bearerAuth": []}],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
                 "responses": {
-                    "200": { "description": "Successful logout" },
-                    "401": { "description": "Unauthorized" },
-                    "500": { "description": "Internal Server Error" }
+                    "200": {
+                        "description": "Successful logout"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
                 }
             }
         },
         "/api/v1/rvm-machines": {
             "get": {
-                "tags": ["RVM Machines"],
+                "tags": [
+                    "RVM Machines"
+                ],
                 "summary": "List all RVM machines",
                 "operationId": "getRvmMachines",
-                "security": [{"bearerAuth": []}],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
                 "responses": {
-                    "200": { "description": "List of machines" },
-                    "401": { "description": "Unauthorized" },
-                    "500": { "description": "Internal Server Error" }
+                    "200": {
+                        "description": "List of machines"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
                 }
             },
             "post": {
-                "tags": ["RVM Machines"],
+                "tags": [
+                    "RVM Machines"
+                ],
                 "summary": "Create new RVM machine",
                 "operationId": "createRvmMachine",
-                "security": [{"bearerAuth": []}],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": ["name","location","serial_number"],
+                                "required": [
+                                    "name",
+                                    "location",
+                                    "serial_number"
+                                ],
                                 "properties": {
-                                    "name": { "type": "string", "example": "RVM Station 1" },
-                                    "location": { "type": "string", "example": "Mall Central Park" },
-                                    "serial_number": { "type": "string", "example": "RVM-JKT-001" },
-                                    "status": { "type": "string", "enum": ["online","offline","maintenance"], "example": "offline" }
+                                    "name": {
+                                        "type": "string",
+                                        "example": "RVM Station 1"
+                                    },
+                                    "location": {
+                                        "type": "string",
+                                        "example": "Mall Central Park"
+                                    },
+                                    "serial_number": {
+                                        "type": "string",
+                                        "example": "RVM-JKT-001"
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "online",
+                                            "offline",
+                                            "maintenance"
+                                        ],
+                                        "example": "offline"
+                                    }
                                 }
                             }
                         }
                     }
                 },
                 "responses": {
-                    "201": { "description": "Machine created successfully" },
-                    "400": { "description": "Bad Request" },
-                    "401": { "description": "Unauthorized" },
-                    "422": { "description": "Unprocessable Entity - Validation Error" },
-                    "500": { "description": "Internal Server Error" }
+                    "201": {
+                        "description": "Machine created successfully"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity - Validation Error"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
                 }
             }
         },
         "/api/v1/tenant/vouchers": {
             "get": {
-                "tags": ["Tenant"],
+                "tags": [
+                    "Tenant"
+                ],
                 "summary": "List all vouchers owned by authenticated tenant",
                 "operationId": "getTenantVouchers",
-                "security": [{"bearerAuth": []}],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
                 "responses": {
-                    "200": { "description": "List of vouchers" },
-                    "401": { "description": "Unauthorized" },
-                    "403": { "description": "Forbidden - Tenant Role Required" },
-                    "500": { "description": "Internal Server Error" }
+                    "200": {
+                        "description": "List of vouchers"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden - Tenant Role Required"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
                 }
             }
         },
         "/api/v1/vouchers": {
             "get": {
-                "tags": ["Vouchers"],
+                "tags": [
+                    "Vouchers"
+                ],
                 "summary": "Get list of active vouchers (Public)",
                 "operationId": "getVouchersList",
                 "responses": {
-                    "200": { "description": "Successful operation" },
-                    "500": { "description": "Internal Server Error" }
+                    "200": {
+                        "description": "Successful operation"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
                 }
             }
         },
         "/api/v1/devices/{id}/telemetry": {
             "post": {
-                "tags": ["Edge Device"],
+                "tags": [
+                    "Edge Device"
+                ],
                 "summary": "Send telemetry data",
                 "operationId": "sendTelemetry",
-                "security": [{"bearerAuth": []}],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
                 "parameters": [
-                    { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
                 ],
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": ["plastic_weight","aluminum_weight","total_items"],
+                                "required": [
+                                    "plastic_weight",
+                                    "aluminum_weight",
+                                    "total_items"
+                                ],
                                 "properties": {
-                                    "plastic_weight": { "type": "number", "format": "float" },
-                                    "aluminum_weight": { "type": "number", "format": "float" },
-                                    "total_items": { "type": "integer" }
+                                    "plastic_weight": {
+                                        "type": "number",
+                                        "format": "float"
+                                    },
+                                    "aluminum_weight": {
+                                        "type": "number",
+                                        "format": "float"
+                                    },
+                                    "total_items": {
+                                        "type": "integer"
+                                    }
                                 }
                             }
                         }
                     }
                 },
                 "responses": {
-                    "201": { "description": "Telemetry recorded" },
-                    "400": { "description": "Bad Request" },
-                    "401": { "description": "Unauthorized - Invalid API Key" },
-                    "404": { "description": "Device Not Found" },
-                    "422": { "description": "Unprocessable Entity" },
-                    "500": { "description": "Internal Server Error" }
+                    "201": {
+                        "description": "Telemetry recorded"
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid API Key"
+                    },
+                    "404": {
+                        "description": "Device Not Found"
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
                 }
             }
         },
         "/api/v1/logs": {
             "get": {
-                "tags": ["Logs"],
+                "tags": [
+                    "Logs"
+                ],
                 "summary": "Read system logs (Admin Only)",
                 "operationId": "getSystemLogs",
-                "security": [{"bearerAuth": []}],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
                 "parameters": [
-                    { "name": "date", "in": "query", "description": "YYYY-MM-DD", "schema": { "type": "string" } }
+                    {
+                        "name": "date",
+                        "in": "query",
+                        "description": "YYYY-MM-DD",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
                 ],
                 "responses": {
-                    "200": { "description": "Log content" },
-                    "302": { "description": "Redirect - Unauthorized access redirected to login" },
-                    "401": { "description": "Unauthorized" },
-                    "403": { "description": "Forbidden - Admin Role Required" },
-                    "500": { "description": "Internal Server Error" }
+                    "200": {
+                        "description": "Log content"
+                    },
+                    "302": {
+                        "description": "Redirect - Unauthorized access redirected to login"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Forbidden - Admin Role Required"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/edge/devices": {
+            "get": {
+                "tags": [
+                    "Edge Device"
+                ],
+                "summary": "List all Edge devices",
+                "description": "Get all registered Edge devices with their status, health metrics, and associated RVM machine info",
+                "operationId": "getEdgeDevices",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter by status",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "online",
+                                "offline",
+                                "maintenance"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of Edge devices with stats",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "status": "success",
+                                    "data": [
+                                        {
+                                            "id": 1,
+                                            "device_id": "EDGE-1736825438000",
+                                            "location_name": "RVM Lobi Mall Grand Indonesia",
+                                            "controller_type": "NVIDIA Jetson",
+                                            "status": "online",
+                                            "tailscale_ip": "100.64.0.5",
+                                            "ip_address_local": "192.168.1.10",
+                                            "health_metrics": {
+                                                "cpu_usage": 45,
+                                                "gpu_usage": 30,
+                                                "temperature": 42
+                                            }
+                                        }
+                                    ],
+                                    "stats": {
+                                        "total": 1,
+                                        "online": 1,
+                                        "offline": 0,
+                                        "maintenance": 0,
+                                        "avg_cpu": 45,
+                                        "avg_temp": 42
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/edge/register": {
+            "post": {
+                "tags": [
+                    "Edge Device"
+                ],
+                "summary": "Register new Edge device",
+                "description": "Register a new Edge device with hardware configuration. Returns API key (shown only once)",
+                "operationId": "registerEdgeDevice",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "device_serial"
+                                ],
+                                "properties": {
+                                    "device_serial": {
+                                        "type": "string",
+                                        "description": "Unique device serial",
+                                        "example": "EDGE-1736825438000"
+                                    },
+                                    "rvm_id": {
+                                        "type": "integer",
+                                        "description": "Associated RVM machine ID",
+                                        "example": 1
+                                    },
+                                    "location_name": {
+                                        "type": "string",
+                                        "description": "Location name for the device",
+                                        "example": "RVM Lobi Mall Grand Indonesia"
+                                    },
+                                    "inventory_code": {
+                                        "type": "string",
+                                        "description": "Internal asset code",
+                                        "example": "INV-2026-001"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "description": "Notes for technician",
+                                        "example": "Near ATM Center"
+                                    },
+                                    "latitude": {
+                                        "type": "number",
+                                        "format": "double",
+                                        "example": -6.2088
+                                    },
+                                    "longitude": {
+                                        "type": "number",
+                                        "format": "double",
+                                        "example": 106.8456
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "Mall Grand Indonesia, Jakarta Pusat"
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "maintenance",
+                                            "inactive",
+                                            "offline"
+                                        ],
+                                        "example": "maintenance"
+                                    },
+                                    "hardware_info": {
+                                        "type": "object",
+                                        "properties": {
+                                            "controller_type": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "NVIDIA Jetson",
+                                                    "RaspberryPI",
+                                                    "ESP32",
+                                                    "ESP8266",
+                                                    "Arduino",
+                                                    "STM32",
+                                                    "other"
+                                                ],
+                                                "example": "NVIDIA Jetson"
+                                            },
+                                            "camera_id": {
+                                                "type": "string",
+                                                "example": "UGREEN USB Camera"
+                                            },
+                                            "threshold_full": {
+                                                "type": "integer",
+                                                "minimum": 50,
+                                                "maximum": 100,
+                                                "example": 90
+                                            }
+                                        }
+                                    },
+                                    "ai_model_version": {
+                                        "type": "string",
+                                        "example": "best.pt"
+                                    }
+                                }
+                            },
+                            "examples": {
+                                "Jetson Device": {
+                                    "value": {
+                                        "device_serial": "EDGE-1736825438000",
+                                        "rvm_id": 1,
+                                        "location_name": "RVM Lobi Mall Grand Indonesia",
+                                        "inventory_code": "INV-2026-001",
+                                        "description": "Posisi di dekat ATM Center",
+                                        "latitude": -6.2088,
+                                        "longitude": 106.8456,
+                                        "address": "Mall Grand Indonesia, Jakarta Pusat",
+                                        "status": "maintenance",
+                                        "hardware_info": {
+                                            "controller_type": "NVIDIA Jetson",
+                                            "camera_id": "UGREEN USB Camera",
+                                            "threshold_full": 90
+                                        },
+                                        "ai_model_version": "best.pt"
+                                    }
+                                },
+                                "ESP32 Device": {
+                                    "value": {
+                                        "device_serial": "EDGE-ESP32-001",
+                                        "rvm_id": 2,
+                                        "location_name": "RVM Central Park Mall",
+                                        "status": "inactive",
+                                        "hardware_info": {
+                                            "controller_type": "ESP32",
+                                            "threshold_full": 85
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Device registered successfully",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "status": "success",
+                                    "message": "Device registered successfully",
+                                    "data": {
+                                        "edge_device_id": 1,
+                                        "device_serial": "EDGE-1736825438000",
+                                        "api_key": "rvm_aBcDeFgHiJkLmNoPqRsTuVwXyZ123456789...",
+                                        "config": {
+                                            "server_url": "http://localhost:8000",
+                                            "telemetry_interval_seconds": 300,
+                                            "heartbeat_interval_seconds": 60,
+                                            "model_sync_interval_minutes": 30,
+                                            "threshold_full": 90
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "409": {
+                        "description": "Conflict - Device already registered"
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity - Validation Error"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/devices/{id}/heartbeat": {
+            "post": {
+                "tags": [
+                    "Edge Device"
+                ],
+                "summary": "Send heartbeat with IP auto-discovery",
+                "description": "Edge device sends heartbeat to indicate online status. IP addresses are auto-updated from device report.",
+                "operationId": "sendHeartbeat",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "RVM Machine ID",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "ip_local": {
+                                        "type": "string",
+                                        "description": "Local network IP",
+                                        "example": "192.168.1.10"
+                                    },
+                                    "tailscale_ip": {
+                                        "type": "string",
+                                        "description": "Tailscale VPN IP",
+                                        "example": "100.64.0.5"
+                                    },
+                                    "network_interfaces": {
+                                        "type": "object",
+                                        "description": "All network interfaces",
+                                        "example": {
+                                            "eth0": "192.168.1.10",
+                                            "tailscale0": "100.64.0.5",
+                                            "wlan0": "192.168.1.15"
+                                        }
+                                    },
+                                    "health_metrics": {
+                                        "type": "object",
+                                        "description": "Device health data",
+                                        "example": {
+                                            "cpu_usage": 45,
+                                            "gpu_usage": 30,
+                                            "temperature": 42,
+                                            "memory_percent": 65
+                                        }
+                                    }
+                                }
+                            },
+                            "examples": {
+                                "Full Heartbeat": {
+                                    "value": {
+                                        "ip_local": "192.168.1.10",
+                                        "tailscale_ip": "100.64.0.5",
+                                        "network_interfaces": {
+                                            "eth0": "192.168.1.10",
+                                            "tailscale0": "100.64.0.5"
+                                        },
+                                        "health_metrics": {
+                                            "cpu_usage": 45,
+                                            "gpu_usage": 30,
+                                            "temperature": 42,
+                                            "memory_percent": 65
+                                        }
+                                    }
+                                },
+                                "Minimal Heartbeat": {
+                                    "value": {}
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Heartbeat received",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "status": "success",
+                                    "message": "Heartbeat received",
+                                    "server_time": "2026-01-14T12:00:00+07:00"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Machine Not Found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/edge/update-location": {
+            "post": {
+                "tags": [
+                    "Edge Device"
+                ],
+                "summary": "Update Edge device location",
+                "description": "Update geolocation coordinates for an Edge device",
+                "operationId": "updateDeviceLocation",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "edge_device_id",
+                                    "latitude",
+                                    "longitude",
+                                    "location_source"
+                                ],
+                                "properties": {
+                                    "edge_device_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "latitude": {
+                                        "type": "number",
+                                        "format": "double",
+                                        "minimum": -90,
+                                        "maximum": 90,
+                                        "example": -6.2088
+                                    },
+                                    "longitude": {
+                                        "type": "number",
+                                        "format": "double",
+                                        "minimum": -180,
+                                        "maximum": 180,
+                                        "example": 106.8456
+                                    },
+                                    "location_source": {
+                                        "type": "string",
+                                        "enum": [
+                                            "manual",
+                                            "gps_module"
+                                        ],
+                                        "example": "manual"
+                                    },
+                                    "accuracy_meters": {
+                                        "type": "number",
+                                        "example": 10.5
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "Mall Grand Indonesia, Jakarta Pusat"
+                                    }
+                                }
+                            },
+                            "examples": {
+                                "Manual Update": {
+                                    "value": {
+                                        "edge_device_id": 1,
+                                        "latitude": -6.2088,
+                                        "longitude": 106.8456,
+                                        "location_source": "manual",
+                                        "address": "Mall Grand Indonesia, Jakarta Pusat"
+                                    }
+                                },
+                                "GPS Module": {
+                                    "value": {
+                                        "edge_device_id": 1,
+                                        "latitude": -6.2088,
+                                        "longitude": 106.8456,
+                                        "location_source": "gps_module",
+                                        "accuracy_meters": 5.2
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Location updated",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "status": "success",
+                                    "message": "Location updated successfully"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity - Validation Error"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
                 }
             }
         }
