@@ -190,9 +190,11 @@ class UserManagement {
         const checkboxes = document.querySelectorAll('#users-table-body input[type="checkbox"]:checked');
         this.selectedUserIds = Array.from(checkboxes).map(cb => parseInt(cb.value));
 
-        // Update UI
+        // Update UI - bulk action buttons
         const deleteBtn = document.getElementById('delete-selected-btn');
+        const statusBtn = document.getElementById('status-selected-btn');
         const countSpan = document.getElementById('selected-count');
+        const statusCountSpan = document.getElementById('status-selected-count');
 
         if (deleteBtn && countSpan) {
             countSpan.textContent = this.selectedUserIds.length;
@@ -202,6 +204,25 @@ class UserManagement {
                 deleteBtn.classList.add('d-none');
             }
         }
+
+        if (statusBtn && statusCountSpan) {
+            statusCountSpan.textContent = this.selectedUserIds.length;
+            if (this.selectedUserIds.length > 0) {
+                statusBtn.classList.remove('d-none');
+            } else {
+                statusBtn.classList.add('d-none');
+            }
+        }
+
+        // Hide single-user action dropdowns when multi-select (>1) is active
+        const singleUserActions = document.querySelectorAll('.single-user-action');
+        singleUserActions.forEach(action => {
+            if (this.selectedUserIds.length > 1) {
+                action.style.visibility = 'hidden';
+            } else {
+                action.style.visibility = 'visible';
+            }
+        });
 
         // Update select-all checkbox state
         const selectAll = document.getElementById('select-all');
@@ -308,7 +329,7 @@ class UserManagement {
                 </td>
                 <td>${this.formatDate(user.created_at)}</td>
                 <td>
-                    <div class="dropdown">
+                    <div class="dropdown single-user-action">
                         <button class="btn btn-sm btn-icon" data-bs-toggle="dropdown">
                             <i class="ti tabler-dots-vertical"></i>
                         </button>
@@ -325,6 +346,10 @@ class UserManagement {
                             </a></li>
                             ` : ''}
                             <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item cursor-pointer" onclick="userManagement.showToggleStatusModal(${user.id}, '${this.escapeHtml(user.name).replace(/'/g, "\\'")}', '${user.status || 'active'}')">
+                                <i class="ti tabler-toggle-${user.status === 'inactive' ? 'right' : 'left'} me-2"></i>
+                                ${user.status === 'inactive' ? 'Activate' : 'Deactivate'}
+                            </a></li>
                             <li><a class="dropdown-item text-danger cursor-pointer" onclick="userManagement.showDeleteModal(${user.id}, '${this.escapeHtml(user.name).replace(/'/g, "\\'")}')">
                                 <i class="ti tabler-trash me-2"></i>Delete
                             </a></li>
@@ -726,6 +751,159 @@ class UserManagement {
     // Legacy deleteUser method - now shows modal
     async deleteUser(userId) {
         this.showDeleteModal(userId);
+    }
+
+    // ====== STATUS TOGGLE FEATURE ======
+
+    // Show toggle status modal for single user
+    showToggleStatusModal(userId, userName, currentStatus) {
+        if (!['super_admin', 'admin', 'operator', 'teknisi'].includes(this.currentUserRole)) {
+            this.showError('You do not have permission to change user status');
+            return;
+        }
+
+        const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+        const actionText = newStatus === 'active' ? 'activate' : 'deactivate';
+
+        document.getElementById('status-confirm-message').innerHTML =
+            `Are you sure you want to <strong>${actionText}</strong> user <strong>${userName}</strong>?`;
+        document.getElementById('status-user-ids').value = userId;
+        document.getElementById('status-new-value').value = newStatus;
+        document.getElementById('status-mode').value = 'single';
+
+        // Show password field for Operator/Teknisi
+        const passwordSection = document.getElementById('status-password-section');
+        if (['operator', 'teknisi'].includes(this.currentUserRole)) {
+            passwordSection.style.display = 'block';
+        } else {
+            passwordSection.style.display = 'none';
+        }
+
+        // Clear previous inputs
+        document.getElementById('status-confirm-password').value = '';
+        document.getElementById('status-confirm-password').classList.remove('is-invalid');
+
+        const modal = new bootstrap.Modal(document.getElementById('statusConfirmModal'));
+        modal.show();
+    }
+
+    // Show bulk status modal
+    showBulkStatusModal(newStatus) {
+        if (!['super_admin', 'admin', 'operator', 'teknisi'].includes(this.currentUserRole)) {
+            this.showError('You do not have permission to change user status');
+            return;
+        }
+
+        if (this.selectedUserIds.length === 0) {
+            this.showError('Please select at least one user');
+            return;
+        }
+
+        const actionText = newStatus === 'active' ? 'activate' : 'deactivate';
+
+        document.getElementById('status-confirm-message').innerHTML =
+            `Are you sure you want to <strong>${actionText}</strong> <strong>${this.selectedUserIds.length}</strong> selected user(s)?`;
+        document.getElementById('status-user-ids').value = this.selectedUserIds.join(',');
+        document.getElementById('status-new-value').value = newStatus;
+        document.getElementById('status-mode').value = 'bulk';
+
+        // Show password field for Operator/Teknisi
+        const passwordSection = document.getElementById('status-password-section');
+        if (['operator', 'teknisi'].includes(this.currentUserRole)) {
+            passwordSection.style.display = 'block';
+        } else {
+            passwordSection.style.display = 'none';
+        }
+
+        // Clear previous inputs
+        document.getElementById('status-confirm-password').value = '';
+        document.getElementById('status-confirm-password').classList.remove('is-invalid');
+
+        const modal = new bootstrap.Modal(document.getElementById('statusConfirmModal'));
+        modal.show();
+    }
+
+    // Confirm status change
+    async confirmStatusChange() {
+        const userIdsStr = document.getElementById('status-user-ids').value;
+        const newStatus = document.getElementById('status-new-value').value;
+        const mode = document.getElementById('status-mode').value;
+        const password = document.getElementById('status-confirm-password').value;
+
+        // Validate password for Operator/Teknisi
+        if (['operator', 'teknisi'].includes(this.currentUserRole)) {
+            if (!password) {
+                document.getElementById('status-confirm-password').classList.add('is-invalid');
+                document.getElementById('status-password-error').textContent = 'Super Admin password is required';
+                return;
+            }
+        }
+
+        const confirmBtn = document.getElementById('confirm-status-btn');
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Changing...';
+
+        try {
+            let response;
+
+            if (mode === 'single') {
+                const userId = userIdsStr;
+                const body = { ...(password && { password }) };
+                response = await apiHelper.request(`/api/v1/admin/users/${userId}/status`, {
+                    method: 'PATCH',
+                    body: JSON.stringify(body),
+                    skipAuthRedirect: true
+                });
+            } else {
+                const userIds = userIdsStr.split(',').map(id => parseInt(id));
+                const body = {
+                    user_ids: userIds,
+                    new_status: newStatus,
+                    ...(password && { password })
+                };
+                response = await apiHelper.request('/api/v1/admin/users/status/bulk', {
+                    method: 'PATCH',
+                    body: JSON.stringify(body),
+                    skipAuthRedirect: true
+                });
+            }
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Failed to change status');
+            }
+
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('statusConfirmModal'));
+            if (modal) modal.hide();
+
+            // Show success
+            this.showSuccess(data.message || 'Status changed successfully');
+
+            // Reset selection
+            this.selectedUserIds = [];
+            const selectAll = document.getElementById('select-all');
+            if (selectAll) selectAll.checked = false;
+            this.updateSelectedUsers();
+
+            // Reload data
+            this.loadUsers();
+            this.loadStats();
+
+        } catch (error) {
+            console.error('Error changing status:', error);
+
+            if (error.message.includes('Invalid Super Admin password')) {
+                document.getElementById('status-confirm-password').classList.add('is-invalid');
+                document.getElementById('status-password-error').textContent = 'Invalid Super Admin password. Please try again.';
+            } else {
+                this.showError(error.message || 'Failed to change status');
+            }
+        } finally {
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = '<i class="ti tabler-toggle-left me-1"></i>Change Status';
+        }
     }
 
     // ====== ASSIGNMENT FEATURE ======

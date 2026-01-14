@@ -192,7 +192,7 @@ class UserController extends Controller
      */
     public function getAllUsers(Request $request)
     {
-        $query = \App\Models\User::select('id', 'name', 'email', 'role', 'points_balance', 'created_at');
+        $query = \App\Models\User::select('id', 'name', 'email', 'role', 'status', 'points_balance', 'created_at');
 
         // Search filter (name or email)
         if ($request->filled('search')) {
@@ -208,11 +208,10 @@ class UserController extends Controller
             $query->where('role', $request->role);
         }
 
-        // Status filter - only apply if DB has status column
-        // TODO: Add status column to users table migration
-        // if ($request->filled('status')) {
-        //     $query->where('status', $request->status);
-        // }
+        // Status filter
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
 
         // Order by created_at descending
         $query->orderBy('created_at', 'desc');
@@ -231,9 +230,8 @@ class UserController extends Controller
     {
         $total = \App\Models\User::count();
 
-        // Active users - since status column doesn't exist yet, assume all are active
-        // TODO: After adding status column, update to: $active = User::where('status', 'active')->count();
-        $active = $total;
+        // Active users
+        $active = \App\Models\User::where('status', 'active')->count();
 
         // Count tenants
         $tenants = \App\Models\User::whereIn('role', ['tenan', 'tenant'])->count();
@@ -249,6 +247,132 @@ class UserController extends Controller
                 'tenants' => $tenants,
                 'new_today' => $newToday
             ]
+        ]);
+    }
+
+    /**
+     * Toggle user status (Operator, Teknisi, Admin, Super Admin).
+     * Operator and Teknisi require Super Admin password verification.
+     */
+    public function toggleStatus(Request $request, $id)
+    {
+        $currentUser = $request->user();
+
+        // Check if user has permission
+        if (!in_array($currentUser->role, ['super_admin', 'admin', 'operator', 'teknisi'])) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'You do not have permission to change user status'
+            ], 403);
+        }
+
+        // Operator and Teknisi require Super Admin password
+        if (in_array($currentUser->role, ['operator', 'teknisi'])) {
+            $request->validate([
+                'password' => 'required|string',
+            ]);
+
+            // Get any Super Admin to verify password
+            $superAdmin = \App\Models\User::where('role', 'super_admin')->first();
+            if (!$superAdmin || !Hash::check($request->password, $superAdmin->password)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Invalid Super Admin password'
+                ], 401);
+            }
+        }
+
+        $user = \App\Models\User::findOrFail($id);
+
+        // Prevent changing own status
+        if ($user->id === $currentUser->id) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Cannot change your own status'
+            ], 400);
+        }
+
+        // Toggle status
+        $newStatus = $user->status === 'active' ? 'inactive' : 'active';
+        $user->update(['status' => $newStatus]);
+
+        ActivityLog::log('User', 'StatusChange', "{$currentUser->name} changed {$user->name}'s status to {$newStatus}", $currentUser->id);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "User status changed to {$newStatus}",
+            'data' => ['new_status' => $newStatus]
+        ]);
+    }
+
+    /**
+     * Toggle multiple users status (Operator, Teknisi, Admin, Super Admin).
+     * Operator and Teknisi require Super Admin password verification.
+     */
+    public function toggleMultipleStatus(Request $request)
+    {
+        $currentUser = $request->user();
+
+        // Check if user has permission
+        if (!in_array($currentUser->role, ['super_admin', 'admin', 'operator', 'teknisi'])) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'You do not have permission to change user status'
+            ], 403);
+        }
+
+        // Validate request
+        $request->validate([
+            'user_ids' => 'required|array|min:1',
+            'user_ids.*' => 'exists:users,id',
+            'new_status' => 'required|string|in:active,inactive',
+        ]);
+
+        // Operator and Teknisi require Super Admin password
+        if (in_array($currentUser->role, ['operator', 'teknisi'])) {
+            $request->validate([
+                'password' => 'required|string',
+            ]);
+
+            // Get any Super Admin to verify password
+            $superAdmin = \App\Models\User::where('role', 'super_admin')->first();
+            if (!$superAdmin || !Hash::check($request->password, $superAdmin->password)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Invalid Super Admin password'
+                ], 401);
+            }
+        }
+
+        $userIds = $request->user_ids;
+        $newStatus = $request->new_status;
+        $updatedCount = 0;
+        $skipped = [];
+
+        foreach ($userIds as $userId) {
+            $user = \App\Models\User::find($userId);
+
+            if (!$user) {
+                continue;
+            }
+
+            // Prevent changing own status
+            if ($user->id === $currentUser->id) {
+                $skipped[] = ['id' => $userId, 'reason' => 'Cannot change own status'];
+                continue;
+            }
+
+            $user->update(['status' => $newStatus]);
+            $updatedCount++;
+
+            ActivityLog::log('User', 'BulkStatusChange', "{$currentUser->name} changed {$user->name}'s status to {$newStatus}", $currentUser->id);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "{$updatedCount} user(s) status changed to {$newStatus}",
+            'updated_count' => $updatedCount,
+            'skipped' => $skipped
         ]);
     }
 
@@ -319,6 +443,7 @@ class UserController extends Controller
             'email' => 'required|string|email|unique:users,email',
             'password' => 'required|string|min:8',
             'role' => 'required|string|in:user,admin,super_admin,operator,teknisi,tenan',
+            'status' => 'nullable|string|in:active,inactive',
             'points_balance' => 'nullable|integer|min:0',
         ]);
 
@@ -327,6 +452,7 @@ class UserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => $request->role,
+            'status' => $request->status ?? 'active',
             'points_balance' => $request->points_balance ?? 0,
         ]);
 
@@ -350,6 +476,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|unique:users,email,' . $id,
             'role' => 'required|string|in:user,admin,super_admin,operator,teknisi,tenan',
+            'status' => 'nullable|string|in:active,inactive',
             'points_balance' => 'nullable|integer|min:0',
             'password' => 'nullable|string|min:8',
         ]);
@@ -358,6 +485,7 @@ class UserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'role' => $request->role,
+            'status' => $request->status ?? $user->status,
             'points_balance' => $request->points_balance ?? $user->points_balance,
         ];
 

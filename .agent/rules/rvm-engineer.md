@@ -22,7 +22,7 @@ You are working on a distributed system comprising four main pillars. You must u
 
 2.  **RVM-Edge (The Body):**
     *   *Tech:* **Jetson Nano/Orin**, **Python**, **GPIO Control**, **Serial Communication**, **Tailscale VPN (Secure Networking)**.
-    *   *Hardware:* Sensors (proximity, weight, metal, ultrasonic), DC Motors (conveyor, crusher), LCD Touchscreen (Kiosk Mode).
+    *   *Hardware:* Sensors (proximity, weight, metal, ultrasonic), DC Motors (Buka dan Menutup Penutup atau Alas untuk Botol yang dimasukan kemudian jatuh ke dalam bak penampungan), LCD Touchscreen (Kiosk Mode).
     *   *Role:* Physical handling of waste, real-time control, basic telemetry sending, local AI inference (Executor), and validation of Technician PIN.
 
 3.  **RVM-CV (The Trainer & Playground):**
@@ -63,6 +63,55 @@ You are working on a distributed system comprising four main pillars. You must u
         // do work
         ```
 *   **Type Hinting:** Always use strict typing (`declare(strict_types=1);`) and Return Types in PHP.
+
+*   **Error Handling:** Always use scenario involves anticipating, detecting, and managing failures (like file read errors, network issues, or invalid data) in software to prevent crashes, maintain user experience, and ensure system reliability, using strategies such as try/catch blocks, logging, retries, and graceful fallbacks (like resuming with default values) rather than failing silently, ensuring proper separation of concerns between business logic and infrastructure handling.
+
+Berikut adalah format Markdown yang rapi dan mudah dibaca untuk skenario error API:
+
+*   **API Error Handling:** 
+## 🚨 Server Errors (5xx Series)
+*   **`500` Internal Server Error**
+    *   The classic "something broke but we're not telling you what" response.
+*   **`503` Service Unavailable**
+    *   The digital equivalent of "sorry, we're closed for renovations."
+*   **`504` Gateway Timeout**
+    *   The server fell asleep on the job and didn't respond in time.
+
+## ⚠️ Client Errors (4xx Series)
+*   **`400` Bad Request**
+    *   Your app sent something the server couldn't understand.
+*   **`401` Unauthorized**
+    *   The digital bouncer just checked your ID and said "nope."
+*   **`403` Forbidden**
+    *   The "you're not on the guest list" of API responses.
+*   **`404` Not Found**
+    *   The digital equivalent of showing up to a party at the wrong address.
+*   **`431` Request Header Fields Too Large**
+    *   When the server refuses to process the request because the headers are too large.
+
+## 🌐 Network Issues
+*   **Timeouts**
+    *   Sometimes servers take forever to respond.
+*   **Connection Refused**
+    *   The server straight-up rejected your connection attempt.
+*   **Partial Responses**
+    *   Getting half a response is often worse than no response at all.
+
+## 🛑 Rate Limiting and Throttling
+*   **`429` Too Many Requests**
+    *   The digital equivalent of "you're talking too fast, slow down!"
+    *   *Note:* It's important to understand how to manage request limits to prevent this error. To avoid hitting rate limits, it's essential to implement rate-limiting strategies in your application.
+
+## 💔 Malformed Data Responses
+*   **Invalid JSON or XML**
+    *   The response is syntactically broken and can't be parsed.
+*   **Schema Changes**
+    *   The API changed what fields it returns without warning.
+
+## 🐌 Service Degradation
+*   **Slow Response Times**
+    *   APIs that respond but take forever can frustrate users more than complete failures.
+
 
 #### C. IoT & Hardware Safety
 *   **Fail-Safe Defaults:** If the server connection is lost, the RVM-Edge must default to a "Safe State" (Motors off, Reject user interaction).

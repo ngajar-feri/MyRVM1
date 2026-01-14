@@ -10,6 +10,22 @@
                         onclick="userManagement.showBulkDeleteModal()">
                         <i class="ti tabler-trash me-1"></i>Delete Selected (<span id="selected-count">0</span>)
                     </button>
+                    <div class="btn-group d-none" id="status-selected-btn">
+                        <button type="button" class="btn btn-outline-warning dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="ti tabler-toggle-left me-1"></i>Change Status (<span
+                                id="status-selected-count">0</span>)
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item cursor-pointer"
+                                    onclick="userManagement.showBulkStatusModal('active')">
+                                    <i class="ti tabler-check me-2 text-success"></i>Set Active
+                                </a></li>
+                            <li><a class="dropdown-item cursor-pointer"
+                                    onclick="userManagement.showBulkStatusModal('inactive')">
+                                    <i class="ti tabler-x me-2 text-danger"></i>Set Inactive
+                                </a></li>
+                        </ul>
+                    </div>
                     <button type="button" class="btn btn-outline-primary"
                         onclick="window.spaNavigator.loadPage('assignments', '/dashboard/assignments')">
                         <i class="ti tabler-subtask me-1"></i>Assignments
@@ -412,9 +428,13 @@
                 <p id="delete-confirm-message">Are you sure you want to delete this user?</p>
 
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Enter your password to confirm:</label>
+                    <div class="alert alert-info mb-3">
+                        <i class="ti tabler-lock me-1"></i>
+                        <strong>Security:</strong> Super Admin password required.
+                    </div>
+                    <label class="form-label fw-semibold">Enter Super Admin password to confirm:</label>
                     <input type="password" id="delete-confirm-password" class="form-control"
-                        placeholder="Your admin password" autocomplete="new-password">
+                        placeholder="Super Admin password" autocomplete="new-password">
                     <div class="invalid-feedback" id="password-error">Invalid password</div>
                 </div>
 
@@ -426,6 +446,46 @@
                 <button type="button" class="btn btn-danger" id="confirm-delete-btn"
                     onclick="userManagement.confirmDelete()">
                     <i class="ti tabler-trash me-1"></i>Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Status Toggle Confirmation Modal -->
+<div class="modal fade" id="statusConfirmModal" tabindex="-1" aria-labelledby="statusConfirmModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title" id="statusConfirmModalLabel">
+                    <i class="ti tabler-toggle-left me-2"></i>Confirm Status Change
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="status-confirm-message">Are you sure you want to change this user's status?</p>
+
+                <div class="mb-3" id="status-password-section" style="display: none;">
+                    <div class="alert alert-info mb-3">
+                        <i class="ti tabler-lock me-1"></i>
+                        <strong>Security:</strong> Super Admin password required for Operator/Teknisi.
+                    </div>
+                    <label class="form-label fw-semibold">Enter Super Admin password to confirm:</label>
+                    <input type="password" id="status-confirm-password" class="form-control"
+                        placeholder="Super Admin password" autocomplete="new-password">
+                    <div class="invalid-feedback" id="status-password-error">Invalid Super Admin password</div>
+                </div>
+
+                <input type="hidden" id="status-user-ids" value="">
+                <input type="hidden" id="status-new-value" value="">
+                <input type="hidden" id="status-mode" value="single">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" id="confirm-status-btn"
+                    onclick="userManagement.confirmStatusChange()">
+                    <i class="ti tabler-toggle-left me-1"></i>Change Status
                 </button>
             </div>
         </div>

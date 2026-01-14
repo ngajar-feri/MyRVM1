@@ -4,39 +4,40 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class EdgeDevice extends Model
 {
+    // Note: Actual table has columns from old migration (2026_01_08)
+    // device_id, rvm_machine_id, type, ip_address, firmware_version, status, health_metrics
     protected $fillable = [
-        'rvm_id',
-        'device_serial',
-        'tailscale_ip',
-        'hardware_info',
-        'status',
-        'last_heartbeat',
-        'ai_model_version',
+        'device_id',        // Unique identifier (MAC or custom)
+        'rvm_machine_id',   // FK to rvm_machines
+        'type',             // jetson, microcontroller, camera, etc.
+        'ip_address',
         'firmware_version',
-        'latitude',
-        'longitude',
-        'location_accuracy_meters',
-        'location_source',
-        'location_address',
-        'location_last_updated',
-        'api_key',
+        'status',
+        'health_metrics',   // JSON: CPU, RAM, Temp
     ];
 
     protected $casts = [
-        'last_heartbeat' => 'datetime',
-        'location_last_updated' => 'datetime',
-        'hardware_info' => 'array',
+        'health_metrics' => 'array',
     ];
 
-    protected $hidden = [
-        'api_key',
-    ];
-
+    /**
+     * Get the RVM machine this edge device is installed in.
+     */
     public function rvmMachine(): BelongsTo
     {
-        return $this->belongsTo(RvmMachine::class, 'rvm_id');
+        return $this->belongsTo(RvmMachine::class, 'rvm_machine_id');
+    }
+
+    /**
+     * Get telemetry records for this edge device.
+     */
+    public function telemetry(): HasMany
+    {
+        return $this->hasMany(EdgeTelemetry::class);
     }
 }
+

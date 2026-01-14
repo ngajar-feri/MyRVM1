@@ -68,13 +68,14 @@ class RvmMachineController extends Controller
 
         // Admin/SuperAdmin see all, operator/teknisi see assigned only
         if (in_array($user->role, ['super_admin', 'admin'])) {
-            $machines = RvmMachine::all();
+            $machines = RvmMachine::with('edgeDevice')->get();
         } else {
             // Filter by assignment for operator/teknisi
             $assignedIds = TechnicianAssignment::where('technician_id', $user->id)
                 ->whereIn('status', ['assigned', 'in_progress'])
                 ->pluck('rvm_machine_id');
-            $machines = RvmMachine::whereIn('id', $assignedIds)->get();
+            $machines = RvmMachine::with('edgeDevice')
+                ->whereIn('id', $assignedIds)->get();
         }
 
         ActivityLog::log('RVM', 'Read', "User {$user->name} accessed RVM machines list", $user->id);
@@ -119,6 +120,7 @@ class RvmMachineController extends Controller
 
     /**
      * Get RVM machine details (with access check).
+     * Includes Edge Device info and latest telemetry.
      */
     public function show(Request $request, $id)
     {
@@ -128,7 +130,12 @@ class RvmMachineController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Access denied'], 403);
         }
 
-        $machine = RvmMachine::findOrFail($id);
+        $machine = RvmMachine::with([
+            'edgeDevice',
+            'edgeDevice.telemetry' => function ($query) {
+                $query->orderBy('client_timestamp', 'desc')->limit(5);
+            }
+        ])->findOrFail($id);
 
         // Check assignment for operator/teknisi
         if (in_array($user->role, ['operator', 'teknisi'])) {

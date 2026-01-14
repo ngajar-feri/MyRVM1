@@ -115,25 +115,39 @@ class MachineManagement {
             return;
         }
 
-        grid.innerHTML = this.machines.map(machine => `
+        grid.innerHTML = this.machines.map(machine => {
+            const edgeDevice = machine.edge_device;
+            const edgeStatus = edgeDevice?.status || 'not_registered';
+            const edgeStatusBadge = edgeDevice
+                ? `<span class="badge bg-label-${edgeDevice.status === 'online' ? 'success' : 'secondary'}" data-bs-toggle="tooltip" title="Edge Device: ${edgeDevice.status}">
+                    <i class="ti tabler-cpu"></i>
+                   </span>`
+                : `<span class="badge bg-label-warning" data-bs-toggle="tooltip" title="No Edge Device">
+                    <i class="ti tabler-cpu-off"></i>
+                   </span>`;
+
+            return `
             <div class="col-md-4">
                 <div class="card card-hoverable" onclick="machineManagement.viewMachine(${machine.id})">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <h6 class="card-title mb-0">${this.escapeHtml(machine.name)}</h6>
-                            <span class="badge badge-status-${machine.status || 'offline'}">
-                                ${machine.status || 'offline'}
-                            </span>
+                            <div class="d-flex gap-1">
+                                ${edgeStatusBadge}
+                                <span class="badge badge-status-${machine.status || 'offline'}">
+                                    ${machine.status || 'offline'}
+                                </span>
+                            </div>
                         </div>
                         <p class="text-muted small mb-2">
                             <i class="ti tabler-map-pin me-1"></i>
-                            ${this.escapeHtml(machine.location_address || 'No location')}
+                            ${this.escapeHtml(machine.location || 'No location')}
                         </p>
                         
                         <!-- Capacity Bar -->
                         <div class="mb-2">
                             <div class="d-flex justify-content-between small mb-1">
-                                <span>Capacity</span>
+                                <span>Bin Capacity</span>
                                 <span>${machine.capacity_percentage || 0}%</span>
                             </div>
                             <div class="progress" style="height: 8px;">
@@ -157,10 +171,21 @@ class MachineManagement {
                                 </div>
                             </div>
                         </div>
+
+                        ${edgeDevice ? `
+                        <div class="mt-2 pt-2 border-top small text-muted">
+                            <i class="ti tabler-heart-rate-monitor me-1"></i>
+                            Last heartbeat: ${this.getLastSeen(edgeDevice.last_heartbeat)}
+                        </div>
+                        ` : ''}
                     </div>
                 </div>
             </div>
-        `).join('');
+        `}).join('');
+
+        // Initialize tooltips
+        const tooltips = grid.querySelectorAll('[data-bs-toggle="tooltip"]');
+        tooltips.forEach(el => new bootstrap.Tooltip(el));
     }
 
     updateStats() {
@@ -197,18 +222,21 @@ class MachineManagement {
 
             const data = await response.json();
             const machine = data.data || data;
+            const edgeDevice = machine.edge_device;
+            const telemetry = edgeDevice?.telemetry || [];
 
             document.getElementById('machine-name').textContent = machine.name;
 
             content.innerHTML = `
                 <div class="row">
+                    <!-- Left Column: Stats -->
                     <div class="col-md-8">
                         <div class="row g-3 mb-3">
                             <div class="col-md-3">
                                 <div class="card text-center">
                                     <div class="card-body">
                                         <span class="badge badge-status-${machine.status}">${machine.status}</span>
-                                        <div class="small text-muted mt-1">Status</div>
+                                        <div class="small text-muted mt-1">Machine Status</div>
                                     </div>
                                 </div>
                             </div>
@@ -216,7 +244,7 @@ class MachineManagement {
                                 <div class="card text-center">
                                     <div class="card-body">
                                         <h5 class="mb-0">${machine.capacity_percentage || 0}%</h5>
-                                        <div class="small text-muted">Capacity</div>
+                                        <div class="small text-muted">Bin Capacity</div>
                                     </div>
                                 </div>
                             </div>
@@ -237,24 +265,127 @@ class MachineManagement {
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="col-md-4">
+
+                        <!-- Edge Device Section -->
+                        ${edgeDevice ? `
+                        <div class="card mb-3">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0"><i class="ti tabler-cpu me-2"></i>Edge Device</h6>
+                                <span class="badge badge-status-${edgeDevice.status || 'offline'}">${edgeDevice.status || 'offline'}</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <dl class="row mb-0 small">
+                                            <dt class="col-5">Device ID:</dt>
+                                            <dd class="col-7"><code>${edgeDevice.device_id || 'N/A'}</code></dd>
+                                            <dt class="col-5">Type:</dt>
+                                            <dd class="col-7">${edgeDevice.type || 'N/A'}</dd>
+                                            <dt class="col-5">Firmware:</dt>
+                                            <dd class="col-7">${edgeDevice.firmware_version || 'N/A'}</dd>
+                                        </dl>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <dl class="row mb-0 small">
+                                            <dt class="col-5">IP Address:</dt>
+                                            <dd class="col-7"><code>${edgeDevice.ip_address || 'N/A'}</code></dd>
+                                            <dt class="col-5">Updated:</dt>
+                                            <dd class="col-7">${this.getLastSeen(edgeDevice.updated_at)}</dd>
+                                        </dl>
+                                    </div>
+                                </div>
+                                ${edgeDevice.health_metrics ? `
+                                <hr>
+                                <h6 class="small fw-semibold mb-2">Health Metrics</h6>
+                                <pre class="bg-light p-2 rounded small mb-0" style="max-height: 100px; overflow: auto;">${JSON.stringify(edgeDevice.health_metrics, null, 2)}</pre>
+                                ` : ''}
+                            </div>
+                        </div>
+                        ` : `
+                        <div class="alert alert-warning mb-3">
+                            <i class="ti tabler-alert-circle me-1"></i>
+                            No Edge Device registered for this machine.
+                        </div>
+                        `}
+
+                        <!-- Telemetry Section -->
+                        ${telemetry.length > 0 ? `
                         <div class="card">
-                            <div class="card-header"><h6 class="mb-0">Information</h6></div>
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="ti tabler-chart-line me-2"></i>Latest Telemetry (${telemetry.length})</h6>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-hover mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Timestamp</th>
+                                                <th>Sensor Data</th>
+                                                <th>Sync</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${telemetry.map(t => `
+                                            <tr>
+                                                <td class="small">${new Date(t.client_timestamp).toLocaleString()}</td>
+                                                <td><code class="small">${JSON.stringify(t.sensor_data).substring(0, 50)}...</code></td>
+                                                <td><span class="badge bg-${t.sync_status === 'synced' ? 'success' : 'warning'}">${t.sync_status}</span></td>
+                                            </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+
+                    <!-- Right Column: Info -->
+                    <div class="col-md-4">
+                        <div class="card mb-3">
+                            <div class="card-header"><h6 class="mb-0">Machine Information</h6></div>
                             <div class="card-body">
                                 <dl class="row mb-0 small">
                                     <dt class="col-5">Serial:</dt>
                                     <dd class="col-7">${machine.serial_number || 'N/A'}</dd>
                                     <dt class="col-5">Location:</dt>
-                                    <dd class="col-7">${machine.location_address || 'N/A'}</dd>
+                                    <dd class="col-7">${machine.location || 'N/A'}</dd>
                                     <dt class="col-5">Last Ping:</dt>
-                                    <dd class="col-7">${this.getLastSeen(machine.last_seen)}</dd>
+                                    <dd class="col-7">${this.getLastSeen(machine.last_ping)}</dd>
                                 </dl>
+                            </div>
+                        </div>
+
+                        <!-- Components Overview -->
+                        <div class="card">
+                            <div class="card-header"><h6 class="mb-0">Components</h6></div>
+                            <div class="card-body">
+                                <div class="d-flex flex-wrap gap-1">
+                                    <span class="badge bg-label-primary" data-bs-toggle="tooltip" title="Jetson Orin Nano">
+                                        <i class="ti tabler-cpu"></i> Edge Device
+                                    </span>
+                                    <span class="badge bg-label-info" data-bs-toggle="tooltip" title="CSI Camera">
+                                        <i class="ti tabler-camera"></i> Camera
+                                    </span>
+                                    <span class="badge bg-label-secondary" data-bs-toggle="tooltip" title="LCD Touch Screen">
+                                        <i class="ti tabler-device-tablet"></i> LCD
+                                    </span>
+                                    <span class="badge bg-label-warning" data-bs-toggle="tooltip" title="ESP32 Controller">
+                                        <i class="ti tabler-circuit-board"></i> ESP32
+                                    </span>
+                                    <span class="badge bg-label-success" data-bs-toggle="tooltip" title="Sensors">
+                                        <i class="ti tabler-radar"></i> Sensors
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             `;
+
+            // Initialize tooltips
+            const tooltips = content.querySelectorAll('[data-bs-toggle="tooltip"]');
+            tooltips.forEach(el => new bootstrap.Tooltip(el));
 
         } catch (error) {
             console.error('Error loading machine details:', error);

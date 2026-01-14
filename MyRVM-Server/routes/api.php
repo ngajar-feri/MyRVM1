@@ -56,6 +56,11 @@ Route::middleware('auth:sanctum')->prefix('v1/admin')->middleware('role:admin,su
 Route::middleware('auth:sanctum')->prefix('v1/admin')->middleware('role:admin,super_admin,teknisi,operator')->group(function () {
     Route::get('/users', [UserController::class, 'getAllUsers']);
     Route::get('/users/stats', [UserController::class, 'getGlobalStats']);
+
+    // Status toggle - bulk route MUST be before {id} route
+    Route::patch('/users/status/bulk', [UserController::class, 'toggleMultipleStatus']);
+    Route::patch('/users/{id}/status', [UserController::class, 'toggleStatus']);
+
     Route::get('/users/{id}/stats', [UserController::class, 'getUserStats']);
 
     // Assignment Management (RVM Installation Assignments)
