@@ -8,20 +8,54 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class EdgeDevice extends Model
 {
-    // Note: Actual table has columns from old migration (2026_01_08)
-    // device_id, rvm_machine_id, type, ip_address, firmware_version, status, health_metrics
+    /**
+     * Edge Device model - represents hardware installed in RVM machines.
+     * Columns based on 2026_01_08 + 2026_01_14 migrations.
+     */
     protected $fillable = [
-        'device_id',        // Unique identifier (MAC or custom)
-        'rvm_machine_id',   // FK to rvm_machines
-        'type',             // jetson, microcontroller, camera, etc.
-        'ip_address',
+        // Identity
+        'rvm_machine_id',
+        'device_id',
+        'location_name',
+        'inventory_code',
+        'description',
+
+        // Network (auto-updated via heartbeat)
+        'ip_address_local',
+        'tailscale_ip',
+        'network_interfaces',
+
+        // Hardware config
+        'type',
+        'controller_type',
+        'camera_id',
+        'threshold_full',
         'firmware_version',
+        'health_metrics',
+
+        // AI
+        'ai_model_version',
+
+        // Status
         'status',
-        'health_metrics',   // JSON: CPU, RAM, Temp
+        'api_key',
+
+        // Geolocation
+        'latitude',
+        'longitude',
+        'address',
     ];
 
     protected $casts = [
         'health_metrics' => 'array',
+        'network_interfaces' => 'array',
+        'latitude' => 'decimal:8',
+        'longitude' => 'decimal:8',
+        'threshold_full' => 'integer',
+    ];
+
+    protected $hidden = [
+        'api_key',
     ];
 
     /**
@@ -39,5 +73,20 @@ class EdgeDevice extends Model
     {
         return $this->hasMany(EdgeTelemetry::class);
     }
-}
 
+    /**
+     * Check if device is online (heartbeat within last 5 minutes).
+     */
+    public function isOnline(): bool
+    {
+        return $this->status === 'online';
+    }
+
+    /**
+     * Get formatted IP display.
+     */
+    public function getDisplayIpAttribute(): string
+    {
+        return $this->tailscale_ip ?: $this->ip_address_local ?: 'N/A';
+    }
+}

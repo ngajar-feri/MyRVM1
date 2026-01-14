@@ -4,13 +4,62 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\RvmMachine;
+use App\Models\EdgeDevice;
 use App\Models\TelemetryData;
 use App\Models\ActivityLog;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Hash;
 use OpenApi\Annotations as OA;
 
 class EdgeDeviceController extends Controller
 {
+    /**
+     * List all Edge devices.
+     */
+    public function index(Request $request)
+    {
+        $query = EdgeDevice::with('rvmMachine:id,serial_number,location_name,status');
+
+        // Filter by status if provided
+        if ($request->has('status') && $request->status) {
+            $query->where('status', $request->status);
+        }
+
+        $devices = $query->orderBy('updated_at', 'desc')->get();
+
+        // Calculate stats
+        $stats = [
+            'total' => $devices->count(),
+            'online' => $devices->where('status', 'online')->count(),
+            'offline' => $devices->where('status', 'offline')->count(),
+            'maintenance' => $devices->where('status', 'maintenance')->count(),
+            'avg_cpu' => $this->calculateAverageMetric($devices, 'cpu_usage'),
+            'avg_gpu' => $this->calculateAverageMetric($devices, 'gpu_usage'),
+            'avg_temp' => $this->calculateAverageMetric($devices, 'temperature'),
+        ];
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $devices,
+            'stats' => $stats
+        ]);
+    }
+
+    /**
+     * Calculate average metric from health_metrics JSON.
+     */
+    private function calculateAverageMetric($devices, $field)
+    {
+        $values = $devices->filter(function ($d) use ($field) {
+            return isset($d->health_metrics[$field]);
+        })->pluck("health_metrics.$field");
+
+        if ($values->isEmpty())
+            return 0;
+        return round($values->avg(), 1);
+    }
+
     /**
      * Send telemetry data from Edge Device.
      * 
@@ -82,7 +131,7 @@ class EdgeDeviceController extends Controller
     }
 
     /**
-     * Send heartbeat (Ping).
+     * Send heartbeat (Ping) with auto-discovery IP update.
      * 
      * @OA\Post(
      *      path="/api/v1/devices/{id}/heartbeat",
@@ -96,23 +145,58 @@ class EdgeDeviceController extends Controller
      *          required=true,
      *          @OA\Schema(type="integer")
      *      ),
+     *      @OA\RequestBody(
+     *          @OA\JsonContent(
+     *              @OA\Property(property="ip_local", type="string", example="192.168.1.10"),
+     *              @OA\Property(property="tailscale_ip", type="string", example="100.64.0.5"),
+     *              @OA\Property(property="network_interfaces", type="object"),
+     *              @OA\Property(property="health_metrics", type="object")
+     *          )
+     *      ),
      *      @OA\Response(
      *          response=200,
      *          description="Heartbeat received"
      *      )
      * )
      */
-    public function heartbeat($id)
+    public function heartbeat(Request $request, $id)
     {
+        // Update RVM Machine
         $machine = RvmMachine::findOrFail($id);
         $machine->update([
             'last_ping' => now(),
             'status' => 'online'
         ]);
 
+        // Update EdgeDevice with auto-discovered IP addresses
+        $edgeDevice = EdgeDevice::where('rvm_machine_id', $id)->first();
+        if ($edgeDevice) {
+            $updateData = [
+                'status' => 'online',
+                'updated_at' => now(),
+            ];
+
+            // Auto-update IP addresses from device report
+            if ($request->has('ip_local')) {
+                $updateData['ip_address_local'] = $request->ip_local;
+            }
+            if ($request->has('tailscale_ip')) {
+                $updateData['tailscale_ip'] = $request->tailscale_ip;
+            }
+            if ($request->has('network_interfaces')) {
+                $updateData['network_interfaces'] = $request->network_interfaces;
+            }
+            if ($request->has('health_metrics')) {
+                $updateData['health_metrics'] = $request->health_metrics;
+            }
+
+            $edgeDevice->update($updateData);
+        }
+
         return response()->json([
             'status' => 'success',
-            'message' => 'Heartbeat received'
+            'message' => 'Heartbeat received',
+            'server_time' => now()->toIso8601String()
         ]);
     }
 
@@ -122,55 +206,68 @@ class EdgeDeviceController extends Controller
     public function register(Request $request)
     {
         $request->validate([
-            'device_serial' => 'required|string|max:255|unique:edge_devices,device_serial',
+            'device_serial' => 'required|string|max:255|unique:edge_devices,device_id',
             'rvm_id' => 'nullable|exists:rvm_machines,id',
             'tailscale_ip' => 'nullable|ip',
             'hardware_info' => 'nullable|array',
+            // New fields from 3-section form
+            'location_name' => 'nullable|string|max:255',
+            'inventory_code' => 'nullable|string|max:100',
+            'description' => 'nullable|string',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
+            'address' => 'nullable|string',
+            'status' => 'nullable|in:maintenance,inactive,offline',
+            'ai_model_version' => 'nullable|string',
         ]);
 
-        // Check if device already exists
-        $existing = \DB::table('edge_devices')
-            ->where('device_serial', $request->device_serial)
-            ->first();
+        // Generate API key (shown only once)
+        $apiKey = 'rvm_' . Str::random(60);
+        $apiKeyHash = hash('sha256', $apiKey);
 
-        if ($existing) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Device already registered'
-            ], 409);
-        }
+        // Extract hardware info
+        $hardwareInfo = $request->hardware_info ?? [];
 
-        // Create device
-        $deviceId = \DB::table('edge_devices')->insertGetId([
-            'rvm_id' => $request->rvm_id,
-            'device_serial' => $request->device_serial,
+        // Create device using model
+        $device = EdgeDevice::create([
+            'rvm_machine_id' => $request->rvm_id,
+            'device_id' => $request->device_serial,
+            'location_name' => $request->location_name,
+            'inventory_code' => $request->inventory_code,
+            'description' => $request->description,
             'tailscale_ip' => $request->tailscale_ip,
-            'hardware_info' => json_encode($request->hardware_info ?? []),
-            'status' => 'online',
-            'last_heartbeat' => now(),
-            'created_at' => now(),
-            'updated_at' => now()
+            'controller_type' => $hardwareInfo['controller_type'] ?? 'NVIDIA Jetson',
+            'camera_id' => $hardwareInfo['camera_id'] ?? null,
+            'threshold_full' => $hardwareInfo['threshold_full'] ?? 90,
+            'ai_model_version' => $request->ai_model_version ?? 'best.pt',
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
+            'address' => $request->address,
+            'status' => $request->status ?? 'maintenance',
+            'api_key' => $apiKeyHash,
+            'health_metrics' => [],
         ]);
 
-        // Generate API key for device
-        $apiKey = \Illuminate\Support\Str::random(64);
-
-        // Store API key (should be hashed in production)
-        \DB::table('edge_devices')
-            ->where('id', $deviceId)
-            ->update(['api_key' => hash('sha256', $apiKey)]);
-
-        ActivityLog::log('Edge', 'Create', "Edge device {$request->device_serial} registered", $request->user()?->id);
+        ActivityLog::log(
+            'Edge',
+            'Create',
+            "Edge device {$request->device_serial} registered at {$request->location_name}",
+            $request->user()?->id
+        );
 
         return response()->json([
             'status' => 'success',
+            'message' => 'Device registered successfully',
             'data' => [
-                'edge_device_id' => $deviceId,
-                'api_key' => $apiKey, // Only returned once
+                'edge_device_id' => $device->id,
+                'device_serial' => $device->device_id,
+                'api_key' => $apiKey, // Only returned once, never stored in plain text
                 'config' => [
+                    'server_url' => config('app.url'),
                     'telemetry_interval_seconds' => 300,
                     'heartbeat_interval_seconds' => 60,
-                    'model_sync_interval_minutes' => 30
+                    'model_sync_interval_minutes' => 30,
+                    'threshold_full' => $device->threshold_full,
                 ]
             ]
         ], 201);
@@ -246,14 +343,14 @@ class EdgeDeviceController extends Controller
         \DB::table('edge_devices')
             ->where('id', $request->edge_device_id)
             ->update([
-                'latitude' => $request->latitude,
-                'longitude' => $request->longitude,
-                'location_accuracy_meters' => $request->accuracy_meters,
-                'location_source' => $request->location_source,
-                'location_address' => $request->address,
-                'location_last_updated' => now(),
-                'updated_at' => now()
-            ]);
+                    'latitude' => $request->latitude,
+                    'longitude' => $request->longitude,
+                    'location_accuracy_meters' => $request->accuracy_meters,
+                    'location_source' => $request->location_source,
+                    'location_address' => $request->address,
+                    'location_last_updated' => now(),
+                    'updated_at' => now()
+                ]);
 
         ActivityLog::log('Edge', 'Update', "Edge device #{$request->edge_device_id} location updated", $request->user()?->id);
 
