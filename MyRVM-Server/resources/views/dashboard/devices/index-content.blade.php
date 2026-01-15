@@ -159,7 +159,7 @@
                 <h5 class="modal-title"><i class="ti tabler-plus me-2"></i>Register New Edge Device</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <form id="register-device-form">
+            <form id="register-device-form" action="javascript:void(0);">
                 <div class="modal-body">
                     <!-- Section 1: Identity & Status -->
                     <div class="card mb-3">
@@ -356,8 +356,8 @@
                 </div>
 
                 <div class="d-grid gap-2">
-                    <button class="btn btn-outline-primary" onclick="downloadConfig()" data-bs-toggle="tooltip"
-                        title="Download device configuration as JSON file">
+                    <button class="btn btn-outline-primary" data-bs-toggle="tooltip"
+                        title="Download device configuration as JSON file" onclick="downloadConfig()">
                         <i class="ti tabler-download me-1"></i>Download Config File (.json)
                     </button>
                 </div>

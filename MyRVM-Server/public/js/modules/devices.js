@@ -200,9 +200,10 @@ class DeviceManagement {
             const params = statusFilter ? `?status=${statusFilter}` : '';
             const response = await fetch(`/api/v1/edge/devices${params}`, {
                 headers: {
-                    'Authorization': `Bearer ${window.authToken}`,
-                    'Accept': 'application/json'
-                }
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin' // Include session cookies
             });
 
             if (!response.ok) throw new Error('Failed to load devices');
@@ -229,9 +230,10 @@ class DeviceManagement {
         try {
             const response = await fetch('/api/v1/rvm-machines?with_edge_device=1', {
                 headers: {
-                    'Authorization': `Bearer ${window.authToken}`,
-                    'Accept': 'application/json'
-                }
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
             });
 
             if (!response.ok) return;
@@ -268,14 +270,16 @@ class DeviceManagement {
                 const displayText = `${machine.serial_number || 'Unknown'} - ${machine.location_name || machine.location || 'N/A'}`;
 
                 return `
-                    <div class="dropdown-item ${isInstalled ? 'disabled text-muted' : ''}" 
+                    <div class="dropdown-item ${isInstalled ? 'disabled text-muted' : 'rvm-available'}" 
                         data-id="${machine.id}" 
                         data-installed="${isInstalled ? '1' : '0'}"
                         data-text="${this.escapeHtml(displayText)}"
-                        style="${isInstalled ? 'cursor: not-allowed; background-color: #f8f9fa;' : 'cursor: pointer;'}">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span>${this.escapeHtml(displayText)}</span>
-                            ${isInstalled ? `<span class="badge bg-secondary ms-2">Installed ${this.escapeHtml(edgeCode)}</span>` : '<span class="badge bg-success ms-2">Available</span>'}
+                        style="${isInstalled ? 'cursor: not-allowed; background-color: #f8f9fa; opacity: 0.7;' : 'cursor: pointer;'}">
+                        <div class="d-flex align-items-center">
+                            ${isInstalled
+                        ? `<span class="badge bg-secondary text-white me-2" style="font-size: 0.7rem;"><i class="ti tabler-lock-filled me-1"></i>Installed ${this.escapeHtml(edgeCode)}</span>`
+                        : '<span class="badge bg-success text-white me-2" style="font-size: 0.75rem; padding: 0.35em 0.65em;"><i class="ti tabler-circle-check-filled me-1"></i>Available</span>'}
+                            <span class="${isInstalled ? 'text-muted' : 'fw-medium'}">${this.escapeHtml(displayText)}</span>
                         </div>
                     </div>
                 `;
@@ -390,6 +394,8 @@ class DeviceManagement {
 
     async registerDevice(e) {
         e.preventDefault();
+        e.stopPropagation(); // Stop bubbling
+
         const form = e.target;
         const formData = new FormData(form);
         const data = Object.fromEntries(formData.entries());
@@ -397,7 +403,7 @@ class DeviceManagement {
         // Validate required fields
         if (!data.location_name) {
             window.showToast('Error', 'Location name is required', 'error');
-            return;
+            return false;
         }
 
         const submitBtn = form.querySelector('button[type="submit"]');
@@ -406,13 +412,18 @@ class DeviceManagement {
         submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Registering...';
 
         try {
+            // Get CSRF token from meta tag
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
             const response = await fetch('/api/v1/edge/register', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${window.authToken}`,
                     'Content-Type': 'application/json',
-                    'Accept': 'application/json'
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': csrfToken
                 },
+                credentials: 'same-origin',
                 body: JSON.stringify({
                     device_serial: `EDGE-${Date.now()}`, // Auto-generate serial
                     rvm_id: data.rvm_machine_id || null,
@@ -441,15 +452,17 @@ class DeviceManagement {
 
             // Store for download config
             this.lastRegisteredDevice = {
-                device_id: result.data.edge_device_id,
+                device_id: result.data.device_serial || result.data.edge_device_id,
                 api_key: result.data.api_key,
                 location_name: data.location_name,
                 config: result.data.config
             };
 
             // Show success modal with API key
-            document.getElementById('success-device-id').value = result.data.edge_device_id;
+            document.getElementById('success-device-id').value = result.data.device_serial || result.data.edge_device_id;
             document.getElementById('success-api-key').value = result.data.api_key;
+
+            console.log('Registration successful:', result.data);
 
             // Close register modal and show success modal
             bootstrap.Modal.getInstance(document.getElementById('registerDeviceModal')).hide();
@@ -469,6 +482,7 @@ class DeviceManagement {
             submitBtn.disabled = false;
             submitBtn.innerHTML = originalText;
         }
+        return false;
     }
 
     monitorDevice(deviceId) {
@@ -600,36 +614,98 @@ function copyToClipboard(elementId) {
     });
 }
 
-function downloadConfig() {
-    const device = deviceManagement.lastRegisteredDevice;
-    if (!device) {
-        window.showToast('Error', 'No device data available', 'error');
+/**
+ * Download Config (Server-Side Method)
+ * Uses server endpoint with Content-Disposition header for reliable download.
+ * API Key must be copied manually for security (not included in downloaded file).
+ */
+window.downloadConfig = function () {
+    console.log('[downloadConfig] Starting server-side download...');
+
+    // 1. Validate device data
+    if (!window.deviceManagement || !window.deviceManagement.lastRegisteredDevice) {
+        const msg = 'Data perangkat hilang. Silakan refresh halaman dan coba lagi.';
+        console.error('[downloadConfig] No device data found');
+        if (window.showToast) window.showToast('Error', msg, 'error');
+        else alert(msg);
         return;
     }
 
-    const config = {
-        rvm_edge_config: {
-            device_id: device.device_id,
-            api_key: device.api_key,
-            location_name: device.location_name,
-            server_url: window.location.origin,
-            ...device.config
-        },
-        generated_at: new Date().toISOString(),
-        warning: "Keep this file secure. API key should not be shared."
-    };
+    const device = window.deviceManagement.lastRegisteredDevice;
+    const deviceId = device.device_id || 'unknown-device';
+    console.log('[downloadConfig] Downloading config for device:', deviceId);
 
-    const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `rvm-edge-config-${device.device_id}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    // 2. Build server-side download URL
+    const downloadUrl = `/api/v1/edge/download-config/${encodeURIComponent(deviceId)}`;
 
-    window.showToast('Downloaded', 'Config file downloaded successfully', 'success');
-}
+    // 3. Open in new window/tab - browser will handle Content-Disposition header
+    try {
+        window.open(downloadUrl, '_blank');
+        console.log('[downloadConfig] Download initiated via:', downloadUrl);
+
+        if (window.showToast) {
+            window.showToast('Download', 'File konfigurasi sedang diunduh. Tambahkan API Key secara manual.', 'success');
+        }
+    } catch (err) {
+        console.error('[downloadConfig] Download error:', err);
+        // Fallback: try anchor link
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.target = '_blank';
+        link.click();
+    }
+};
+
+// Alias for backward compatibility
+window.downloadJson = window.downloadConfig;
 
 const deviceManagement = new DeviceManagement();
+
+// Expose to window for HTML onclick handlers
+window.deviceManagement = deviceManagement;
+window.copyToClipboard = copyToClipboard;
+
+// Ensure showToast exists
+if (!window.showToast) {
+    window.showToast = function (title, message, type = 'info') {
+        // Create toast container if needed
+        let container = document.querySelector('.toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'toast-container position-fixed top-0 end-0 p-3';
+            document.body.appendChild(container);
+        }
+
+        const toastId = 'toast-' + Date.now();
+        const icon = type === 'success' ? 'ti-check' : (type === 'error' ? 'ti-alert-circle' : 'ti-info-circle');
+        const bgClass = type === 'success' ? 'text-success' : (type === 'error' ? 'text-danger' : 'text-primary');
+
+        const html = `
+            <div id="${toastId}" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="toast-header">
+                    <i class="ti ${icon} ${bgClass} me-2"></i>
+                    <strong class="me-auto">${title}</strong>
+                    <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="toast-body">
+                    ${message}
+                </div>
+            </div>
+        `;
+
+        container.insertAdjacentHTML('beforeend', html);
+        const toastEl = document.getElementById(toastId);
+        const toast = new bootstrap.Toast(toastEl);
+        toast.show();
+
+        // Cleanup
+        toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+    };
+}
+
+// Ensure refreshPage exists
+if (!window.refreshPage) {
+    window.refreshPage = function () {
+        window.location.reload();
+    };
+}

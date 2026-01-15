@@ -99,6 +99,7 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
         Route::post('/update-location', [EdgeDeviceController::class, 'updateLocation']);
         Route::post('/upload-image', [EdgeDeviceController::class, 'uploadImage']);
         Route::get('/devices', [EdgeDeviceController::class, 'index']); // Added for dashboard
+        Route::get('/download-config/{deviceId}', [EdgeDeviceController::class, 'downloadConfig']); // Server-side download
     });
     Route::post('/devices/{id}/telemetry', [EdgeDeviceController::class, 'telemetry']);
     Route::post('/devices/{id}/heartbeat', [EdgeDeviceController::class, 'heartbeat']);

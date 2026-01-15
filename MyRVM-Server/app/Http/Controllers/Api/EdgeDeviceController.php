@@ -19,7 +19,7 @@ class EdgeDeviceController extends Controller
      */
     public function index(Request $request)
     {
-        $query = EdgeDevice::with('rvmMachine:id,serial_number,location_name,status');
+        $query = EdgeDevice::with('rvmMachine:id,serial_number,location,status');
 
         // Filter by status if provided
         if ($request->has('status') && $request->status) {
@@ -229,14 +229,16 @@ class EdgeDeviceController extends Controller
         $hardwareInfo = $request->hardware_info ?? [];
 
         // Create device using model
+        $controllerType = $hardwareInfo['controller_type'] ?? 'NVIDIA Jetson';
         $device = EdgeDevice::create([
             'rvm_machine_id' => $request->rvm_id,
             'device_id' => $request->device_serial,
+            'type' => $controllerType, // Required NOT NULL column
             'location_name' => $request->location_name,
             'inventory_code' => $request->inventory_code,
             'description' => $request->description,
             'tailscale_ip' => $request->tailscale_ip,
-            'controller_type' => $hardwareInfo['controller_type'] ?? 'NVIDIA Jetson',
+            'controller_type' => $controllerType,
             'camera_id' => $hardwareInfo['camera_id'] ?? null,
             'threshold_full' => $hardwareInfo['threshold_full'] ?? 90,
             'ai_model_version' => $request->ai_model_version ?? 'best.pt',
@@ -343,14 +345,14 @@ class EdgeDeviceController extends Controller
         \DB::table('edge_devices')
             ->where('id', $request->edge_device_id)
             ->update([
-                    'latitude' => $request->latitude,
-                    'longitude' => $request->longitude,
-                    'location_accuracy_meters' => $request->accuracy_meters,
-                    'location_source' => $request->location_source,
-                    'location_address' => $request->address,
-                    'location_last_updated' => now(),
-                    'updated_at' => now()
-                ]);
+                'latitude' => $request->latitude,
+                'longitude' => $request->longitude,
+                'location_accuracy_meters' => $request->accuracy_meters,
+                'location_source' => $request->location_source,
+                'location_address' => $request->address,
+                'location_last_updated' => now(),
+                'updated_at' => now()
+            ]);
 
         ActivityLog::log('Edge', 'Update', "Edge device #{$request->edge_device_id} location updated", $request->user()?->id);
 
@@ -404,5 +406,48 @@ class EdgeDeviceController extends Controller
                 'uploaded_at' => now()->toIso8601String()
             ]
         ], 201);
+    }
+
+    /**
+     * Download device configuration as JSON file.
+     * Uses Laravel's streamDownload for efficient on-the-fly generation.
+     */
+    public function downloadConfig($deviceId)
+    {
+        $device = EdgeDevice::where('device_id', $deviceId)->first();
+
+        if (!$device) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Device not found'
+            ], 404);
+        }
+
+        // Build config data
+        $configData = [
+            'rvm_edge_config' => [
+                'device_id' => $device->device_id,
+                'api_key' => '', // API key not included for security (user copies it manually)
+                'location_name' => $device->location_name ?? '',
+                'server_url' => config('app.url'),
+                'telemetry_interval_seconds' => 300,
+                'heartbeat_interval_seconds' => 60,
+                'model_sync_interval_minutes' => 30,
+                'threshold_full' => $device->threshold_full ?? 90,
+            ],
+            'generated_at' => now()->toIso8601String(),
+            'warning' => 'Keep this file secure. Add your API key manually.'
+        ];
+
+        // Sanitize filename
+        $safeName = preg_replace('/[^a-zA-Z0-9\-_]/', '-', $device->device_id);
+        $fileName = "rvm-config-{$safeName}.json";
+
+        // Use streamDownload for efficient on-the-fly generation (no disk write)
+        return response()->streamDownload(function () use ($configData) {
+            echo json_encode($configData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        }, $fileName, [
+            'Content-Type' => 'application/json',
+        ]);
     }
 }
