@@ -1,8 +1,9 @@
 ---
-trigger: always_on
+name: skill-002-dev-plan-storage
+description: Standardizes how development plans and documentation are saved and versioned.
 ---
 
-# Development Plan Storage
+# Skill 002: Development Plan Storage
 
 Ensures all development plans are documented, versioned, and saved to the specific directory structure.
 
@@ -29,8 +30,3 @@ Versi Dokumen: [X.Y] (Increment from previous)
 Tanggal Revisi: [Hari-DD Bulan Tahun - HH:MM AM/PM] (e.g., Kamis-08 Januari 2026 - 02:45 PM)
 Tujuan: [Description of goals and scope]
 Status: [Selesai | Belum]
-
-Pastikan semua perubahan:
-- Dicatat dalam changelog terpisah
-- Diuji melalui staging environment sebelum deploy
-- Memiliki rollback plan yang jelas

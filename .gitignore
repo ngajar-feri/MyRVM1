@@ -8,3 +8,11 @@ Thumbs.db
 .DS_Store
 MyRVM-Server/public/vendor/node_modules/
 MyRVM-Server/public/vendor/node_modules/@iconify/json/json/fluent-emoji.json
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
