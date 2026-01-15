@@ -42,6 +42,76 @@ class DeviceManagement {
         if (statusFilter) {
             statusFilter.addEventListener('change', () => this.loadDevices());
         }
+
+        // Location search
+        const locationSearchBtn = document.getElementById('location-search-btn');
+        const locationSearchInput = document.getElementById('location-search-input');
+        if (locationSearchBtn) {
+            locationSearchBtn.addEventListener('click', () => this.searchLocation());
+        }
+        if (locationSearchInput) {
+            locationSearchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.searchLocation();
+                }
+            });
+        }
+
+        // RVM Machine search
+        const rvmSearchInput = document.getElementById('rvm-machine-search');
+        if (rvmSearchInput) {
+            rvmSearchInput.addEventListener('input', (e) => this.searchRvmMachines(e.target.value));
+            rvmSearchInput.addEventListener('focus', () => this.showRvmResults());
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#rvm-machine-search') && !e.target.closest('#rvm-search-results')) {
+                    this.hideRvmResults();
+                }
+            });
+        }
+    }
+
+    async searchLocation() {
+        const input = document.getElementById('location-search-input');
+        const query = input?.value.trim();
+        if (!query) {
+            window.showToast?.('Error', 'Masukkan nama lokasi untuk dicari', 'error');
+            return;
+        }
+
+        const btn = document.getElementById('location-search-btn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        btn.disabled = true;
+
+        try {
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&countrycodes=id`,
+                { headers: { 'Accept-Language': 'id' } }
+            );
+            const results = await response.json();
+
+            if (results.length > 0) {
+                const { lat, lon, display_name } = results[0];
+                const latlng = { lat: parseFloat(lat), lng: parseFloat(lon) };
+
+                // Center map and place marker
+                this.map.setView(latlng, 16);
+                this.placeMarker(latlng);
+
+                // Update address field
+                document.getElementById('device-address').value = display_name;
+                window.showToast?.('Found', `Lokasi ditemukan: ${display_name.substring(0, 50)}...`, 'success');
+            } else {
+                window.showToast?.('Not Found', 'Lokasi tidak ditemukan. Coba kata kunci lain.', 'warning');
+            }
+        } catch (error) {
+            console.error('Location search error:', error);
+            window.showToast?.('Error', 'Gagal mencari lokasi', 'error');
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
     }
 
     initializeMap() {
@@ -155,47 +225,88 @@ class DeviceManagement {
     }
 
     async loadRvmMachines() {
-        const select = document.getElementById('rvm-machine-select');
-
-        if (!select) {
-            console.warn('RVM machine select element not found');
-            return;
-        }
-
-        // Skip if already loaded (more than just the placeholder option)
-        if (select.options.length > 1) {
-            console.log('RVM machines already loaded');
-            return;
-        }
-
+        // Load all RVM machines with edge device relationship
         try {
-            const response = await fetch('/api/v1/rvm-machines', {
+            const response = await fetch('/api/v1/rvm-machines?with_edge_device=1', {
                 headers: {
                     'Authorization': `Bearer ${window.authToken}`,
                     'Accept': 'application/json'
                 }
             });
 
-            if (!response.ok) {
-                console.warn('RVM machines API returned:', response.status);
-                return;
-            }
+            if (!response.ok) return;
 
             const result = await response.json();
-
-            // Handle both array and {data: array} formats
-            const machines = Array.isArray(result) ? result : (result.data || []);
-
-            console.log(`Loaded ${machines.length} RVM machines`);
-
-            machines.forEach(machine => {
-                const option = document.createElement('option');
-                option.value = machine.id;
-                option.textContent = `${machine.serial_number || machine.uuid || 'Unknown'} - ${machine.location_name || machine.location || 'N/A'}`;
-                select.appendChild(option);
-            });
+            this.rvmMachines = Array.isArray(result) ? result : (result.data || []);
+            console.log(`Loaded ${this.rvmMachines.length} RVM machines`);
         } catch (error) {
             console.error('Failed to load RVM machines:', error);
+            this.rvmMachines = [];
+        }
+    }
+
+    searchRvmMachines(query) {
+        const resultsContainer = document.getElementById('rvm-search-results');
+        if (!resultsContainer) return;
+
+        if (!this.rvmMachines || this.rvmMachines.length === 0) {
+            this.loadRvmMachines().then(() => this.searchRvmMachines(query));
+            return;
+        }
+
+        const filtered = this.rvmMachines.filter(m => {
+            const searchStr = `${m.serial_number || ''} ${m.location_name || ''} ${m.location || ''}`.toLowerCase();
+            return searchStr.includes(query.toLowerCase());
+        });
+
+        if (filtered.length === 0) {
+            resultsContainer.innerHTML = '<div class="dropdown-item text-muted">No machines found</div>';
+        } else {
+            resultsContainer.innerHTML = filtered.map(machine => {
+                const isInstalled = machine.edge_device && machine.edge_device.id;
+                const edgeCode = isInstalled ? machine.edge_device.device_id || `ID:${machine.edge_device.id}` : null;
+                const displayText = `${machine.serial_number || 'Unknown'} - ${machine.location_name || machine.location || 'N/A'}`;
+
+                return `
+                    <div class="dropdown-item ${isInstalled ? 'disabled text-muted' : ''}" 
+                        data-id="${machine.id}" 
+                        data-installed="${isInstalled ? '1' : '0'}"
+                        data-text="${this.escapeHtml(displayText)}"
+                        style="${isInstalled ? 'cursor: not-allowed; background-color: #f8f9fa;' : 'cursor: pointer;'}">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>${this.escapeHtml(displayText)}</span>
+                            ${isInstalled ? `<span class="badge bg-secondary ms-2">Installed ${this.escapeHtml(edgeCode)}</span>` : '<span class="badge bg-success ms-2">Available</span>'}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        this.showRvmResults();
+
+        // Add click handlers for available machines
+        resultsContainer.querySelectorAll('.dropdown-item:not(.disabled)').forEach(item => {
+            item.addEventListener('click', () => {
+                const id = item.dataset.id;
+                const text = item.dataset.text;
+                document.getElementById('rvm-machine-search').value = text;
+                document.getElementById('rvm-machine-id').value = id;
+                this.hideRvmResults();
+            });
+        });
+    }
+
+    showRvmResults() {
+        const resultsContainer = document.getElementById('rvm-search-results');
+        if (resultsContainer) {
+            resultsContainer.style.display = 'block';
+        }
+    }
+
+    hideRvmResults() {
+        const resultsContainer = document.getElementById('rvm-search-results');
+        if (resultsContainer) {
+            resultsContainer.style.display = 'none';
         }
     }
 

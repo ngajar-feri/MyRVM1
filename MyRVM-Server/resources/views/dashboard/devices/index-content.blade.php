@@ -191,11 +191,19 @@
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">RVM Machine</label>
-                                    <select name="rvm_machine_id" class="form-select" id="rvm-machine-select"
-                                        data-bs-toggle="tooltip" title="Pilih mesin RVM yang akan dipasangi device ini">
-                                        <option value="">-- Select RVM Machine --</option>
-                                        <!-- Dynamic options loaded via JS -->
-                                    </select>
+                                    <div class="position-relative">
+                                        <input type="text" id="rvm-machine-search" class="form-control"
+                                            placeholder="Type machine name or serial..." autocomplete="off"
+                                            data-bs-toggle="tooltip"
+                                            title="Cari dan pilih mesin RVM yang akan dipasangi device ini. RVM yang sudah terpasang tidak bisa dipilih.">
+                                        <input type="hidden" name="rvm_machine_id" id="rvm-machine-id">
+                                        <div id="rvm-search-results" class="dropdown-menu w-100"
+                                            style="max-height: 250px; overflow-y: auto; display: none;">
+                                            <!-- Search results loaded via JS -->
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">Relasi 1-ke-1: Satu RVM hanya bisa memiliki satu Edge
+                                        Device</small>
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label">Description / Notes</label>
@@ -214,13 +222,26 @@
                         </div>
                         <div class="card-body">
                             <div class="row g-3">
+                                <!-- Location Search -->
                                 <div class="col-12">
-                                    <label class="form-label">Pick Location on Map <span
-                                            class="text-danger">*</span></label>
+                                    <label class="form-label">Search Location</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="ti tabler-search"></i></span>
+                                        <input type="text" id="location-search-input" class="form-control"
+                                            placeholder="Search location (e.g., Jogja City Mall)" autocomplete="off"
+                                            data-bs-toggle="tooltip"
+                                            title="Ketik nama tempat lalu klik Search atau tekan Enter">
+                                        <button type="button" class="btn btn-primary" id="location-search-btn">
+                                            <i class="ti tabler-search me-1"></i>Search
+                                        </button>
+                                    </div>
+                                </div>
+                                <!-- Map Widget -->
+                                <div class="col-12">
                                     <div id="device-map"
                                         style="height: 250px; border-radius: 8px; border: 1px solid #ddd;"></div>
-                                    <small class="text-muted">Klik pada peta untuk menentukan lokasi. Koordinat dan
-                                        alamat akan terisi otomatis.</small>
+                                    <small class="text-muted"><i class="ti tabler-info-circle me-1"></i>Click map or
+                                        drag marker to set exact location. Use search to find places.</small>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label">Latitude</label>
