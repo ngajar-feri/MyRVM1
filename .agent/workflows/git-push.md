@@ -10,7 +10,8 @@ Push current branch to origin and sync with remote updates.
 
 ## Steps
 
-1. **Fetch and rebase onto latest main (optional but recommended)**
+1. check if there are any uncommitted changes first, then push.
+**Fetch and rebase onto latest main (optional but recommended)**
     - `git fetch origin`
     - `git rebase origin/main || git rebase --abort` (if not on main, rebase your feature branch onto latest main)
 2. **Push current branch**
