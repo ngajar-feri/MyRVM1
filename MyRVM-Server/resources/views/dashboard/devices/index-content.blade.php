@@ -151,162 +151,368 @@
     </div>
 </div>
 
-<!-- Register Device Modal (Redesigned: 3 Sections) -->
-<div class="modal fade" id="registerDeviceModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+<!-- Register Device Modal (Bio-Digital Minimalism 2026) -->
+<style>
+    /* Bio-Digital Minimalism Styles */
+    .modal-minimalist .modal-dialog {
+        max-width: 380px;
+    }
+
+    .modal-minimalist .modal-content {
+        border-radius: 20px;
+        border: none;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+    }
+
+    .modal-minimalist .modal-header {
+        border-bottom: none;
+        padding: 28px 28px 0;
+    }
+
+    .modal-minimalist .modal-body {
+        padding: 20px 28px;
+    }
+
+    .modal-minimalist .modal-footer {
+        border-top: none;
+        padding: 0 28px 28px;
+    }
+
+    .modal-minimalist .modal-title {
+        font-weight: 700;
+        font-size: 1.25rem;
+        color: #1f2937;
+    }
+
+    .modal-minimalist .btn-close {
+        opacity: 0.4;
+    }
+
+    .modal-minimalist .btn-close:hover {
+        opacity: 1;
+    }
+
+    /* Step Indicator */
+    .step-indicator {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin-bottom: 24px;
+    }
+
+    .step-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #e5e7eb;
+        transition: all 0.3s ease;
+    }
+
+    .step-dot.active {
+        background: #7c3aed;
+        transform: scale(1.2);
+    }
+
+    .step-dot.completed {
+        background: #7c3aed;
+    }
+
+    /* Step Content */
+    .step-content {
+        display: none;
+    }
+
+    .step-content.active {
+        display: block;
+        animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Form Labels */
+    .modal-minimalist .step-title {
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: #1f2937;
+        margin-bottom: 16px;
+    }
+
+    .modal-minimalist .form-label {
+        font-weight: 600;
+        color: #374151;
+        font-size: 0.875rem;
+        margin-bottom: 6px;
+    }
+
+    .modal-minimalist .form-control,
+    .modal-minimalist .form-select {
+        border-radius: 12px;
+        border: 2px solid #e5e7eb;
+        padding: 12px 16px;
+        font-size: 0.95rem;
+        transition: border-color 0.2s;
+    }
+
+    .modal-minimalist .form-control:focus,
+    .modal-minimalist .form-select:focus {
+        border-color: #7c3aed;
+        box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+    }
+
+    .modal-minimalist .form-control::placeholder {
+        color: #9ca3af;
+    }
+
+    .modal-minimalist .form-text {
+        color: #6b7280;
+        font-size: 0.8rem;
+    }
+
+    /* Buttons */
+    .modal-minimalist .btn-wizard {
+        width: 100%;
+        padding: 14px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+
+    .modal-minimalist .btn-primary {
+        background: #7c3aed;
+        border-color: #7c3aed;
+    }
+
+    .modal-minimalist .btn-primary:hover {
+        background: #6d28d9;
+        border-color: #6d28d9;
+    }
+
+    .modal-minimalist .btn-outline-secondary {
+        border: 2px solid #e5e7eb;
+        color: #6b7280;
+    }
+
+    .modal-minimalist .btn-outline-secondary:hover {
+        background: #f3f4f6;
+        border-color: #d1d5db;
+    }
+
+    /* Threshold Slider with Gradient */
+    .threshold-slider {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
+        height: 10px;
+        border-radius: 5px;
+        background: linear-gradient(to right,
+                #22c55e 0%,
+                /* Green - Success */
+                #22c55e 25%,
+                #eab308 50%,
+                /* Yellow - Warning */
+                #ef4444 85%,
+                /* Red - Danger */
+                #ef4444 100%);
+        outline: none;
+        cursor: pointer;
+    }
+
+    .threshold-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: #fff;
+        border: 3px solid #7c3aed;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+        transition: transform 0.15s ease;
+    }
+
+    .threshold-slider::-webkit-slider-thumb:hover {
+        transform: scale(1.15);
+    }
+
+    .threshold-slider::-moz-range-thumb {
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: #fff;
+        border: 3px solid #7c3aed;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+    }
+
+    /* Compact Map */
+    .modal-minimalist #device-map {
+        height: 180px;
+        border-radius: 12px;
+        border: 2px solid #e5e7eb;
+    }
+
+    /* Coordinates Box */
+    .modal-minimalist .coords-box {
+        background: #f9fafb;
+        border-radius: 12px;
+        padding: 12px;
+        margin-top: 12px;
+    }
+
+    .modal-minimalist .coords-box .form-control {
+        background: white;
+        padding: 8px 12px;
+        font-size: 0.85rem;
+    }
+
+    .modal-minimalist .coords-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #9ca3af;
+        font-weight: 600;
+    }
+</style>
+
+<div class="modal fade modal-minimalist" id="registerDeviceModal" tabindex="-1"
+    aria-labelledby="registerDeviceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title"><i class="ti tabler-plus me-2"></i>Register New Edge Device</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            <div class="modal-header">
+                <h5 class="modal-title" id="registerDeviceModalLabel">Register Edge Device</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="register-device-form" action="javascript:void(0);">
                 <div class="modal-body">
-                    <!-- Section 1: Identity & Status -->
-                    <div class="card mb-3">
-                        <div class="card-header py-2">
-                            <h6 class="mb-0"><i class="ti tabler-id me-2"></i>Section 1: Identity & Status</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="row g-3">
-                                <!-- 1. RVM Machine (Top Priority) -->
-                                <div class="col-12">
-                                    <label class="form-label">RVM Machine <span class="text-danger">*</span></label>
-                                    <div class="position-relative">
-                                        <input type="text" id="rvm-machine-search" class="form-control"
-                                            placeholder="Type machine name or serial..." autocomplete="off" required
-                                            data-bs-toggle="tooltip"
-                                            title="Cari dan pilih mesin RVM yang akan dipasangi device ini. RVM yang sudah terpasang tidak bisa dipilih.">
-                                        <input type="hidden" name="rvm_machine_id" id="rvm-machine-id" required>
-                                        <div id="rvm-search-results" class="dropdown-menu w-100"
-                                            style="max-height: 250px; overflow-y: auto; display: none;">
-                                            <!-- Search results loaded via JS -->
-                                        </div>
-                                    </div>
-                                    <small class="text-muted">Relasi 1-ke-1: Satu RVM hanya bisa memiliki satu Edge
-                                        Device</small>
+                    <!-- Step Indicator -->
+                    <div class="step-indicator">
+                        <div class="step-dot active" data-step="1"></div>
+                        <div class="step-dot" data-step="2"></div>
+                        <div class="step-dot" data-step="3"></div>
+                    </div>
+
+                    <!-- Step 1: Select RVM -->
+                    <div class="step-content active" id="step-1">
+                        <div class="step-title">1. Select RVM Machine</div>
+
+                        <div class="mb-3">
+                            <label class="form-label">RVM Machine</label>
+                            <div class="position-relative">
+                                <input type="text" id="rvm-machine-search" class="form-control"
+                                    placeholder="Search machine..." autocomplete="off" required>
+                                <input type="hidden" name="rvm_machine_id" id="rvm-machine-id" required>
+                                <div id="rvm-search-results" class="dropdown-menu w-100"
+                                    style="max-height: 200px; overflow-y: auto; display: none; border-radius: 12px;">
                                 </div>
-                                <!-- 2. Location Name (Auto-fill from RVM, Read-only) -->
-                                <div class="col-12">
-                                    <label class="form-label">Location Name</label>
-                                    <input type="text" name="location_name" id="location-name-display"
-                                        class="form-control" placeholder="Will auto-fill from selected RVM Machine"
-                                        readonly data-bs-toggle="tooltip"
-                                        title="Nama lokasi otomatis diambil dari RVM Machine yang dipilih">
-                                    <small class="text-muted"><i class="ti tabler-info-circle me-1"></i>Auto-filled from
-                                        RVM Machine</small>
-                                </div>
-                                <!-- 3. Description / Notes -->
-                                <div class="col-12">
-                                    <label class="form-label">Description / Notes</label>
-                                    <textarea name="description" class="form-control" rows="2"
-                                        placeholder="Catatan khusus untuk teknisi (misal: Posisi di dekat ATM Center)"
-                                        data-bs-toggle="tooltip" title="Catatan tambahan untuk teknisi"></textarea>
-                                </div>
-                                <!-- Hidden Fields (Auto-generated/Defaults) -->
-                                <input type="hidden" name="status" value="maintenance">
-                                <input type="hidden" name="inventory_code" id="inventory-code" value="">
                             </div>
+                            <div class="form-text">Select the RVM for this device</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Location</label>
+                            <input type="text" name="location_name" id="location-name-display" class="form-control"
+                                placeholder="Auto-filled from RVM" readonly style="background: #f9fafb;">
                         </div>
                     </div>
 
-                    <!-- Section 2: Geolocation -->
-                    <div class="card mb-3">
-                        <div class="card-header py-2">
-                            <h6 class="mb-0"><i class="ti tabler-map-pin me-2"></i>Section 2: Geolocation</h6>
+                    <!-- Step 2: Configure -->
+                    <div class="step-content" id="step-2">
+                        <div class="step-title">2. Configuration</div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Controller Type</label>
+                            <select name="controller_type" class="form-select" required>
+                                <option value="NVIDIA Jetson" selected>NVIDIA Jetson</option>
+                                <option value="RaspberryPI">Raspberry PI</option>
+                                <option value="ESP32">ESP32</option>
+                                <option value="Arduino">Arduino</option>
+                                <option value="other">Other</option>
+                            </select>
                         </div>
-                        <div class="card-body">
-                            <div class="row g-3">
-                                <!-- Location Search -->
-                                <div class="col-12">
-                                    <label class="form-label">Search Location</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text"><i class="ti tabler-search"></i></span>
-                                        <input type="text" id="location-search-input" class="form-control"
-                                            placeholder="Search location (e.g., Jogja City Mall)" autocomplete="off"
-                                            data-bs-toggle="tooltip"
-                                            title="Ketik nama tempat lalu klik Search atau tekan Enter">
-                                        <button type="button" class="btn btn-primary" id="location-search-btn">
-                                            <i class="ti tabler-search me-1"></i>Search
-                                        </button>
-                                    </div>
-                                </div>
-                                <!-- Map Widget -->
-                                <div class="col-12">
-                                    <div id="device-map"
-                                        style="height: 250px; border-radius: 8px; border: 1px solid #ddd;"></div>
-                                    <small class="text-muted"><i class="ti tabler-info-circle me-1"></i>Click map or
-                                        drag marker to set exact location. Use search to find places.</small>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Latitude</label>
-                                    <input type="text" name="latitude" class="form-control" id="device-latitude"
-                                        readonly placeholder="Auto from map">
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Longitude</label>
-                                    <input type="text" name="longitude" class="form-control" id="device-longitude"
-                                        readonly placeholder="Auto from map">
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Address</label>
-                                    <input type="text" name="address" class="form-control" id="device-address"
-                                        placeholder="Auto-fill from geocoding" data-bs-toggle="tooltip"
-                                        title="Alamat lengkap (otomatis dari peta atau manual)">
-                                </div>
+
+                        <!-- Threshold Slider with Gradient -->
+                        <div class="mb-3">
+                            <label class="form-label">Threshold Full <span id="threshold-value"
+                                    class="badge bg-warning">90%</span></label>
+                            <input type="range" name="threshold_full" id="threshold-slider"
+                                class="form-range threshold-slider" value="90" min="0" max="100" step="5">
+                            <div class="d-flex justify-content-between mt-1">
+                                <small class="text-success fw-semibold">0%</small>
+                                <small class="text-warning fw-semibold">50%</small>
+                                <small class="text-danger fw-semibold">100%</small>
                             </div>
                         </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Notes (Optional)</label>
+                            <textarea name="description" class="form-control" rows="2"
+                                placeholder="Additional notes..."></textarea>
+                        </div>
+
+                        <!-- Hidden fields -->
+                        <input type="hidden" name="camera_id" value="">
+                        <input type="hidden" name="ai_model_version" value="">
+                        <input type="hidden" name="status" value="maintenance">
+                        <input type="hidden" name="inventory_code" id="inventory-code" value="">
                     </div>
 
-                    <!-- Section 3: Hardware Configuration -->
-                    <div class="card">
-                        <div class="card-header py-2">
-                            <h6 class="mb-0"><i class="ti tabler-cpu me-2"></i>Section 3: Hardware Configuration</h6>
+                    <!-- Step 3: Location -->
+                    <div class="step-content" id="step-3">
+                        <div class="step-title">3. Set Location</div>
+
+                        <div class="mb-2">
+                            <div class="input-group">
+                                <input type="text" id="location-search-input" class="form-control"
+                                    placeholder="Search location..." style="border-radius: 12px 0 0 12px;">
+                                <button class="btn btn-primary" type="button" id="location-search-btn"
+                                    style="border-radius: 0 12px 12px 0;">
+                                    <i class="ti tabler-search"></i>
+                                </button>
+                            </div>
                         </div>
-                        <div class="card-body">
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Controller Type <span class="text-danger">*</span></label>
-                                    <select name="controller_type" class="form-select" required data-bs-toggle="tooltip"
-                                        title="Jenis kontroler utama">
-                                        <option value="NVIDIA Jetson" selected>NVIDIA Jetson</option>
-                                        <option value="RaspberryPI">Raspberry PI</option>
-                                        <option value="ESP32">ESP32</option>
-                                        <option value="ESP8266">ESP8266</option>
-                                        <option value="Arduino">Arduino</option>
-                                        <option value="STM32">STM32</option>
-                                        <option value="other">Other</option>
-                                    </select>
+
+                        <div id="device-map"></div>
+
+                        <div class="coords-box">
+                            <div class="coords-label mb-1">Address</div>
+                            <input type="text" name="address" id="device-address"
+                                class="form-control form-control-sm mb-2" readonly placeholder="Click map...">
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <div class="coords-label">Lat</div>
+                                    <input type="text" name="latitude" id="device-latitude"
+                                        class="form-control form-control-sm" readonly>
                                 </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Camera ID</label>
-                                    <input type="text" name="camera_id" class="form-control"
-                                        placeholder="UGREEN / Hikvision / /dev/video0" data-bs-toggle="tooltip"
-                                        title="Merk atau ID hardware kamera">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Threshold Full (%) <span
-                                            class="text-danger">*</span></label>
-                                    <input type="number" name="threshold_full" class="form-control" value="90" min="50"
-                                        max="100" required data-bs-toggle="tooltip"
-                                        title="Persentase kapasitas sebelum status berubah jadi Full">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Target AI Model</label>
-                                    <select name="ai_model_version" class="form-select" id="ai-model-select"
-                                        data-bs-toggle="tooltip" title="Pilih versi model AI (opsional)">
-                                        <option value="">Default (best.pt)</option>
-                                        <!-- Dynamic options loaded via JS -->
-                                    </select>
+                                <div class="col-6">
+                                    <div class="coords-label">Lng</div>
+                                    <input type="text" name="longitude" id="device-longitude"
+                                        class="form-control form-control-sm" readonly>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="ti tabler-key me-1"></i>Register & Generate API Key
-                    </button>
+                    <div class="d-flex gap-2 w-100">
+                        <button type="button" class="btn btn-outline-secondary btn-wizard" id="wizard-back"
+                            style="display: none;">
+                            <i class="ti tabler-arrow-left me-1"></i>Back
+                        </button>
+                        <button type="button" class="btn btn-primary btn-wizard flex-grow-1" id="wizard-next">
+                            Next<i class="ti tabler-arrow-right ms-1"></i>
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>

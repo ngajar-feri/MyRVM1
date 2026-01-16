@@ -10,6 +10,8 @@ class DeviceManagement {
         this.map = null;
         this.marker = null;
         this.lastRegisteredDevice = null;
+        this.currentStep = 1;
+        this.totalSteps = 3;
         this.init();
     }
 
@@ -22,8 +24,44 @@ class DeviceManagement {
         const registerModal = document.getElementById('registerDeviceModal');
         if (registerModal) {
             registerModal.addEventListener('shown.bs.modal', () => {
-                this.initializeMap();
-                this.loadRvmMachines(); // Load when modal is visible
+                this.loadRvmMachines();
+                // Only init map on step 3 to save resources
+            });
+
+            // Reset wizard on modal close
+            registerModal.addEventListener('hidden.bs.modal', () => {
+                this.resetWizard();
+            });
+        }
+
+        // Wizard navigation buttons
+        const nextBtn = document.getElementById('wizard-next');
+        const backBtn = document.getElementById('wizard-back');
+
+        if (nextBtn) {
+            nextBtn.addEventListener('click', () => this.nextStep());
+        }
+        if (backBtn) {
+            backBtn.addEventListener('click', () => this.prevStep());
+        }
+
+        // Threshold slider value update
+        const thresholdSlider = document.getElementById('threshold-slider');
+        const thresholdValue = document.getElementById('threshold-value');
+        if (thresholdSlider && thresholdValue) {
+            thresholdSlider.addEventListener('input', (e) => {
+                const value = parseInt(e.target.value);
+                thresholdValue.textContent = value + '%';
+
+                // Update badge color based on value
+                thresholdValue.className = 'badge';
+                if (value <= 40) {
+                    thresholdValue.classList.add('bg-success');
+                } else if (value <= 70) {
+                    thresholdValue.classList.add('bg-warning');
+                } else {
+                    thresholdValue.classList.add('bg-danger');
+                }
             });
         }
 
@@ -31,6 +69,101 @@ class DeviceManagement {
         const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
         tooltips.forEach(el => new bootstrap.Tooltip(el));
     }
+
+    // Wizard Step Navigation
+    nextStep() {
+        if (!this.validateCurrentStep()) return;
+
+        if (this.currentStep < this.totalSteps) {
+            this.currentStep++;
+            this.goToStep(this.currentStep);
+        } else {
+            // Final step - submit form
+            this.submitRegistration();
+        }
+    }
+
+    prevStep() {
+        if (this.currentStep > 1) {
+            this.currentStep--;
+            this.goToStep(this.currentStep);
+        }
+    }
+
+    goToStep(step) {
+        // Update step dots
+        document.querySelectorAll('.step-dot').forEach((dot, index) => {
+            dot.classList.remove('active', 'completed');
+            if (index + 1 < step) dot.classList.add('completed');
+            if (index + 1 === step) dot.classList.add('active');
+        });
+
+        // Update step content
+        document.querySelectorAll('.step-content').forEach((content, index) => {
+            content.classList.remove('active');
+            if (index + 1 === step) content.classList.add('active');
+        });
+
+        // Update buttons
+        const nextBtn = document.getElementById('wizard-next');
+        const backBtn = document.getElementById('wizard-back');
+
+        if (backBtn) {
+            backBtn.style.display = step > 1 ? 'block' : 'none';
+        }
+
+        if (nextBtn) {
+            if (step === this.totalSteps) {
+                nextBtn.innerHTML = '<i class="ti tabler-key me-1"></i>Register';
+            } else {
+                nextBtn.innerHTML = 'Next<i class="ti tabler-arrow-right ms-1"></i>';
+            }
+        }
+
+        // Initialize map only when reaching step 3
+        if (step === 3 && !this.map) {
+            setTimeout(() => this.initializeMap(), 100);
+        }
+    }
+
+    validateCurrentStep() {
+        if (this.currentStep === 1) {
+            const rvmId = document.getElementById('rvm-machine-id')?.value;
+            if (!rvmId) {
+                window.showToast?.('Error', 'Please select an RVM Machine', 'error');
+                return false;
+            }
+        }
+        return true;
+    }
+
+    resetWizard() {
+        this.currentStep = 1;
+        this.goToStep(1);
+
+        // Clear form
+        const form = document.getElementById('register-device-form');
+        if (form) form.reset();
+
+        // Clear RVM selection
+        const rvmSearch = document.getElementById('rvm-machine-search');
+        const rvmId = document.getElementById('rvm-machine-id');
+        const locationDisplay = document.getElementById('location-name-display');
+
+        if (rvmSearch) rvmSearch.value = '';
+        if (rvmId) rvmId.value = '';
+        if (locationDisplay) locationDisplay.value = '';
+    }
+
+    async submitRegistration() {
+        const form = document.getElementById('register-device-form');
+        if (!form) return;
+
+        // Create a fake event to reuse registerDevice
+        const fakeEvent = { preventDefault: () => { } };
+        await this.registerDevice(fakeEvent);
+    }
+
 
     setupEventListeners() {
         const form = document.getElementById('register-device-form');

@@ -131,7 +131,7 @@ class EdgeDeviceController extends Controller
     }
 
     /**
-     * Send heartbeat (Ping) with auto-discovery IP update.
+     * Send heartbeat (Ping) with auto-discovery IP and Hardware Info update.
      * 
      * @OA\Post(
      *      path="/api/v1/devices/{id}/heartbeat",
@@ -150,7 +150,8 @@ class EdgeDeviceController extends Controller
      *              @OA\Property(property="ip_local", type="string", example="192.168.1.10"),
      *              @OA\Property(property="tailscale_ip", type="string", example="100.64.0.5"),
      *              @OA\Property(property="network_interfaces", type="object"),
-     *              @OA\Property(property="health_metrics", type="object")
+     *              @OA\Property(property="health_metrics", type="object"),
+     *              @OA\Property(property="hardware_info", type="object", description="Full hardware specs including cameras")
      *          )
      *      ),
      *      @OA\Response(
@@ -188,6 +189,22 @@ class EdgeDeviceController extends Controller
             }
             if ($request->has('health_metrics')) {
                 $updateData['health_metrics'] = $request->health_metrics;
+            }
+
+            // Auto-update Hardware Info & Camera ID
+            if ($request->has('hardware_info')) {
+                $updateData['hardware_info'] = $request->hardware_info;
+
+                // Extract Camera ID from the first camera in the list
+                if (isset($request->hardware_info['cameras']) && is_array($request->hardware_info['cameras']) && count($request->hardware_info['cameras']) > 0) {
+                    $camera = $request->hardware_info['cameras'][0];
+                    // Prefer 'path' (e.g., /dev/video0) or 'id'
+                    if (isset($camera['path'])) {
+                        $updateData['camera_id'] = $camera['path'];
+                    } elseif (isset($camera['id'])) {
+                        $updateData['camera_id'] = $camera['id'];
+                    }
+                }
             }
 
             $edgeDevice->update($updateData);
