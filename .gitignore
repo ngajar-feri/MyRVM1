@@ -16,3 +16,9 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# Ignored Tooling & Workflows
+.agent/
+.cursor/
+.github/
+tests/
