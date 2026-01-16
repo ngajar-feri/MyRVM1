@@ -268,12 +268,14 @@ class DeviceManagement {
                 const isInstalled = machine.edge_device && machine.edge_device.id;
                 const edgeCode = isInstalled ? machine.edge_device.device_id || `ID:${machine.edge_device.id}` : null;
                 const displayText = `${machine.serial_number || 'Unknown'} - ${machine.location_name || machine.location || 'N/A'}`;
+                const locationName = machine.location_name || machine.location || '';
 
                 return `
                     <div class="dropdown-item ${isInstalled ? 'disabled text-muted' : 'rvm-available'}" 
                         data-id="${machine.id}" 
                         data-installed="${isInstalled ? '1' : '0'}"
                         data-text="${this.escapeHtml(displayText)}"
+                        data-location-name="${this.escapeHtml(locationName)}"
                         style="${isInstalled ? 'cursor: not-allowed; background-color: #f8f9fa; opacity: 0.7;' : 'cursor: pointer;'}">
                         <div class="d-flex align-items-center">
                             ${isInstalled
@@ -293,8 +295,27 @@ class DeviceManagement {
             item.addEventListener('click', () => {
                 const id = item.dataset.id;
                 const text = item.dataset.text;
+                const locationName = item.dataset.locationName; // Get location_name from data attribute
+
                 document.getElementById('rvm-machine-search').value = text;
                 document.getElementById('rvm-machine-id').value = id;
+
+                // Auto-fill Location Name from selected RVM Machine
+                const locationField = document.getElementById('location-name-display');
+                if (locationField) {
+                    locationField.value = locationName || '';
+                }
+
+                // Auto-fill Search Location field and trigger map search
+                const searchInput = document.getElementById('location-search-input');
+                if (searchInput && locationName) {
+                    searchInput.value = locationName;
+                    // Trigger location search automatically (like clicking Search button)
+                    setTimeout(() => {
+                        this.searchLocation();
+                    }, 100); // Small delay to ensure UI updates first
+                }
+
                 this.hideRvmResults();
             });
         });

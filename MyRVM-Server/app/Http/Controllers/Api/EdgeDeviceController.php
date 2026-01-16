@@ -207,7 +207,7 @@ class EdgeDeviceController extends Controller
     {
         $request->validate([
             'device_serial' => 'required|string|max:255|unique:edge_devices,device_id',
-            'rvm_id' => 'nullable|exists:rvm_machines,id',
+            'rvm_id' => 'required|exists:rvm_machines,id', // Now required
             'tailscale_ip' => 'nullable|ip',
             'hardware_info' => 'nullable|array',
             // New fields from 3-section form
@@ -228,6 +228,15 @@ class EdgeDeviceController extends Controller
         // Extract hardware info
         $hardwareInfo = $request->hardware_info ?? [];
 
+        // Auto-generate inventory_code if not provided
+        $inventoryCode = $request->inventory_code;
+        if (empty($inventoryCode)) {
+            $year = date('Y');
+            $lastDevice = EdgeDevice::whereYear('created_at', $year)->orderBy('id', 'desc')->first();
+            $sequence = $lastDevice ? (intval(substr($lastDevice->inventory_code ?? 'INV-0000-0000', -4)) + 1) : 1;
+            $inventoryCode = sprintf('INV-%s-%04d', $year, $sequence);
+        }
+
         // Create device using model
         $controllerType = $hardwareInfo['controller_type'] ?? 'NVIDIA Jetson';
         $device = EdgeDevice::create([
@@ -235,7 +244,7 @@ class EdgeDeviceController extends Controller
             'device_id' => $request->device_serial,
             'type' => $controllerType, // Required NOT NULL column
             'location_name' => $request->location_name,
-            'inventory_code' => $request->inventory_code,
+            'inventory_code' => $inventoryCode,
             'description' => $request->description,
             'tailscale_ip' => $request->tailscale_ip,
             'controller_type' => $controllerType,
@@ -245,7 +254,7 @@ class EdgeDeviceController extends Controller
             'latitude' => $request->latitude,
             'longitude' => $request->longitude,
             'address' => $request->address,
-            'status' => $request->status ?? 'maintenance',
+            'status' => $request->status ?? 'maintenance', // Default to maintenance
             'api_key' => $apiKeyHash,
             'health_metrics' => [],
         ]);

@@ -168,35 +168,15 @@
                         </div>
                         <div class="card-body">
                             <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Location Name <span class="text-danger">*</span></label>
-                                    <input type="text" name="location_name" class="form-control"
-                                        placeholder="RVM Lobi Mall Grand Indonesia" required data-bs-toggle="tooltip"
-                                        title="Nama unik lokasi pemasangan RVM">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Inventory Code</label>
-                                    <input type="text" name="inventory_code" class="form-control"
-                                        placeholder="INV-2026-001" data-bs-toggle="tooltip"
-                                        title="Kode aset internal perusahaan">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Initial Status <span class="text-danger">*</span></label>
-                                    <select name="status" class="form-select" required data-bs-toggle="tooltip"
-                                        title="Status awal perangkat (jangan pilih Online)">
-                                        <option value="maintenance" selected>Maintenance</option>
-                                        <option value="inactive">Inactive</option>
-                                    </select>
-                                    <small class="text-muted">Status 'Online' dideteksi otomatis dari heartbeat</small>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">RVM Machine</label>
+                                <!-- 1. RVM Machine (Top Priority) -->
+                                <div class="col-12">
+                                    <label class="form-label">RVM Machine <span class="text-danger">*</span></label>
                                     <div class="position-relative">
                                         <input type="text" id="rvm-machine-search" class="form-control"
-                                            placeholder="Type machine name or serial..." autocomplete="off"
+                                            placeholder="Type machine name or serial..." autocomplete="off" required
                                             data-bs-toggle="tooltip"
                                             title="Cari dan pilih mesin RVM yang akan dipasangi device ini. RVM yang sudah terpasang tidak bisa dipilih.">
-                                        <input type="hidden" name="rvm_machine_id" id="rvm-machine-id">
+                                        <input type="hidden" name="rvm_machine_id" id="rvm-machine-id" required>
                                         <div id="rvm-search-results" class="dropdown-menu w-100"
                                             style="max-height: 250px; overflow-y: auto; display: none;">
                                             <!-- Search results loaded via JS -->
@@ -205,12 +185,26 @@
                                     <small class="text-muted">Relasi 1-ke-1: Satu RVM hanya bisa memiliki satu Edge
                                         Device</small>
                                 </div>
+                                <!-- 2. Location Name (Auto-fill from RVM, Read-only) -->
+                                <div class="col-12">
+                                    <label class="form-label">Location Name</label>
+                                    <input type="text" name="location_name" id="location-name-display"
+                                        class="form-control" placeholder="Will auto-fill from selected RVM Machine"
+                                        readonly data-bs-toggle="tooltip"
+                                        title="Nama lokasi otomatis diambil dari RVM Machine yang dipilih">
+                                    <small class="text-muted"><i class="ti tabler-info-circle me-1"></i>Auto-filled from
+                                        RVM Machine</small>
+                                </div>
+                                <!-- 3. Description / Notes -->
                                 <div class="col-12">
                                     <label class="form-label">Description / Notes</label>
                                     <textarea name="description" class="form-control" rows="2"
                                         placeholder="Catatan khusus untuk teknisi (misal: Posisi di dekat ATM Center)"
                                         data-bs-toggle="tooltip" title="Catatan tambahan untuk teknisi"></textarea>
                                 </div>
+                                <!-- Hidden Fields (Auto-generated/Defaults) -->
+                                <input type="hidden" name="status" value="maintenance">
+                                <input type="hidden" name="inventory_code" id="inventory-code" value="">
                             </div>
                         </div>
                     </div>
