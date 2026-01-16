@@ -22,3 +22,8 @@ node_modules/
 .cursor/
 .github/
 tests/
+
+# Ignored Root Configs
+package.json
+package-lock.json
+playwright.config.js
