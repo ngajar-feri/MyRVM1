@@ -17,13 +17,6 @@ node_modules/
 /playwright/.cache/
 /playwright/.auth/
 
-# Ignored Tooling & Workflows
-.agent/
-.cursor/
-.github/
-tests/
 
-# Ignored Root Configs
-package.json
-package-lock.json
-playwright.config.js
+# Ignored Tooling & Workflows
+# Now managed in .git/info/exclude for privacy
