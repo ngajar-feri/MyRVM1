@@ -87,7 +87,7 @@
                         </li>
                     @endif
                     <li class="menu-item">
-                        <a href="{{ route('dashboard.devices') }}" class="menu-link" data-page="devices">
+                        <a href="{{ route('dashboard.devices') }}" class="menu-link" data-page="edge-devices">
                             <i class="menu-icon icon-base ti tabler-cpu"></i>
                             <div>Edge Devices</div>
                         </a>

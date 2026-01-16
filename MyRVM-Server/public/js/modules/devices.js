@@ -659,11 +659,25 @@ window.downloadConfig = function () {
 // Alias for backward compatibility
 window.downloadJson = window.downloadConfig;
 
-const deviceManagement = new DeviceManagement();
+// Safe Initialization Function
+function initDeviceManagement() {
+    if (window.deviceManagement) return; // Prevent double init
 
-// Expose to window for HTML onclick handlers
-window.deviceManagement = deviceManagement;
-window.copyToClipboard = copyToClipboard;
+    const deviceManagement = new DeviceManagement();
+
+    // Expose to window for HTML onclick handlers
+    window.deviceManagement = deviceManagement;
+    window.copyToClipboard = copyToClipboard;
+
+    console.log('[DeviceManagement] Initialized safely. DOM State:', document.readyState);
+}
+
+// Check DOM State before initializing
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initDeviceManagement);
+} else {
+    initDeviceManagement();
+}
 
 // Ensure showToast exists
 if (!window.showToast) {
