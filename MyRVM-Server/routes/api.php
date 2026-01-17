@@ -98,8 +98,14 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
         Route::get('/model-sync', [EdgeDeviceController::class, 'modelSync']);
         Route::post('/update-location', [EdgeDeviceController::class, 'updateLocation']);
         Route::post('/upload-image', [EdgeDeviceController::class, 'uploadImage']);
-        Route::get('/devices', [EdgeDeviceController::class, 'index']); // Added for dashboard
-        Route::get('/download-config/{deviceId}', [EdgeDeviceController::class, 'downloadConfig']); // Server-side download
+        Route::get('/devices', [EdgeDeviceController::class, 'index']); // List all devices
+        Route::get('/devices/trashed', [EdgeDeviceController::class, 'trashed']); // List deleted devices
+        Route::get('/devices/{id}', [EdgeDeviceController::class, 'show']); // Get single device
+        Route::put('/devices/{id}', [EdgeDeviceController::class, 'update']); // Update device
+        Route::delete('/devices/{id}', [EdgeDeviceController::class, 'destroy']); // Soft delete
+        Route::post('/devices/{id}/restore', [EdgeDeviceController::class, 'restore']); // Restore from trash
+        Route::post('/devices/{id}/regenerate-key', [EdgeDeviceController::class, 'regenerateApiKey']); // New API key
+        Route::get('/download-config/{deviceId}', [EdgeDeviceController::class, 'downloadConfig']); // Download config
     });
     Route::post('/devices/{id}/telemetry', [EdgeDeviceController::class, 'telemetry']);
     Route::post('/devices/{id}/heartbeat', [EdgeDeviceController::class, 'heartbeat']);

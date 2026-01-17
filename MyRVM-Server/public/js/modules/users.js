@@ -908,6 +908,72 @@ class UserManagement {
 
     // ====== ASSIGNMENT FEATURE ======
 
+    /**
+     * Current step in assignment wizard (1 or 2)
+     */
+    currentAssignmentStep = 1;
+
+    /**
+     * Navigate to a specific step in the assignment wizard
+     */
+    goToStep(step) {
+        // Validate step (now only 2 steps)
+        if (step < 1 || step > 2) return;
+
+        // Optional validation before moving forward
+        if (step > this.currentAssignmentStep) {
+            const valid = this.validateAssignmentStep(this.currentAssignmentStep);
+            if (!valid) return;
+        }
+
+        this.currentAssignmentStep = step;
+
+        // Update step indicators
+        document.querySelectorAll('.step-dot').forEach((dot, index) => {
+            dot.classList.remove('active', 'completed');
+            if (index + 1 < step) {
+                dot.classList.add('completed');
+            } else if (index + 1 === step) {
+                dot.classList.add('active');
+            }
+        });
+
+        // Update step content
+        document.querySelectorAll('.step-content').forEach(content => {
+            content.classList.remove('active');
+        });
+        document.getElementById(`assignment-step-${step}`)?.classList.add('active');
+
+        // Update buttons (only 2 steps now)
+        document.getElementById('step-1-buttons').style.display = step === 1 ? 'block' : 'none';
+        document.getElementById('step-2-buttons').style.display = step === 2 ? 'grid' : 'none';
+
+        // Initialize map when entering step 2
+        if (step === 2 && this.assignmentMap) {
+            setTimeout(() => this.assignmentMap.invalidateSize(), 100);
+        }
+    }
+
+    /**
+     * Validate current step before proceeding
+     */
+    validateAssignmentStep(step) {
+        if (step === 1) {
+            // Validate both technician AND machine in step 1
+            const userIds = this.userAutocomplete?.getSelectedIds() || [];
+            if (userIds.length === 0) {
+                this.showError('Please select at least one technician');
+                return false;
+            }
+            const machineIds = this.machineAutocomplete?.getSelectedIds() || [];
+            if (machineIds.length === 0) {
+                this.showError('Please select at least one RVM machine');
+                return false;
+            }
+        }
+        return true;
+    }
+
     async openAssignment(userId = null) {
         await this.waitForBootstrap();
 
@@ -919,6 +985,10 @@ class UserManagement {
 
         this.cleanupModals();
         const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+
+        // Reset wizard to step 1
+        this.currentAssignmentStep = 1;
+        this.goToStep(1);
 
         // Initialize tag autocomplete components if not already done
         if (!this.userAutocomplete) {

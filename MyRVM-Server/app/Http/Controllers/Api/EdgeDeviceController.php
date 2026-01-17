@@ -476,4 +476,223 @@ class EdgeDeviceController extends Controller
             'Content-Type' => 'application/json',
         ]);
     }
+
+    /**
+     * Get single Edge Device detail for editing.
+     */
+    public function show($id)
+    {
+        $device = EdgeDevice::with('rvmMachine:id,serial_number,location_name')->find($id);
+
+        if (!$device) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Device not found'
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $device
+        ]);
+    }
+
+    /**
+     * Update Edge Device.
+     */
+    public function update(Request $request, $id)
+    {
+        $device = EdgeDevice::find($id);
+
+        if (!$device) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Device not found'
+            ], 404);
+        }
+
+        $request->validate([
+            'location_name' => 'nullable|string|max:255',
+            'description' => 'nullable|string',
+            'threshold_full' => 'nullable|integer|min:0|max:100',
+            'status' => 'nullable|in:online,offline,maintenance,inactive',
+            'controller_type' => 'nullable|string|max:100',
+            'camera_id' => 'nullable|string|max:100',
+            'ai_model_version' => 'nullable|string|max:100',
+        ]);
+
+        $device->update($request->only([
+            'location_name',
+            'description',
+            'threshold_full',
+            'status',
+            'controller_type',
+            'camera_id',
+            'ai_model_version',
+        ]));
+
+        ActivityLog::log(
+            'Edge',
+            'Update',
+            "Edge device {$device->device_id} updated",
+            $request->user()?->id
+        );
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Device updated successfully',
+            'data' => $device->fresh()
+        ]);
+    }
+
+    /**
+     * Soft delete Edge Device.
+     * Unlinks from RVM Machine so it becomes available for new registration.
+     */
+    public function destroy(Request $request, $id)
+    {
+        $device = EdgeDevice::find($id);
+
+        if (!$device) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Device not found'
+            ], 404);
+        }
+
+        // Store RVM info for response
+        $rvmMachineId = $device->rvm_machine_id;
+        $deviceSerial = $device->device_id;
+
+        // Unlink from RVM Machine (so RVM is available for new device)
+        $device->rvm_machine_id = null;
+        $device->save();
+
+        // Soft delete
+        $device->delete();
+
+        ActivityLog::log(
+            'Edge',
+            'Delete',
+            "Edge device {$deviceSerial} moved to trash. RVM #{$rvmMachineId} is now available.",
+            $request->user()?->id
+        );
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Device dipindahkan ke Kotak Sampah. RVM Machine sekarang tersedia untuk registrasi baru.',
+            'unlinked_rvm_id' => $rvmMachineId
+        ]);
+    }
+
+    /**
+     * Get list of soft-deleted (trashed) Edge Devices.
+     */
+    public function trashed()
+    {
+        $trashedDevices = EdgeDevice::onlyTrashed()
+            ->orderBy('deleted_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $trashedDevices,
+            'count' => $trashedDevices->count()
+        ]);
+    }
+
+    /**
+     * Restore a soft-deleted Edge Device.
+     * Checks if original RVM is still available before restoring.
+     */
+    public function restore(Request $request, $id)
+    {
+        $device = EdgeDevice::onlyTrashed()->find($id);
+
+        if (!$device) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Trashed device not found'
+            ], 404);
+        }
+
+        // Get device's original RVM machine ID from metadata (we need to store this)
+        // Since we nullified rvm_machine_id on delete, we need to check if user wants to re-link
+        $rvmMachineId = $request->input('rvm_machine_id');
+
+        if ($rvmMachineId) {
+            // Check if this RVM is already connected to another device
+            $existingDevice = EdgeDevice::where('rvm_machine_id', $rvmMachineId)->first();
+
+            if ($existingDevice) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Restore gagal: RVM Machine sudah terhubung dengan Edge Device lain (' . $existingDevice->device_id . '). Pilih RVM lain atau restore tanpa koneksi RVM.',
+                    'connected_device' => $existingDevice->device_id
+                ], 409); // Conflict
+            }
+
+            // Re-link to RVM
+            $device->rvm_machine_id = $rvmMachineId;
+        }
+
+        // Restore device
+        $device->restore();
+        $device->save();
+
+        ActivityLog::log(
+            'Edge',
+            'Restore',
+            "Edge device {$device->device_id} restored from trash" . ($rvmMachineId ? " and linked to RVM #{$rvmMachineId}" : ''),
+            $request->user()?->id
+        );
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Device berhasil di-restore dari Kotak Sampah.',
+            'data' => $device->fresh()
+        ]);
+    }
+
+    /**
+     * Regenerate API key for Edge Device.
+     * Returns new key for download (shown only once).
+     */
+    public function regenerateApiKey(Request $request, $id)
+    {
+        $device = EdgeDevice::find($id);
+
+        if (!$device) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Device not found'
+            ], 404);
+        }
+
+        // Generate new API key
+        $newApiKey = 'rvm_' . Str::random(60);
+        $apiKeyHash = hash('sha256', $newApiKey);
+
+        // Update device
+        $device->api_key = $apiKeyHash;
+        $device->save();
+
+        ActivityLog::log(
+            'Edge',
+            'Update',
+            "API key regenerated for Edge device {$device->device_id}",
+            $request->user()?->id
+        );
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'API Key berhasil di-regenerate. Simpan key ini, tidak akan ditampilkan lagi!',
+            'data' => [
+                'device_id' => $device->device_id,
+                'api_key' => $newApiKey, // Only returned once, never stored in plain text
+                'generated_at' => now()->toIso8601String()
+            ]
+        ]);
+    }
 }
+

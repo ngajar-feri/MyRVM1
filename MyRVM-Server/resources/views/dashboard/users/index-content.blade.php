@@ -298,110 +298,541 @@
     </div>
 </div>
 
-<!-- Assignment Modal -->
-<div class="modal fade" id="assignmentModal" tabindex="-1" aria-labelledby="assignmentModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl">
+<!-- Assignment Modal (Bio-Digital Minimalism 2026 - 2 Step Wizard) -->
+<style>
+    /* Bio-Digital Minimalism Styles */
+    .modal-minimalist .modal-dialog {
+        max-width: 600px !important;
+    }
+
+    .modal-minimalist .modal-content {
+        border-radius: 20px;
+        border: none;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+    }
+
+    .modal-minimalist .modal-header {
+        border-bottom: none;
+        padding: 28px 28px 0;
+    }
+
+    .modal-minimalist .modal-body {
+        padding: 20px 28px;
+    }
+
+    .modal-minimalist .modal-footer {
+        border-top: none;
+        padding: 0 28px 28px;
+    }
+
+    .modal-minimalist .modal-title {
+        font-weight: 700;
+        font-size: 1.25rem;
+        color: #1f2937;
+    }
+
+    .modal-minimalist .btn-close {
+        opacity: 0.4;
+    }
+
+    .modal-minimalist .btn-close:hover {
+        opacity: 1;
+    }
+
+    /* Step Indicator */
+    .step-indicator {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin-bottom: 24px;
+    }
+
+    .step-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #e5e7eb;
+        transition: all 0.3s ease;
+    }
+
+    .step-dot.active {
+        background: #7c3aed;
+        transform: scale(1.2);
+    }
+
+    .step-dot.completed {
+        background: #7c3aed;
+    }
+
+    /* Step Content */
+    .step-content {
+        display: none;
+    }
+
+    .step-content.active {
+        display: block;
+        animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Form Labels */
+    .modal-minimalist .step-title {
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: #1f2937;
+        margin-bottom: 16px;
+    }
+
+    .modal-minimalist .form-label {
+        font-weight: 600;
+        color: #374151;
+        font-size: 0.875rem;
+        margin-bottom: 6px;
+    }
+
+    .modal-minimalist .form-control,
+    .modal-minimalist .form-select {
+        border-radius: 12px;
+        border: 2px solid #e5e7eb;
+        padding: 12px 16px;
+        font-size: 0.95rem;
+        transition: border-color 0.2s;
+    }
+
+    .modal-minimalist .form-control:focus,
+    .modal-minimalist .form-select:focus {
+        border-color: #7c3aed;
+        box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+    }
+
+    .modal-minimalist .form-control::placeholder {
+        color: #9ca3af;
+    }
+
+    .modal-minimalist .form-text {
+        color: #6b7280;
+        font-size: 0.8rem;
+    }
+
+    /* Buttons */
+    .modal-minimalist .btn-wizard {
+        width: 100%;
+        padding: 14px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+
+    .modal-minimalist .btn-primary {
+        background: #7c3aed;
+        border-color: #7c3aed;
+    }
+
+    .modal-minimalist .btn-primary:hover {
+        background: #6d28d9;
+        border-color: #6d28d9;
+    }
+
+    .modal-minimalist .btn-outline-secondary {
+        border: 2px solid #e5e7eb;
+        color: #6b7280;
+    }
+
+    .modal-minimalist .btn-outline-secondary:hover {
+        background: #f3f4f6;
+        border-color: #d1d5db;
+    }
+
+    /* Wizard Primary Button */
+    .modal-minimalist .btn-wizard-primary {
+        background: linear-gradient(135deg, #7c3aed, #6d28d9);
+        border: none;
+        border-radius: 12px;
+        padding: 14px 24px;
+        color: white;
+        font-weight: 600;
+        font-size: 0.95rem;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.2s;
+    }
+
+    .modal-minimalist .btn-wizard-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(124, 58, 237, 0.3);
+        color: white;
+    }
+
+    .modal-minimalist .btn-wizard-primary:disabled {
+        opacity: 0.7;
+        transform: none;
+    }
+
+    /* Wizard Secondary Button */
+    .modal-minimalist .btn-wizard-secondary {
+        background: #f3f4f6;
+        border: none;
+        border-radius: 12px;
+        padding: 14px 24px;
+        color: #374151;
+        font-weight: 600;
+        font-size: 0.95rem;
+        width: 100%;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .modal-minimalist .btn-wizard-secondary:hover {
+        background: #e5e7eb;
+    }
+
+    .modal-minimalist .map-container,
+    .modal-minimalist #assignment-map {
+        height: 160px;
+        border-radius: 12px;
+        border: 2px solid #e5e7eb;
+    }
+
+    /* Coordinates Box */
+    .modal-minimalist .coords-box {
+        background: #f9fafb;
+        border-radius: 12px;
+        padding: 12px;
+        margin-top: 12px;
+    }
+
+    .modal-minimalist .coords-box .form-control {
+        background: white;
+        padding: 8px 12px;
+        font-size: 0.85rem;
+    }
+
+    .modal-minimalist .coords-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #9ca3af;
+        font-weight: 600;
+    }
+
+    /* Coordinates Grid */
+    .modal-minimalist .coords-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .modal-minimalist .coords-grid input {
+        font-size: 0.8rem;
+        padding: 8px 12px;
+    }
+
+    /* Button Group */
+    .modal-minimalist .btn-group-wizard {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    /* Tag Input Container */
+    .modal-minimalist .tag-input-container {
+        border: 2px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 6px 10px;
+        min-height: 38px;
+        position: relative;
+        transition: border-color 0.2s;
+    }
+
+    .modal-minimalist .tag-input-container:focus-within {
+        border-color: #7c3aed;
+        box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+    }
+
+    .modal-minimalist .tag-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 4px;
+    }
+
+    .modal-minimalist .tag-item {
+        background: linear-gradient(135deg, #7c3aed, #6d28d9);
+        color: white;
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .modal-minimalist .tag-item .tag-remove {
+        cursor: pointer;
+        opacity: 0.8;
+    }
+
+    .modal-minimalist .tag-item .tag-remove:hover {
+        opacity: 1;
+    }
+
+    .modal-minimalist .tag-input-container input {
+        border: none;
+        outline: none;
+        width: 100%;
+        padding: 4px 0;
+        font-size: 0.9rem;
+        background: transparent;
+    }
+
+    .modal-minimalist .autocomplete-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        margin-top: 4px;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 1000;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .modal-minimalist .autocomplete-item {
+        padding: 10px 14px;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .modal-minimalist .autocomplete-item:hover {
+        background: #f3f4f6;
+    }
+
+    /* ========== COMPACT FORM STYLING ========== */
+    .modal-minimalist .compact-form {
+        padding: 16px 20px;
+    }
+
+    .modal-minimalist .step-indicator {
+        margin-bottom: 16px;
+    }
+
+    .modal-minimalist .step-title {
+        font-size: 1rem;
+        margin-bottom: 12px;
+    }
+
+    /* Compact Form Groups */
+    .modal-minimalist .form-group-compact {
+        margin-bottom: 10px;
+    }
+
+    .modal-minimalist .compact-label {
+        display: block;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #6b7280;
+        margin-bottom: 4px;
+        line-height: 1.2;
+    }
+
+    .modal-minimalist .compact-input {
+        padding: 8px 10px;
+        font-size: 0.85rem;
+        border-radius: 8px;
+    }
+
+    .modal-minimalist .compact-input:focus {
+        border-color: #7c3aed;
+        box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.1);
+    }
+
+    /* Search Row */
+    .modal-minimalist .search-row {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+
+    .modal-minimalist .search-row input {
+        flex: 1;
+    }
+
+    .modal-minimalist .btn-search {
+        background: #7c3aed;
+        border: none;
+        border-radius: 8px;
+        padding: 8px 14px;
+        color: white;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .modal-minimalist .btn-search:hover {
+        background: #6d28d9;
+    }
+
+    /* Compact Map */
+    .modal-minimalist .compact-map {
+        height: 140px;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+        margin-bottom: 10px;
+    }
+
+    /* Details Grid */
+    .modal-minimalist .details-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .modal-minimalist .grid-full {
+        grid-column: span 2;
+    }
+
+    .modal-minimalist .grid-half {
+        grid-column: span 1;
+    }
+
+    .modal-minimalist .details-grid textarea {
+        resize: none;
+    }
+
+    /* Compact Footer */
+    .modal-minimalist .compact-footer {
+        padding: 12px 20px 16px;
+    }
+
+    .modal-minimalist .btn-row {
+        width: 100%;
+    }
+
+    .modal-minimalist .btn-row-split {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .modal-minimalist .btn-row .btn {
+        padding: 10px 16px;
+        font-size: 0.9rem;
+    }
+</style>
+
+<div class="modal fade modal-minimalist" id="assignmentModal" tabindex="-1" aria-labelledby="assignmentModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="assignmentModalLabel">
-                    <i class="ti tabler-map-pin me-2"></i>RVM Installation Assignment
-                </h5>
+                <h5 class="modal-title" id="assignmentModalLabel">RVM Installation Assignment</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                <div class="row">
-                    <!-- Left Column: Selections -->
-                    <div class="col-md-5">
-                        <!-- Tag-Based User Selection -->
-                        <div class="mb-4">
-                            <label class="form-label fw-semibold">
-                                <i class="ti tabler-users me-1"></i>Assign To (Technicians/Operators)
-                            </label>
-                            <div class="tag-input-container">
-                                <div id="selected-users" class="tag-list"></div>
-                                <input type="text" id="user-search-input" class="form-control"
-                                    placeholder="Type name to search..." autocomplete="off">
-                                <div id="user-suggestions" class="autocomplete-dropdown" style="display:none;"></div>
-                            </div>
-                            <small class="text-muted">Type and select users to assign</small>
-                        </div>
+            <div class="modal-body compact-form">
+                <!-- Step Indicator -->
+                <div class="step-indicator">
+                    <div class="step-dot active" data-step="1"></div>
+                    <div class="step-dot" data-step="2"></div>
+                </div>
 
-                        <!-- Tag-Based Machine Selection -->
-                        <div class="mb-4">
-                            <label class="form-label fw-semibold">
-                                <i class="ti tabler-device-desktop me-1"></i>RVM Machines
-                            </label>
-                            <div class="tag-input-container">
-                                <div id="selected-machines" class="tag-list"></div>
-                                <input type="text" id="machine-search-input" class="form-control"
-                                    placeholder="Type machine name or serial..." autocomplete="off">
-                                <div id="machine-suggestions" class="autocomplete-dropdown" style="display:none;"></div>
-                            </div>
-                            <small class="text-muted">Select machines to be installed</small>
-                        </div>
+                <!-- Step 1: Select Assignment -->
+                <div class="step-content active" id="assignment-step-1">
+                    <h6 class="step-title">1. Select Assignment</h6>
 
-                        <!-- Notes -->
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">
-                                <i class="ti tabler-notes me-1"></i>Notes (Optional)
-                            </label>
-                            <textarea id="assignment-notes" class="form-control" rows="3"
-                                placeholder="Additional instructions or notes..."></textarea>
-                        </div>
-
-                        <!-- Coordinates Display -->
-                        <div class="coordinates-display">
-                            <div class="row g-2">
-                                <div class="col-12 mb-2">
-                                    <label class="form-label">Address</label>
-                                    <input type="text" id="assignment-address" class="form-control form-control-sm"
-                                        readonly placeholder="Click map or search to get address">
-                                </div>
-                                <div class="col-6">
-                                    <label class="form-label">Latitude</label>
-                                    <input type="text" id="assignment-lat" class="form-control form-control-sm"
-                                        readonly>
-                                </div>
-                                <div class="col-6">
-                                    <label class="form-label">Longitude</label>
-                                    <input type="text" id="assignment-lng" class="form-control form-control-sm"
-                                        readonly>
-                                </div>
-                            </div>
+                    <div class="form-group-compact">
+                        <label class="compact-label">Technician</label>
+                        <div class="tag-input-container">
+                            <div id="selected-users" class="tag-list"></div>
+                            <input type="text" id="user-search-input" placeholder="Search technician..."
+                                autocomplete="off">
+                            <div id="user-suggestions" class="autocomplete-dropdown" style="display:none;"></div>
                         </div>
                     </div>
 
-                    <!-- Right Column: Map -->
-                    <div class="col-md-7">
-                        <label class="form-label fw-semibold">
-                            <i class="ti tabler-map me-1"></i>Installation Location
-                        </label>
-
-                        <!-- Map Search Bar -->
-                        <div class="input-group mb-2 map-search-bar">
-                            <span class="input-group-text"><i class="ti tabler-search"></i></span>
-                            <input type="text" id="location-search" class="form-control"
-                                placeholder="Search location (e.g., Jogja City Mall)">
-                            <button class="btn btn-primary" type="button" id="search-location-btn">
-                                <i class="ti tabler-search"></i> Search
-                            </button>
+                    <div class="form-group-compact">
+                        <label class="compact-label">RVM Machine</label>
+                        <div class="tag-input-container">
+                            <div id="selected-machines" class="tag-list"></div>
+                            <input type="text" id="machine-search-input" placeholder="Search machine..."
+                                autocomplete="off">
+                            <div id="machine-suggestions" class="autocomplete-dropdown" style="display:none;"></div>
                         </div>
+                    </div>
+                </div>
 
-                        <!-- Interactive Map -->
-                        <div id="assignment-map" style="height: 380px;"></div>
-                        <small class="text-muted mt-1 d-block">
-                            <i class="ti tabler-info-circle"></i>
-                            Click map or drag marker to set exact location. Use search to find places.
-                        </small>
+                <!-- Step 2: Set Location -->
+                <div class="step-content" id="assignment-step-2">
+                    <h6 class="step-title">2. Set Location</h6>
+
+                    <!-- Search -->
+                    <div class="search-row">
+                        <input type="text" id="location-search" class="form-control compact-input"
+                            placeholder="Search location...">
+                        <button class="btn-search" type="button" id="search-location-btn">
+                            <i class="ti tabler-search"></i>
+                        </button>
+                    </div>
+
+                    <!-- Map -->
+                    <div id="assignment-map" class="compact-map"></div>
+
+                    <!-- Details Grid -->
+                    <div class="details-grid">
+                        <div class="grid-full">
+                            <label class="compact-label">ADDRESS</label>
+                            <input type="text" id="assignment-address" class="form-control compact-input" readonly
+                                placeholder="Click map...">
+                        </div>
+                        <!-- Hidden LAT/LNG -->
+                        <input type="hidden" id="assignment-lat">
+                        <input type="hidden" id="assignment-lng">
+                        <div class="grid-full">
+                            <label class="compact-label">NOTES</label>
+                            <textarea id="assignment-notes" class="form-control compact-input" rows="2"
+                                placeholder="Optional..."></textarea>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="submit-assignment-btn"
-                    onclick="userManagement.submitAssignment()">
-                    <i class="ti tabler-check me-1"></i>Create Assignment
-                </button>
+            <div class="modal-footer compact-footer">
+                <!-- Step 1 Buttons -->
+                <div id="step-1-buttons" class="btn-row">
+                    <button type="button" class="btn btn-wizard-primary" onclick="userManagement.goToStep(2)">
+                        Next <i class="ti tabler-arrow-right"></i>
+                    </button>
+                </div>
+
+                <!-- Step 2 Buttons -->
+                <div id="step-2-buttons" class="btn-row btn-row-split" style="display:none;">
+                    <button type="button" class="btn btn-wizard-secondary" onclick="userManagement.goToStep(1)">
+                        <i class="ti tabler-arrow-left"></i> Back
+                    </button>
+                    <button type="button" class="btn btn-wizard-primary" id="submit-assignment-btn"
+                        onclick="userManagement.submitAssignment()">
+                        <i class="ti tabler-check"></i> Create
+                    </button>
+                </div>
             </div>
         </div>
     </div>

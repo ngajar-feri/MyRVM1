@@ -24,10 +24,18 @@
                             <option value="maintenance">Maintenance</option>
                         </select>
                     </div>
-                    <div class="col-md-6">
-                        <button type="button" class="btn btn-label-secondary w-100" onclick="window.refreshPage()"
-                            data-bs-toggle="tooltip" title="Refresh device list and stats">
-                            <i class="ti tabler-refresh me-1"></i>Refresh Status
+                    <div class="col-md-3">
+                        <button type="button" class="btn btn-label-secondary w-100"
+                            onclick="deviceManagement.refreshCurrentView()" data-bs-toggle="tooltip"
+                            title="Refresh device list">
+                            <i class="ti tabler-refresh me-1"></i>Refresh
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="button" class="btn btn-label-warning w-100" id="toggle-trash-btn"
+                            onclick="deviceManagement.toggleTrashedView()" data-bs-toggle="tooltip"
+                            title="View deleted devices (Trash)">
+                            <i class="ti tabler-trash me-1"></i>Kotak Sampah
                         </button>
                     </div>
                 </div>
@@ -574,3 +582,152 @@
 <!-- Include Leaflet CSS -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- Edit Device Modal -->
+<div class="modal fade" id="editDeviceModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="ti tabler-edit me-2"></i>Edit Device</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="edit-device-form">
+                <div class="modal-body">
+                    <input type="hidden" id="edit-device-id">
+
+                    <div class="mb-3">
+                        <label class="form-label">Device ID</label>
+                        <input type="text" class="form-control" id="edit-device-serial" readonly disabled>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Location Name</label>
+                        <input type="text" class="form-control" id="edit-location-name" name="location_name">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" id="edit-status" name="status">
+                            <option value="online">Online</option>
+                            <option value="offline">Offline</option>
+                            <option value="maintenance">Maintenance</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Controller Type</label>
+                        <select class="form-select" id="edit-controller-type" name="controller_type">
+                            <option value="NVIDIA Jetson">NVIDIA Jetson</option>
+                            <option value="RaspberryPI">Raspberry PI</option>
+                            <option value="ESP32">ESP32</option>
+                            <option value="Arduino">Arduino</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Threshold Full <span id="edit-threshold-value"
+                                class="badge bg-warning">90%</span></label>
+                        <input type="range" class="form-range" id="edit-threshold" name="threshold_full" min="0"
+                            max="100" step="5" value="90">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" id="edit-description" name="description" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="ti tabler-check me-1"></i>Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteDeviceModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="ti tabler-trash me-2"></i>Hapus Device</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="delete-device-id">
+
+                <div class="alert alert-warning">
+                    <i class="ti tabler-alert-triangle me-1"></i>
+                    <strong>Perhatian:</strong> Device akan dipindahkan ke <strong>Kotak Sampah (Trash)</strong>.
+                    RVM Machine yang terhubung akan di-unlink dan tersedia untuk registrasi baru.
+                </div>
+
+                <p class="mb-2">Anda yakin ingin menghapus device ini?</p>
+                <p class="text-muted mb-0" id="delete-device-info"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-danger" onclick="deviceManagement.deleteDevice()">
+                    <i class="ti tabler-trash me-1"></i>Hapus ke Trash
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Regenerate API Key Modal -->
+<div class="modal fade" id="regenerateKeyModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title"><i class="ti tabler-key me-2"></i>Regenerate API Key</h5>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger mb-3">
+                    <i class="ti tabler-alert-circle me-1"></i>
+                    <strong>Warning:</strong> API Key lama akan dihapus dan tidak bisa digunakan lagi!
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Device ID</label>
+                    <input type="text" class="form-control" id="regen-device-id" readonly>
+                </div>
+
+                <div class="mb-3" id="new-key-container" style="display: none;">
+                    <label class="form-label fw-semibold">New API Key <span class="badge bg-danger">Show
+                            Once</span></label>
+                    <div class="input-group">
+                        <input type="text" class="form-control font-monospace" id="regen-api-key" readonly>
+                        <button class="btn btn-outline-secondary" type="button"
+                            onclick="copyToClipboard('regen-api-key')">
+                            <i class="ti tabler-copy"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2" id="regen-actions">
+                    <button class="btn btn-warning" id="btn-confirm-regen"
+                        onclick="deviceManagement.confirmRegenerateKey()">
+                        <i class="ti tabler-refresh me-1"></i>Generate New API Key
+                    </button>
+                </div>
+
+                <div class="d-grid gap-2" id="download-actions" style="display: none;">
+                    <button class="btn btn-outline-primary" onclick="deviceManagement.downloadNewConfig()">
+                        <i class="ti tabler-download me-1"></i>Download Config File
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" data-bs-dismiss="modal"
+                    onclick="deviceManagement.loadDevices()">
+                    <i class="ti tabler-check me-1"></i>Done
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

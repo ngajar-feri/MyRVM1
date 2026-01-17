@@ -5,9 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class EdgeDevice extends Model
 {
+    use SoftDeletes;
     /**
      * Edge Device model - represents hardware installed in RVM machines.
      * Columns based on 2026_01_08 + 2026_01_14 migrations.

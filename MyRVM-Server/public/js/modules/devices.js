@@ -499,12 +499,13 @@ class DeviceManagement {
 
         return `
             <div class="col-md-4">
-                <div class="card h-100 device-card" onclick="deviceManagement.monitorDevice(${device.id})">
-                    <div class="card-header d-flex justify-content-between align-items-center py-2">
+                <div class="card h-100 device-card">
+                    <div class="card-header d-flex justify-content-between align-items-center py-2" 
+                         onclick="deviceManagement.monitorDevice(${device.id})" style="cursor: pointer;">
                         <span class="badge bg-${statusColor}">${this.escapeHtml(device.status || 'unknown')}</span>
                         <small class="text-muted">${this.getLastSeen(device.updated_at)}</small>
                     </div>
-                    <div class="card-body py-3">
+                    <div class="card-body py-3" onclick="deviceManagement.monitorDevice(${device.id})" style="cursor: pointer;">
                         <h6 class="mb-1">${this.escapeHtml(device.location_name || device.device_id || 'Unnamed Device')}</h6>
                         <small class="text-muted d-block mb-2">
                             <i class="ti tabler-cpu me-1"></i>${this.escapeHtml(device.controller_type || device.type || 'N/A')}
@@ -525,11 +526,29 @@ class DeviceManagement {
                         </div>
                         ` : ''}
                     </div>
-                    <div class="card-footer py-2">
+                    <div class="card-footer py-2 d-flex justify-content-between align-items-center">
                         <small class="text-muted">
                             <i class="ti tabler-building me-1"></i>
                             ${device.rvm_machine ? this.escapeHtml(device.rvm_machine.serial_number || device.rvm_machine.location_name) : 'Unassigned'}
                         </small>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-light" type="button" data-bs-toggle="dropdown" 
+                                    onclick="event.stopPropagation()">
+                                <i class="ti tabler-dots-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); deviceManagement.editDevice(${device.id})">
+                                    <i class="ti tabler-edit me-2"></i>Edit
+                                </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); deviceManagement.showRegenerateKeyModal(${device.id}, '${this.escapeHtml(device.device_id)}')">
+                                    <i class="ti tabler-key me-2"></i>Regenerate API Key
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="#" onclick="event.preventDefault(); deviceManagement.confirmDeleteDevice(${device.id}, '${this.escapeHtml(device.device_id)}', '${this.escapeHtml(device.location_name || '')}')">
+                                    <i class="ti tabler-trash me-2"></i>Delete
+                                </a></li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -547,10 +566,17 @@ class DeviceManagement {
     }
 
     async registerDevice(e) {
-        e.preventDefault();
-        e.stopPropagation(); // Stop bubbling
+        if (e && e.preventDefault) e.preventDefault();
+        if (e && e.stopPropagation) e.stopPropagation();
 
-        const form = e.target;
+        // Get form directly by ID (not from event.target which may be undefined when called from wizard)
+        const form = document.getElementById('register-device-form');
+        if (!form) {
+            console.error('[registerDevice] Form not found');
+            window.showToast?.('Error', 'Form not found', 'error');
+            return false;
+        }
+
         const formData = new FormData(form);
         const data = Object.fromEntries(formData.entries());
 
@@ -560,10 +586,14 @@ class DeviceManagement {
             return false;
         }
 
-        const submitBtn = form.querySelector('button[type="submit"]');
-        const originalText = submitBtn.innerHTML;
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Registering...';
+        // Get button for loading state (wizard uses #wizard-next, not button[type="submit"])
+        const submitBtn = document.getElementById('wizard-next') || form.querySelector('button[type="submit"]');
+        const originalText = submitBtn ? submitBtn.innerHTML : '';
+
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Registering...';
+        }
 
         try {
             // Get CSRF token from meta tag
@@ -620,7 +650,7 @@ class DeviceManagement {
 
             // Close register modal and show success modal
             bootstrap.Modal.getInstance(document.getElementById('registerDeviceModal')).hide();
-            new bootstrap.Modal(document.getElementById('successModal')).show();
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('successModal')).show();
 
             form.reset();
             if (this.marker) {
@@ -633,8 +663,10 @@ class DeviceManagement {
             console.error('Registration error:', error);
             window.showToast('Error', error.message || 'Failed to register device', 'error');
         } finally {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = originalText;
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
         }
         return false;
     }
@@ -726,7 +758,7 @@ class DeviceManagement {
             </div>
         `;
 
-        new bootstrap.Modal(document.getElementById('deviceMonitorModal')).show();
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('deviceMonitorModal')).show();
     }
 
     startAutoRefresh() {
@@ -751,7 +783,349 @@ class DeviceManagement {
         div.textContent = text;
         return div.innerHTML;
     }
+
+    // ========================
+    // CRUD Methods
+    // ========================
+
+    async editDevice(id) {
+        try {
+            const response = await fetch(`/api/v1/edge/devices/${id}`, {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin'
+            });
+            if (!response.ok) throw new Error('Failed to fetch device');
+
+            const result = await response.json();
+            const device = result.data;
+
+            // Populate form
+            document.getElementById('edit-device-id').value = device.id;
+            document.getElementById('edit-device-serial').value = device.device_id;
+            document.getElementById('edit-location-name').value = device.location_name || '';
+            document.getElementById('edit-status').value = device.status || 'offline';
+            document.getElementById('edit-controller-type').value = device.controller_type || 'NVIDIA Jetson';
+            document.getElementById('edit-threshold').value = device.threshold_full || 90;
+            document.getElementById('edit-threshold-value').textContent = (device.threshold_full || 90) + '%';
+            document.getElementById('edit-description').value = device.description || '';
+
+            // Setup threshold slider
+            const slider = document.getElementById('edit-threshold');
+            slider.oninput = () => {
+                document.getElementById('edit-threshold-value').textContent = slider.value + '%';
+            };
+
+            // Setup form submit
+            const form = document.getElementById('edit-device-form');
+            form.onsubmit = (e) => {
+                e.preventDefault();
+                this.updateDevice(device.id);
+            };
+
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('editDeviceModal')).show();
+        } catch (error) {
+            console.error('Edit device error:', error);
+            window.showToast?.('Error', error.message, 'error');
+        }
+    }
+
+    async updateDevice(id) {
+        const form = document.getElementById('edit-device-form');
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Saving...';
+        submitBtn.disabled = true;
+
+        try {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+            const response = await fetch(`/api/v1/edge/devices/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    location_name: document.getElementById('edit-location-name').value,
+                    status: document.getElementById('edit-status').value,
+                    controller_type: document.getElementById('edit-controller-type').value,
+                    threshold_full: parseInt(document.getElementById('edit-threshold').value),
+                    description: document.getElementById('edit-description').value
+                })
+            });
+
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.message || 'Update failed');
+
+            bootstrap.Modal.getInstance(document.getElementById('editDeviceModal')).hide();
+            window.showToast?.('Success', 'Device updated successfully', 'success');
+            this.loadDevices();
+        } catch (error) {
+            console.error('Update error:', error);
+            window.showToast?.('Error', error.message, 'error');
+        } finally {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }
+    }
+
+    confirmDeleteDevice(id, deviceId, locationName) {
+        document.getElementById('delete-device-id').value = id;
+        document.getElementById('delete-device-info').innerHTML = `
+            <strong>Device:</strong> ${this.escapeHtml(deviceId)}<br>
+            <strong>Location:</strong> ${this.escapeHtml(locationName || 'N/A')}
+        `;
+        // Use getOrCreateInstance to prevent multiple backdrop accumulation
+        const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('deleteDeviceModal'));
+        modal.show();
+    }
+
+    async deleteDevice() {
+        const id = document.getElementById('delete-device-id').value;
+        const modalEl = document.getElementById('deleteDeviceModal');
+        const deleteBtn = modalEl.querySelector('.btn-danger');
+        const originalText = deleteBtn.innerHTML;
+        deleteBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Deleting...';
+        deleteBtn.disabled = true;
+
+        try {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+            const response = await fetch(`/api/v1/edge/devices/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                credentials: 'same-origin'
+            });
+
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.message || 'Delete failed');
+
+            // Hide modal properly
+            const modalInstance = bootstrap.Modal.getInstance(modalEl);
+            if (modalInstance) {
+                modalInstance.hide();
+            }
+
+            // Clean up any stale backdrops (fix accumulation bug)
+            this.cleanupModalBackdrops();
+
+            window.showToast?.('Success', 'Device dipindahkan ke Kotak Sampah', 'success');
+            this.loadDevices();
+        } catch (error) {
+            console.error('Delete error:', error);
+            window.showToast?.('Error', error.message, 'error');
+        } finally {
+            // Reset button state
+            deleteBtn.innerHTML = originalText;
+            deleteBtn.disabled = false;
+        }
+    }
+
+    /**
+     * Clean up stale modal backdrops that may have accumulated
+     */
+    cleanupModalBackdrops() {
+        setTimeout(() => {
+            // Remove all stale modal backdrops
+            document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+                backdrop.remove();
+            });
+            // Remove modal-open class from body if no modals are shown
+            if (!document.querySelector('.modal.show')) {
+                document.body.classList.remove('modal-open');
+                document.body.style.removeProperty('overflow');
+                document.body.style.removeProperty('padding-right');
+            }
+        }, 300); // Wait for modal hide animation
+    }
+
+    // ========================
+    // Trash/Restore Methods
+    // ========================
+
+    /**
+     * Refresh the current view (either active devices or trashed devices)
+     * based on the current showingTrashed state
+     */
+    refreshCurrentView() {
+        if (this.showingTrashed) {
+            this.loadTrashedDevices();
+        } else {
+            this.loadDevices();
+        }
+    }
+
+    toggleTrashedView() {
+        this.showingTrashed = !this.showingTrashed;
+        const btn = document.getElementById('toggle-trash-btn');
+
+        if (this.showingTrashed) {
+            btn.classList.remove('btn-label-warning');
+            btn.classList.add('btn-warning');
+            btn.innerHTML = '<i class="ti tabler-arrow-back me-1"></i>Back to Active';
+            this.loadTrashedDevices();
+        } else {
+            btn.classList.remove('btn-warning');
+            btn.classList.add('btn-label-warning');
+            btn.innerHTML = '<i class="ti tabler-trash me-1"></i>Kotak Sampah';
+            this.loadDevices();
+        }
+    }
+
+    async loadTrashedDevices() {
+        const grid = document.getElementById('devices-grid');
+        grid.innerHTML = '<div class="col-12 text-center py-5"><div class="spinner-border text-primary"></div></div>';
+
+        try {
+            const response = await fetch('/api/v1/edge/devices/trashed', {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin'
+            });
+
+            if (!response.ok) throw new Error('Failed to load trashed devices');
+
+            const result = await response.json();
+            const trashedDevices = result.data || [];
+
+            if (trashedDevices.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-12">
+                        <div class="alert alert-info mb-0">
+                            <i class="ti tabler-info-circle me-2"></i>
+                            Kotak Sampah kosong. Tidak ada device yang dihapus.
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = trashedDevices.map(device => this.renderTrashedCard(device)).join('');
+        } catch (error) {
+            console.error('Load trashed error:', error);
+            grid.innerHTML = `<div class="col-12"><div class="alert alert-danger">${error.message}</div></div>`;
+        }
+    }
+
+    renderTrashedCard(device) {
+        const deletedAt = device.deleted_at ? new Date(device.deleted_at).toLocaleDateString('id-ID') : 'Unknown';
+        return `
+            <div class="col-md-4">
+                <div class="card h-100 border-warning">
+                    <div class="card-header bg-warning bg-opacity-10 d-flex justify-content-between py-2">
+                        <span class="badge bg-warning text-dark">Deleted</span>
+                        <small class="text-muted">${deletedAt}</small>
+                    </div>
+                    <div class="card-body py-3">
+                        <h6 class="mb-1">${this.escapeHtml(device.location_name || device.device_id || 'Unnamed')}</h6>
+                        <small class="text-muted d-block">
+                            <i class="ti tabler-cpu me-1"></i>${this.escapeHtml(device.controller_type || 'N/A')}
+                        </small>
+                    </div>
+                    <div class="card-footer py-2">
+                        <button class="btn btn-sm btn-success w-100" onclick="deviceManagement.restoreDevice(${device.id})">
+                            <i class="ti tabler-refresh me-1"></i>Restore
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    async restoreDevice(id) {
+        try {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+            const response = await fetch(`/api/v1/edge/devices/${id}/restore`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({}) // No rvm_machine_id means restore without linking
+            });
+
+            const result = await response.json();
+            if (!response.ok) {
+                // RVM conflict - show specific error
+                window.showToast?.('Restore Gagal', result.message, 'error');
+                return;
+            }
+
+            window.showToast?.('Success', 'Device berhasil di-restore!', 'success');
+            this.loadTrashedDevices(); // Refresh trash list
+        } catch (error) {
+            console.error('Restore error:', error);
+            window.showToast?.('Error', error.message, 'error');
+        }
+    }
+
+    // ========================
+    // Regenerate API Key
+    // ========================
+
+    showRegenerateKeyModal(id, deviceId) {
+        this.regenerateDeviceId = id;
+        document.getElementById('regen-device-id').value = deviceId;
+        document.getElementById('new-key-container').style.display = 'none';
+        document.getElementById('regen-actions').style.display = 'grid';
+        document.getElementById('download-actions').style.display = 'none';
+        document.getElementById('btn-confirm-regen').disabled = false;
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('regenerateKeyModal')).show();
+    }
+
+    async confirmRegenerateKey() {
+        const btn = document.getElementById('btn-confirm-regen');
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Generating...';
+        btn.disabled = true;
+
+        try {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+            const response = await fetch(`/api/v1/edge/devices/${this.regenerateDeviceId}/regenerate-key`, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                credentials: 'same-origin'
+            });
+
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.message || 'Failed to regenerate key');
+
+            // Show new key
+            document.getElementById('regen-api-key').value = result.data.api_key;
+            this.newApiKey = result.data.api_key;
+            this.regenerateDeviceSerial = result.data.device_id;
+
+            document.getElementById('new-key-container').style.display = 'block';
+            document.getElementById('regen-actions').style.display = 'none';
+            document.getElementById('download-actions').style.display = 'grid';
+
+            window.showToast?.('Success', 'API Key baru berhasil di-generate!', 'success');
+        } catch (error) {
+            console.error('Regenerate key error:', error);
+            window.showToast?.('Error', error.message, 'error');
+            btn.innerHTML = '<i class="ti tabler-refresh me-1"></i>Generate New API Key';
+            btn.disabled = false;
+        }
+    }
+
+    downloadNewConfig() {
+        if (!this.regenerateDeviceSerial) return;
+        const downloadUrl = `/api/v1/edge/download-config/${encodeURIComponent(this.regenerateDeviceSerial)}`;
+        window.open(downloadUrl, '_blank');
+        window.showToast?.('Download', 'File konfigurasi sedang diunduh. Tambahkan API Key baru secara manual.', 'info');
+    }
 }
+
 
 // Global functions
 function copyToClipboard(elementId) {
@@ -841,6 +1215,9 @@ if (!window.showToast) {
         if (!container) {
             container = document.createElement('div');
             container.className = 'toast-container position-fixed top-0 end-0 p-3';
+            // Ensure toast appears above navbar (z-index: 1050+) and has margin for navbar height
+            container.style.zIndex = '1090';
+            container.style.marginTop = '60px'; // Account for fixed navbar height
             document.body.appendChild(container);
         }
 
