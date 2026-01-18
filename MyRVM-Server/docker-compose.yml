@@ -1,9 +1,7 @@
 services:
     app:
-        build:
-            context: .
-            dockerfile: Dockerfile
-        image: myrvm-server-app
+        # Using existing local image instead of building (network issues)
+        image: myrvm-ecosystem-v2-app:latest
         container_name: myrvm-app
         restart: unless-stopped
         working_dir: /var/www
@@ -20,7 +18,7 @@ services:
         container_name: myrvm-web
         restart: unless-stopped
         ports:
-            - "8000:80"
+            - "8080:80"
         volumes:
             - ./:/var/www
             - ./docker/nginx/conf.d:/etc/nginx/conf.d
@@ -45,7 +43,7 @@ services:
             - myrvm-network
 
     redis:
-        image: redis:alpine
+        image: redis:7-alpine
         container_name: myrvm-redis
         restart: unless-stopped
         ports:
@@ -55,20 +53,20 @@ services:
         networks:
             - myrvm-network
 
-    minio:
-        image: minio/minio
-        container_name: myrvm-minio
-        ports:
-            - "${AWS_PORT}:9000"
-            - "9001:9001"
-        environment:
-            MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID}
-            MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY}
-        command: server /data --console-address ":9001"
-        volumes:
-            - minio-data:/data
-        networks:
-            - myrvm-network
+    # minio:
+    #     image: minio/minio
+    #     container_name: myrvm-minio
+    #     ports:
+    #         - "${AWS_PORT}:9000"
+    #         - "9001:9001"
+    #     environment:
+    #         MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID}
+    #         MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY}
+    #     command: server /data --console-address ":9001"
+    #     volumes:
+    #         - minio-data:/data
+    #     networks:
+    #         - myrvm-network
 
 networks:
     myrvm-network:
