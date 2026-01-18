@@ -66,40 +66,58 @@
                         </a>
                     </li>
 
-                    <!-- Management Modules -->
+                    <!-- Management Header -->
                     <li class="menu-header small text-uppercase">
                         <span class="menu-header-text">Management</span>
                     </li>
-                    @if(in_array(auth()->user()->role, ['super_admin', 'admin', 'operator', 'teknisi']))
-                        <li class="menu-item">
-                            <a href="{{ route('dashboard.users') }}" class="menu-link" data-page="users">
+
+                    <!-- 1. User & Tenants (Expandable) -->
+                    @if(in_array(auth()->user()->role, ['super_admin', 'admin', 'operator']))
+                        <li class="menu-item {{ request()->routeIs('dashboard.users*') ? 'open active' : '' }}">
+                            <a href="javascript:void(0);" class="menu-link menu-toggle">
                                 <i class="menu-icon icon-base ti tabler-users"></i>
                                 <div>User & Tenants</div>
                             </a>
+                            <ul class="menu-sub">
+                                <li class="menu-item {{ request()->routeIs('dashboard.users') ? 'active' : '' }}">
+                                    <a href="{{ route('dashboard.users') }}" class="menu-link" data-page="users">
+                                        <div>Master Data</div>
+                                    </a>
+                                </li>
+                                <li class="menu-item {{ request()->routeIs('dashboard.assignments') ? 'active' : '' }}">
+                                    <a href="{{ route('dashboard.assignments') }}" class="menu-link"
+                                        data-page="assignments">
+                                        <div>Assignments</div>
+                                    </a>
+                                </li>
+                            </ul>
                         </li>
                     @endif
+
+                    <!-- 2. RVM Machines (Expandable) -->
                     @if(in_array(auth()->user()->role, ['super_admin', 'admin', 'operator', 'teknisi']))
-                        <li class="menu-item">
-                            <a href="{{ route('dashboard.machines') }}" class="menu-link" data-page="machines">
+                        <li class="menu-item {{ request()->routeIs('dashboard.machines*') ? 'open active' : '' }}">
+                            <a href="javascript:void(0);" class="menu-link menu-toggle">
                                 <i class="menu-icon icon-base ti tabler-device-desktop-analytics"></i>
                                 <div>RVM Machines</div>
                             </a>
+                            <ul class="menu-sub">
+                                <li class="menu-item {{ request()->routeIs('dashboard.machines') ? 'active' : '' }}">
+                                    <a href="{{ route('dashboard.machines') }}" class="menu-link" data-page="machines">
+                                        <div>Master Data</div>
+                                    </a>
+                                </li>
+                                <li class="menu-item {{ request()->routeIs('dashboard.tickets') ? 'active' : '' }}">
+                                    <a href="{{ route('dashboard.tickets') }}" class="menu-link" data-page="tickets">
+                                        <div>Maintenance Tickets</div>
+                                    </a>
+                                </li>
+                            </ul>
                         </li>
                     @endif
-                    <li class="menu-item">
-                        <a href="{{ route('dashboard.devices') }}" class="menu-link" data-page="edge-devices">
-                            <i class="menu-icon icon-base ti tabler-cpu"></i>
-                            <div>Edge Devices</div>
-                        </a>
-                    </li>
-                    <li class="menu-item">
-                        <a href="{{ route('dashboard.cv-servers') }}" class="menu-link" data-page="cv-servers">
-                            <i class="menu-icon icon-base ti tabler-server"></i>
-                            <div>CV Servers</div>
-                        </a>
-                    </li>
 
-                    <!-- Monitoring -->
+
+                    <!-- Monitoring Header -->
                     <li class="menu-header small text-uppercase">
                         <span class="menu-header-text">Monitoring</span>
                     </li>
@@ -115,15 +133,13 @@
                             <div>Transactions</div>
                         </a>
                     </li>
-                    @if(in_array(auth()->user()->role, ['super_admin', 'admin', 'operator', 'teknisi']))
-                        <li class="menu-item">
+                    @if(in_array(auth()->user()->role, ['super_admin', 'admin']))
+                        <li class="menu-item {{ request()->routeIs('dashboard.logs') ? 'active' : '' }}">
                             <a href="{{ route('dashboard.logs') }}" class="menu-link" data-page="logs">
                                 <i class="menu-icon icon-base ti tabler-file-analytics"></i>
                                 <div>Logs</div>
                             </a>
                         </li>
-                    @endif
-                    @if(in_array(auth()->user()->role, ['super_admin', 'admin', 'operator', 'teknisi']))
                         <li class="menu-item">
                             <a href="{{ route('dashboard.api-docs') }}" class="menu-link">
                                 <i class="menu-icon icon-base ti tabler-api"></i>

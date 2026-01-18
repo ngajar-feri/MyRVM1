@@ -43,6 +43,20 @@ class RvmMachineController extends Controller
      *      tags={"RVM Machines"},
      *      summary="List RVM machines (role-based)",
      *      security={{"bearerAuth":{}}},
+     *      @OA\Parameter(
+     *          name="status",
+     *          in="query",
+     *          description="Filter by machine status",
+     *          required=false,
+     *          @OA\Schema(type="string", enum={"online", "offline", "maintenance", "full_warning"})
+     *      ),
+     *      @OA\Parameter(
+     *          name="location",
+     *          in="query",
+     *          description="Filter by location (partial match)",
+     *          required=false,
+     *          @OA\Schema(type="string")
+     *      ),
      *      @OA\Response(
      *          response=200,
      *          description="List of machines",
@@ -66,17 +80,28 @@ class RvmMachineController extends Controller
             ], 403);
         }
 
-        // Admin/SuperAdmin see all, operator/teknisi see assigned only
-        if (in_array($user->role, ['super_admin', 'admin'])) {
-            $machines = RvmMachine::with('edgeDevice')->get();
-        } else {
-            // Filter by assignment for operator/teknisi
+        // Build base query with eager loading
+        $query = RvmMachine::with('edgeDevice');
+
+        // Role-based filtering: operator/teknisi see assigned only
+        if (!in_array($user->role, ['super_admin', 'admin'])) {
             $assignedIds = TechnicianAssignment::where('technician_id', $user->id)
                 ->whereIn('status', ['assigned', 'in_progress'])
                 ->pluck('rvm_machine_id');
-            $machines = RvmMachine::with('edgeDevice')
-                ->whereIn('id', $assignedIds)->get();
+            $query->whereIn('id', $assignedIds);
         }
+
+        // Filter by status (if provided)
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Filter by location (partial match, if provided)
+        if ($request->filled('location')) {
+            $query->where('location', 'like', '%' . $request->location . '%');
+        }
+
+        $machines = $query->latest()->get();
 
         ActivityLog::log('RVM', 'Read', "User {$user->name} accessed RVM machines list", $user->id);
 
@@ -86,8 +111,45 @@ class RvmMachineController extends Controller
         ]);
     }
 
+
     /**
      * Create a new RVM machine (admin/super_admin only).
+     * Auto-generates serial_number and api_key.
+     * Auto-creates EdgeDevice stub.
+     * 
+     * @OA\Post(
+     *      path="/api/v1/rvm-machines",
+     *      operationId="createRvmMachine",
+     *      tags={"RVM Machines"},
+     *      summary="Create new RVM machine",
+     *      security={{"bearerAuth":{}}},
+     *      @OA\RequestBody(
+     *          required=true,
+     *          @OA\JsonContent(
+     *              required={"name"},
+     *              @OA\Property(property="name", type="string", example="RVM Mall Grand Indonesia"),
+     *              @OA\Property(property="location", type="string", example="Lt. 3 Dekat Eskalator"),
+     *              @OA\Property(property="location_address", type="string", example="Jl. MH Thamrin No.1"),
+     *              @OA\Property(property="latitude", type="number", example=-6.1951),
+     *              @OA\Property(property="longitude", type="number", example=106.8211),
+     *              @OA\Property(property="status", type="string", enum={"online","offline","maintenance","full_warning"}, example="offline")
+     *          )
+     *      ),
+     *      @OA\Response(
+     *          response=201,
+     *          description="Machine created successfully",
+     *          @OA\JsonContent(
+     *              @OA\Property(property="status", type="string", example="success"),
+     *              @OA\Property(property="message", type="string"),
+     *              @OA\Property(property="data", type="object"),
+     *              @OA\Property(property="credentials", type="object",
+     *                  @OA\Property(property="serial_number", type="string"),
+     *                  @OA\Property(property="api_key", type="string")
+     *              )
+     *          )
+     *      ),
+     *      @OA\Response(response=403, description="Access denied")
+     * )
      */
     public function store(Request $request)
     {
@@ -102,19 +164,40 @@ class RvmMachineController extends Controller
 
         $request->validate([
             'name' => 'required|string|max:255',
-            'location' => 'required|string|max:255',
-            'serial_number' => 'required|string|unique:rvm_machines,serial_number',
+            'location' => 'nullable|string|max:255',
+            'location_address' => 'nullable|string',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
             'status' => 'in:online,offline,maintenance,full_warning',
         ]);
 
-        $machine = RvmMachine::create($request->all());
+        // Create machine (serial_number and api_key auto-generated in model boot)
+        $machine = RvmMachine::create([
+            'name' => $request->name,
+            'location' => $request->location,
+            'location_address' => $request->location_address,
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
+            'status' => $request->status ?? 'offline',
+        ]);
+
+        // Auto-create EdgeDevice stub for this machine
+        $machine->edgeDevice()->create([
+            'status' => 'waiting_handshake',
+            'location_name' => $machine->name,
+        ]);
 
         ActivityLog::log('RVM', 'Create', "Machine '{$machine->name}' created by {$user->name}", $user->id);
 
+        // Return with credentials (one-time display)
         return response()->json([
             'status' => 'success',
             'message' => 'RVM berhasil ditambahkan',
-            'data' => $machine
+            'data' => $machine,
+            'credentials' => [
+                'serial_number' => $machine->serial_number,
+                'api_key' => $machine->getApiKeyForConfig()
+            ]
         ], 201);
     }
 
@@ -325,6 +408,97 @@ class RvmMachineController extends Controller
                 'machine' => $machine,
                 'assignments' => $assignments
             ]
+        ]);
+    }
+
+    /**
+     * Regenerate API key for a machine.
+     * 
+     * @OA\Post(
+     *      path="/api/v1/rvm-machines/{id}/regenerate-api-key",
+     *      operationId="regenerateRvmApiKey",
+     *      tags={"RVM Machines"},
+     *      summary="Regenerate API key",
+     *      security={{"bearerAuth":{}}},
+     *      @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *      @OA\Response(
+     *          response=200,
+     *          description="API key regenerated",
+     *          @OA\JsonContent(
+     *              @OA\Property(property="status", type="string", example="success"),
+     *              @OA\Property(property="message", type="string"),
+     *              @OA\Property(property="api_key", type="string")
+     *          )
+     *      ),
+     *      @OA\Response(response=403, description="Access denied")
+     * )
+     */
+    public function regenerateApiKey(Request $request, $id)
+    {
+        $user = $request->user();
+
+        if (!in_array($user->role, $this->editAllowedRoles)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Access denied. Only Super Admin and Admin can regenerate API keys.'
+            ], 403);
+        }
+
+        $machine = RvmMachine::findOrFail($id);
+        $newKey = $machine->regenerateApiKey();
+
+        ActivityLog::log('RVM', 'Update', "API Key regenerated for '{$machine->name}' by {$user->name}", $user->id);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'API Key berhasil di-regenerate',
+            'api_key' => $newKey
+        ]);
+    }
+
+    /**
+     * Get machine credentials (Serial Number + API Key) for download.
+     * 
+     * @OA\Get(
+     *      path="/api/v1/rvm-machines/{id}/credentials",
+     *      operationId="getRvmCredentials",
+     *      tags={"RVM Machines"},
+     *      summary="Get credentials for download",
+     *      security={{"bearerAuth":{}}},
+     *      @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *      @OA\Response(
+     *          response=200,
+     *          description="Credentials JSON",
+     *          @OA\JsonContent(
+     *              @OA\Property(property="serial_number", type="string"),
+     *              @OA\Property(property="api_key", type="string"),
+     *              @OA\Property(property="name", type="string"),
+     *              @OA\Property(property="generated_at", type="string")
+     *          )
+     *      ),
+     *      @OA\Response(response=403, description="Access denied")
+     * )
+     */
+    public function getCredentials(Request $request, $id)
+    {
+        $user = $request->user();
+
+        if (!in_array($user->role, $this->editAllowedRoles)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Access denied. Only Super Admin and Admin can view credentials.'
+            ], 403);
+        }
+
+        $machine = RvmMachine::findOrFail($id);
+
+        ActivityLog::log('RVM', 'Read', "Credentials downloaded for '{$machine->name}' by {$user->name}", $user->id);
+
+        return response()->json([
+            'serial_number' => $machine->serial_number,
+            'api_key' => $machine->getApiKeyForConfig(),
+            'name' => $machine->name,
+            'generated_at' => now()->toIso8601String()
         ]);
     }
 }

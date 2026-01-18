@@ -130,6 +130,9 @@ class SPANavigator {
                 // Update content
                 this.contentContainer.innerHTML = html;
 
+                // CRITICAL: Execute inline scripts (innerHTML doesn't execute them)
+                this.executeInlineScripts(this.contentContainer);
+
                 // Fade in
                 setTimeout(() => {
                     // CRITICAL FIX: Clear inline styles to remove stacking context
@@ -140,6 +143,32 @@ class SPANavigator {
                 }, 50);
             }, 200);
         });
+    }
+
+    /**
+     * Execute inline scripts that were injected via innerHTML
+     * This is necessary because innerHTML doesn't execute script tags
+     */
+    executeInlineScripts(container) {
+        const scripts = container.querySelectorAll('script');
+        scripts.forEach(oldScript => {
+            const newScript = document.createElement('script');
+
+            // Copy attributes
+            Array.from(oldScript.attributes).forEach(attr => {
+                newScript.setAttribute(attr.name, attr.value);
+            });
+
+            // Copy inline content
+            if (oldScript.textContent) {
+                newScript.textContent = oldScript.textContent;
+            }
+
+            // Replace old script with new one (this triggers execution)
+            oldScript.parentNode.replaceChild(newScript, oldScript);
+        });
+
+        console.log(`✅ Executed ${scripts.length} inline script(s)`);
     }
 
     showLoading() {
@@ -199,8 +228,8 @@ class SPANavigator {
             'machines': '/js/modules/machines.js',
             'edge-devices': '/js/modules/devices.js',
             'cv-servers': '/js/modules/cv-servers.js',
-            'logs': '/js/modules/logs.js',
-            'assignments': '/js/modules/assignments.js'
+            'logs': '/js/modules/logs.js'
+            // NOTE: 'assignments' removed - uses inline script in blade file with search functionality
         };
 
         // IMPORTANT: Initialize Bootstrap components FIRST before module scripts run

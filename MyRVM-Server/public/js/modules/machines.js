@@ -73,6 +73,23 @@ class MachineManagement {
         if (toggleView) {
             toggleView.addEventListener('click', () => this.toggleView());
         }
+
+        // Add Machine form submit - use event delegation since modal is moved to body by SPA
+        document.addEventListener('submit', (e) => {
+            if (e.target && e.target.id === 'addMachineForm') {
+                e.preventDefault();
+                e.stopPropagation();
+                this.addMachine();
+            }
+        });
+
+        // Reset form when modal is hidden - use event delegation
+        document.addEventListener('hidden.bs.modal', (e) => {
+            if (e.target && e.target.id === 'addMachineModal') {
+                document.getElementById('addMachineForm')?.reset();
+                document.getElementById('addMachineErrors')?.classList.add('d-none');
+            }
+        });
     }
 
     async loadMachines() {
@@ -266,45 +283,80 @@ class MachineManagement {
                             </div>
                         </div>
 
-                        <!-- Edge Device Section -->
+                        <!-- Edge Device Section - Bio-Digital 2026 -->
                         ${edgeDevice ? `
-                        <div class="card mb-3">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <h6 class="mb-0"><i class="ti tabler-cpu me-2"></i>Edge Device</h6>
+                        <div class="card mb-3" style="border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.2); background: linear-gradient(to bottom right, #f0fdf4, #ffffff);">
+                            <div class="card-header d-flex justify-content-between align-items-center" style="border-bottom: 1px solid rgba(16, 185, 129, 0.1); background: transparent;">
+                                <h6 class="mb-0" style="color: #065f46;"><i class="ti tabler-cpu me-2"></i>Edge Device (Auto via Handshake)</h6>
                                 <span class="badge badge-status-${edgeDevice.status || 'offline'}">${edgeDevice.status || 'offline'}</span>
                             </div>
                             <div class="card-body">
-                                <div class="row">
+                                <div class="row g-3">
+                                    <!-- Hardware Info -->
                                     <div class="col-md-6">
                                         <dl class="row mb-0 small">
-                                            <dt class="col-5">Device ID:</dt>
-                                            <dd class="col-7"><code>${edgeDevice.device_id || 'N/A'}</code></dd>
-                                            <dt class="col-5">Type:</dt>
-                                            <dd class="col-7">${edgeDevice.type || 'N/A'}</dd>
-                                            <dt class="col-5">Firmware:</dt>
-                                            <dd class="col-7">${edgeDevice.firmware_version || 'N/A'}</dd>
+                                            <dt class="col-5 text-muted">Device ID:</dt>
+                                            <dd class="col-7"><code style="background: #ecfdf5; padding: 2px 6px; border-radius: 4px;">${edgeDevice.device_id || 'N/A'}</code></dd>
+                                            <dt class="col-5 text-muted">Controller:</dt>
+                                            <dd class="col-7">${edgeDevice.type || edgeDevice.processor_type || 'Jetson Orin Nano'}</dd>
+                                            <dt class="col-5 text-muted">Firmware:</dt>
+                                            <dd class="col-7">${edgeDevice.firmware_version || 'v1.0.0'}</dd>
+                                            <dt class="col-5 text-muted">Camera:</dt>
+                                            <dd class="col-7">${edgeDevice.camera_id || edgeDevice.hardware_config?.camera || 'CSI Camera'}</dd>
                                         </dl>
                                     </div>
+                                    <!-- Network Info -->
                                     <div class="col-md-6">
                                         <dl class="row mb-0 small">
-                                            <dt class="col-5">IP Address:</dt>
-                                            <dd class="col-7"><code>${edgeDevice.ip_address || 'N/A'}</code></dd>
-                                            <dt class="col-5">Updated:</dt>
-                                            <dd class="col-7">${this.getLastSeen(edgeDevice.updated_at)}</dd>
+                                            <dt class="col-5 text-muted">Tailscale IP:</dt>
+                                            <dd class="col-7"><code style="background: #dbeafe; padding: 2px 6px; border-radius: 4px;">${edgeDevice.tailscale_ip || edgeDevice.vpn_ip || 'N/A'}</code></dd>
+                                            <dt class="col-5 text-muted">Local IP:</dt>
+                                            <dd class="col-7"><code style="background: #f3f4f6; padding: 2px 6px; border-radius: 4px;">${edgeDevice.local_ip || edgeDevice.ip_address || 'N/A'}</code></dd>
+                                            <dt class="col-5 text-muted">AI Model:</dt>
+                                            <dd class="col-7">${edgeDevice.ai_model_version || edgeDevice.hardware_config?.ai_model || 'YOLO11n'}</dd>
+                                            <dt class="col-5 text-muted">Last Heartbeat:</dt>
+                                            <dd class="col-7">${this.getLastSeen(edgeDevice.last_heartbeat || edgeDevice.updated_at)}</dd>
                                         </dl>
                                     </div>
                                 </div>
-                                ${edgeDevice.health_metrics ? `
-                                <hr>
-                                <h6 class="small fw-semibold mb-2">Health Metrics</h6>
-                                <pre class="bg-light p-2 rounded small mb-0" style="max-height: 100px; overflow: auto;">${JSON.stringify(edgeDevice.health_metrics, null, 2)}</pre>
+
+                                ${edgeDevice.health_metrics || edgeDevice.hardware_info ? `
+                                <!-- Health Metrics - Bio-Digital Cards -->
+                                <hr style="border-color: rgba(16, 185, 129, 0.1);">
+                                <h6 class="small fw-semibold mb-3" style="color: #065f46;"><i class="ti tabler-activity-heartbeat me-1"></i>Health Metrics</h6>
+                                <div class="row g-2">
+                                    <div class="col-3">
+                                        <div class="text-center p-2" style="background: linear-gradient(135deg, #ecfdf5, #d1fae5); border-radius: 10px;">
+                                            <div class="fw-bold" style="color: #065f46;">${(edgeDevice.health_metrics?.cpu_usage || edgeDevice.hardware_info?.cpu_usage || 0).toFixed(0)}%</div>
+                                            <small class="text-muted">CPU</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-3">
+                                        <div class="text-center p-2" style="background: linear-gradient(135deg, #eff6ff, #dbeafe); border-radius: 10px;">
+                                            <div class="fw-bold" style="color: #1e40af;">${(edgeDevice.health_metrics?.memory_usage || edgeDevice.hardware_info?.memory_usage || 0).toFixed(0)}%</div>
+                                            <small class="text-muted">Memory</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-3">
+                                        <div class="text-center p-2" style="background: linear-gradient(135deg, #fef3c7, #fde68a); border-radius: 10px;">
+                                            <div class="fw-bold" style="color: #92400e;">${edgeDevice.health_metrics?.cpu_temp || edgeDevice.hardware_info?.cpu_temp || 45}°C</div>
+                                            <small class="text-muted">Temp</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-3">
+                                        <div class="text-center p-2" style="background: linear-gradient(135deg, #f3f4f6, #e5e7eb); border-radius: 10px;">
+                                            <div class="fw-bold" style="color: #374151;">${(edgeDevice.health_metrics?.disk_usage || edgeDevice.hardware_info?.disk_usage || 0).toFixed(0)}%</div>
+                                            <small class="text-muted">Disk</small>
+                                        </div>
+                                    </div>
+                                </div>
                                 ` : ''}
                             </div>
                         </div>
                         ` : `
-                        <div class="alert alert-warning mb-3">
+                        <div class="alert mb-3" style="background: linear-gradient(to right, #fef3c7, #fff7ed); border: 1px solid #fcd34d; border-radius: 10px; color: #92400e;">
                             <i class="ti tabler-alert-circle me-1"></i>
-                            No Edge Device registered for this machine.
+                            <strong>Waiting for Handshake:</strong> Edge Device will auto-register when the physical machine connects using the API Key.
                         </div>
                         `}
 
@@ -430,7 +482,288 @@ class MachineManagement {
 
     showError(message) {
         console.error(message);
+        // Show toast notification
+        this.showToast(message, 'danger');
+    }
+
+    showSuccess(message) {
+        this.showToast(message, 'success');
+    }
+
+    showToast(message, type = 'info') {
+        const toastContainer = document.querySelector('.toast-container') || this.createToastContainer();
+        const toast = document.createElement('div');
+        toast.className = `toast show align-items-center text-bg-${type} border-0`;
+        toast.setAttribute('role', 'alert');
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+        toastContainer.appendChild(toast);
+        setTimeout(() => toast.remove(), 5000);
+    }
+
+    createToastContainer() {
+        const container = document.createElement('div');
+        container.className = 'toast-container position-fixed top-0 end-0 p-3';
+        container.style.zIndex = '9999';
+        document.body.appendChild(container);
+        return container;
+    }
+
+    async addMachine() {
+        const form = document.getElementById('addMachineForm');
+        const submitBtn = document.getElementById('addMachineSubmit');
+        const spinner = document.getElementById('addMachineSpinner');
+        const errorsDiv = document.getElementById('addMachineErrors');
+
+        if (!form) return;
+
+        // Show loading state
+        submitBtn.disabled = true;
+        spinner.classList.remove('d-none');
+        errorsDiv.classList.add('d-none');
+
+        try {
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData);
+
+            const response = await apiHelper.post('/api/v1/rvm-machines', data);
+            const result = await response.json();
+
+            if (response.ok) {
+                // Success - close add modal
+                const addModal = bootstrap.Modal.getInstance(document.getElementById('addMachineModal'));
+                if (addModal) addModal.hide();
+
+                // Store credentials for display
+                machineWizard.lastCredentials = result.credentials;
+                machineWizard.lastMachineId = result.data?.id;
+
+                // Show success modal with credentials
+                document.getElementById('successSerialNumber').textContent = result.credentials?.serial_number || '-';
+                document.getElementById('successApiKey').textContent = result.credentials?.api_key || '-';
+
+                const successModal = new bootstrap.Modal(document.getElementById('machineSuccessModal'));
+                successModal.show();
+
+                // Reset wizard to step 1
+                machineWizard.goToStep(1);
+                form.reset();
+
+                // Show toast notification
+                this.showSuccess('RVM berhasil ditambahkan!');
+
+                // Refresh machine list
+                this.loadMachines();
+            } else {
+                // Validation errors
+                let errorHtml = '<ul class="mb-0">';
+                if (result.errors) {
+                    Object.values(result.errors).forEach(errs => {
+                        errs.forEach(e => errorHtml += `<li>${e}</li>`);
+                    });
+                } else {
+                    errorHtml += `<li>${result.message || 'Failed to add machine'}</li>`;
+                }
+                errorHtml += '</ul>';
+                errorsDiv.innerHTML = errorHtml;
+                errorsDiv.classList.remove('d-none');
+            }
+        } catch (error) {
+            console.error('Error adding machine:', error);
+            errorsDiv.innerHTML = 'Network error. Please try again.';
+            errorsDiv.classList.remove('d-none');
+        } finally {
+            submitBtn.disabled = false;
+            spinner.classList.add('d-none');
+        }
     }
 }
 
 const machineManagement = new MachineManagement();
+
+/**
+ * Machine Wizard - Multi-Step Add Machine with Map
+ * Bio-Digital Minimalism 2026
+ */
+const machineWizard = {
+    map: null,
+    marker: null,
+    currentStep: 1,
+    lastCredentials: null,
+    lastMachineId: null,
+
+    /**
+     * Navigate to wizard step
+     */
+    goToStep(step) {
+        this.currentStep = step;
+
+        // Update step indicators
+        document.querySelectorAll('.add-machine-step').forEach((dot, i) => {
+            dot.classList.remove('active', 'completed');
+            if (i + 1 < step) dot.classList.add('completed');
+            if (i + 1 === step) dot.classList.add('active');
+        });
+
+        // Show/hide content
+        document.querySelectorAll('.add-machine-content').forEach((content, i) => {
+            content.classList.toggle('active', i + 1 === step);
+        });
+
+        // Show/hide buttons
+        document.getElementById('addMachineStep1Buttons').style.display = step === 1 ? 'block' : 'none';
+        document.getElementById('addMachineStep2Buttons').style.display = step === 2 ? 'grid' : 'none';
+
+        // Initialize map when entering step 2
+        if (step === 2) {
+            setTimeout(() => this.initMap(), 100);
+        }
+    },
+
+    /**
+     * Initialize Leaflet map
+     */
+    initMap() {
+        const mapContainer = document.getElementById('addMachineMap');
+        if (!mapContainer || this.map) return;
+
+        // Default: Jakarta
+        const defaultLat = -6.2088;
+        const defaultLng = 106.8456;
+
+        this.map = L.map('addMachineMap').setView([defaultLat, defaultLng], 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OSM'
+        }).addTo(this.map);
+
+        // Click to place marker
+        this.map.on('click', (e) => {
+            this.setMarker(e.latlng.lat, e.latlng.lng);
+            this.reverseGeocode(e.latlng.lat, e.latlng.lng);
+        });
+
+        // Search button
+        document.getElementById('addMachineSearchBtn')?.addEventListener('click', () => this.searchLocation());
+        document.getElementById('addMachineLocationSearch')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                this.searchLocation();
+            }
+        });
+    },
+
+    /**
+     * Set marker on map
+     */
+    setMarker(lat, lng) {
+        if (this.marker) {
+            this.marker.setLatLng([lat, lng]);
+        } else {
+            this.marker = L.marker([lat, lng]).addTo(this.map);
+        }
+        this.map.setView([lat, lng], 15);
+
+        // Update form fields
+        document.getElementById('machineLat').value = lat.toFixed(7);
+        document.getElementById('machineLng').value = lng.toFixed(7);
+    },
+
+    /**
+     * Search location using Nominatim
+     */
+    async searchLocation() {
+        const query = document.getElementById('addMachineLocationSearch')?.value;
+        if (!query) return;
+
+        try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
+            const results = await response.json();
+
+            if (results.length > 0) {
+                const { lat, lon, display_name } = results[0];
+                this.setMarker(parseFloat(lat), parseFloat(lon));
+                document.getElementById('machineAddress').value = display_name;
+            }
+        } catch (error) {
+            console.error('Search error:', error);
+        }
+    },
+
+    /**
+     * Reverse geocode lat/lng to address
+     */
+    async reverseGeocode(lat, lng) {
+        try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+            const result = await response.json();
+            if (result.display_name) {
+                document.getElementById('machineAddress').value = result.display_name;
+            }
+        } catch (error) {
+            console.error('Reverse geocode error:', error);
+        }
+    },
+
+    /**
+     * Copy API Key to clipboard
+     */
+    async copyApiKey() {
+        const apiKey = this.lastCredentials?.api_key;
+        if (!apiKey) return;
+
+        try {
+            await navigator.clipboard.writeText(apiKey);
+            machineManagement.showSuccess('API Key copied to clipboard!');
+        } catch (error) {
+            console.error('Copy failed:', error);
+        }
+    },
+
+    /**
+     * Download credentials as JSON
+     */
+    downloadCredentials() {
+        if (!this.lastCredentials) return;
+
+        const data = {
+            serial_number: this.lastCredentials.serial_number,
+            api_key: this.lastCredentials.api_key,
+            generated_at: new Date().toISOString()
+        };
+
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `rvm-credentials-${this.lastCredentials.serial_number}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        machineManagement.showSuccess('Credentials downloaded!');
+    },
+
+    /**
+     * Reset wizard state
+     */
+    reset() {
+        this.currentStep = 1;
+        this.lastCredentials = null;
+        this.lastMachineId = null;
+        if (this.marker) {
+            this.map.removeLayer(this.marker);
+            this.marker = null;
+        }
+        this.goToStep(1);
+    }
+};
+
+// Reset wizard when modal is hidden
+document.addEventListener('hidden.bs.modal', (e) => {
+    if (e.target?.id === 'addMachineModal') {
+        machineWizard.reset();
+    }
+});

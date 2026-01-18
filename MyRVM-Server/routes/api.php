@@ -91,6 +91,8 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     Route::apiResource('rvm-machines', RvmMachineController::class);
     Route::post('/rvm-machines/{id}/assign', [RvmMachineController::class, 'assignMachine']);
     Route::get('/rvm-machines/{id}/assignments', [RvmMachineController::class, 'getAssignments']);
+    Route::post('/rvm-machines/{id}/regenerate-api-key', [RvmMachineController::class, 'regenerateApiKey']);
+    Route::get('/rvm-machines/{id}/credentials', [RvmMachineController::class, 'getCredentials']);
 
     // Edge Device & Telemetry (IoT)
     Route::prefix('edge')->group(function () {
@@ -155,4 +157,21 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     // System Logs (Role: Admin/Operator/Teknisi - with role check in controller)
     Route::get('/logs', [LogController::class, 'index']);
     Route::get('/logs/stats', [LogController::class, 'stats']);
+
+    // Technician Assignments (Hak Akses RVM) - Complete CRUD
+    Route::get('/technician-assignments', [\App\Http\Controllers\Api\TechnicianAssignmentController::class, 'index']);
+    Route::post('/technician-assignments', [\App\Http\Controllers\Api\TechnicianAssignmentController::class, 'store']);
+    Route::get('/technician-assignments/{id}', [\App\Http\Controllers\Api\TechnicianAssignmentController::class, 'show']);
+    Route::put('/technician-assignments/{id}', [\App\Http\Controllers\Api\TechnicianAssignmentController::class, 'update']);
+    Route::delete('/technician-assignments/{id}', [\App\Http\Controllers\Api\TechnicianAssignmentController::class, 'destroy']);
+    Route::post('/technician-assignments/{id}/generate-pin', [\App\Http\Controllers\Api\TechnicianAssignmentController::class, 'generatePin']);
+    Route::get('/technician-assignments/by-rvm/{rvmId}', [\App\Http\Controllers\Api\TechnicianAssignmentController::class, 'getByRvm']);
+
+    // Maintenance Tickets - Complete CRUD
+    Route::get('/maintenance-tickets', [\App\Http\Controllers\Api\MaintenanceTicketController::class, 'index']);
+    Route::post('/maintenance-tickets', [\App\Http\Controllers\Api\MaintenanceTicketController::class, 'store']);
+    Route::get('/maintenance-tickets/{id}', [\App\Http\Controllers\Api\MaintenanceTicketController::class, 'show']);
+    Route::put('/maintenance-tickets/{id}', [\App\Http\Controllers\Api\MaintenanceTicketController::class, 'update']);
+    Route::delete('/maintenance-tickets/{id}', [\App\Http\Controllers\Api\MaintenanceTicketController::class, 'destroy']);
+    Route::patch('/maintenance-tickets/{id}/status', [\App\Http\Controllers\Api\MaintenanceTicketController::class, 'updateStatus']);
 });

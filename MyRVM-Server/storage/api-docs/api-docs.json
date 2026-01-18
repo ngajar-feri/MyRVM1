@@ -653,7 +653,7 @@
                 "tags": [
                     "RVM Machines"
                 ],
-                "summary": "Create new RVM machine",
+                "summary": "Create new RVM machine (auto-generates serial_number and api_key)",
                 "operationId": "createRvmMachine",
                 "security": [
                     {
@@ -666,29 +666,38 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "name",
-                                    "location",
-                                    "serial_number"
+                                    "name"
                                 ],
                                 "properties": {
                                     "name": {
                                         "type": "string",
-                                        "example": "RVM Station 1"
+                                        "example": "RVM Mall Grand Indonesia"
                                     },
                                     "location": {
                                         "type": "string",
-                                        "example": "Mall Central Park"
+                                        "example": "Lt. 3 Dekat Eskalator"
                                     },
-                                    "serial_number": {
+                                    "location_address": {
                                         "type": "string",
-                                        "example": "RVM-JKT-001"
+                                        "example": "Jl. MH Thamrin No.1, Jakarta"
+                                    },
+                                    "latitude": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": -6.1951
+                                    },
+                                    "longitude": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 106.8211
                                     },
                                     "status": {
                                         "type": "string",
                                         "enum": [
                                             "online",
                                             "offline",
-                                            "maintenance"
+                                            "maintenance",
+                                            "full_warning"
                                         ],
                                         "example": "offline"
                                     }
@@ -699,7 +708,38 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Machine created successfully"
+                        "description": "Machine created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "credentials": {
+                                            "type": "object",
+                                            "properties": {
+                                                "serial_number": {
+                                                    "type": "string",
+                                                    "example": "RVM-202601-001"
+                                                },
+                                                "api_key": {
+                                                    "type": "string",
+                                                    "example": "sk_live_abc123..."
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     },
                     "400": {
                         "description": "Bad Request"
@@ -707,8 +747,132 @@
                     "401": {
                         "description": "Unauthorized"
                     },
+                    "403": {
+                        "description": "Access denied"
+                    },
                     "422": {
                         "description": "Unprocessable Entity - Validation Error"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/rvm-machines/{id}/regenerate-api-key": {
+            "post": {
+                "tags": [
+                    "RVM Machines"
+                ],
+                "summary": "Regenerate API key for RVM machine",
+                "operationId": "regenerateRvmApiKey",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "API key regenerated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "api_key": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Access denied"
+                    },
+                    "404": {
+                        "description": "Machine not found"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/rvm-machines/{id}/credentials": {
+            "get": {
+                "tags": [
+                    "RVM Machines"
+                ],
+                "summary": "Get credentials for download (serial_number + api_key)",
+                "operationId": "getRvmCredentials",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Credentials JSON",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "serial_number": {
+                                            "type": "string"
+                                        },
+                                        "api_key": {
+                                            "type": "string"
+                                        },
+                                        "name": {
+                                            "type": "string"
+                                        },
+                                        "generated_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "description": "Access denied"
+                    },
+                    "404": {
+                        "description": "Machine not found"
                     },
                     "500": {
                         "description": "Internal Server Error"

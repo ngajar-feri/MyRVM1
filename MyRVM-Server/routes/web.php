@@ -114,6 +114,10 @@ Route::middleware('auth')->group(function () {
         // Assignment Management
         Route::get('/assignments', [App\Http\Controllers\Dashboard\AssignmentController::class, 'index'])->name('assignments');
         Route::get('/assignments/content', [App\Http\Controllers\Dashboard\AssignmentController::class, 'indexContent']);
+
+        // Maintenance Tickets Management
+        Route::get('/tickets', [App\Http\Controllers\Dashboard\TicketController::class, 'index'])->name('tickets');
+        Route::get('/tickets/content', [App\Http\Controllers\Dashboard\TicketController::class, 'indexContent']);
     });
 
     // Dashboard API endpoints (use web auth instead of Sanctum)
@@ -123,5 +127,22 @@ Route::middleware('auth')->group(function () {
         Route::get('/machines', [App\Http\Controllers\Api\RvmMachineController::class, 'index']);
         Route::get('/machines/{id}', [App\Http\Controllers\Api\RvmMachineController::class, 'show']);
         Route::get('/devices', [App\Http\Controllers\Api\EdgeDeviceController::class, 'index']);
+
+        // Technician Assignments (Hak Akses RVM) - Dashboard CRUD
+        Route::get('/technician-assignments', [App\Http\Controllers\Api\TechnicianAssignmentController::class, 'index']);
+        Route::post('/technician-assignments', [App\Http\Controllers\Api\TechnicianAssignmentController::class, 'store']);
+        Route::get('/technician-assignments/{id}', [App\Http\Controllers\Api\TechnicianAssignmentController::class, 'show']);
+        Route::put('/technician-assignments/{id}', [App\Http\Controllers\Api\TechnicianAssignmentController::class, 'update']);
+        Route::delete('/technician-assignments/{id}', [App\Http\Controllers\Api\TechnicianAssignmentController::class, 'destroy']);
+        Route::post('/technician-assignments/{id}/generate-pin', [App\Http\Controllers\Api\TechnicianAssignmentController::class, 'generatePin']);
+        Route::get('/technician-assignments/by-rvm/{rvmId}', [App\Http\Controllers\Api\TechnicianAssignmentController::class, 'getByRvm']);
+
+        // Maintenance Tickets - Dashboard CRUD
+        Route::get('/maintenance-tickets', [App\Http\Controllers\Api\MaintenanceTicketController::class, 'index']);
+        Route::post('/maintenance-tickets', [App\Http\Controllers\Api\MaintenanceTicketController::class, 'store']);
+        Route::get('/maintenance-tickets/{id}', [App\Http\Controllers\Api\MaintenanceTicketController::class, 'show']);
+        Route::put('/maintenance-tickets/{id}', [App\Http\Controllers\Api\MaintenanceTicketController::class, 'update']);
+        Route::delete('/maintenance-tickets/{id}', [App\Http\Controllers\Api\MaintenanceTicketController::class, 'destroy']);
+        Route::patch('/maintenance-tickets/{id}/status', [App\Http\Controllers\Api\MaintenanceTicketController::class, 'updateStatus']);
     });
 });
