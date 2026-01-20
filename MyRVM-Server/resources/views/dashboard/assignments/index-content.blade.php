@@ -287,248 +287,251 @@
         </div>
     </div>
 
-    <!-- API Credentials Modal - Bio-Digital -->
-    <div class="modal fade" id="assignmentSuccessModal" tabindex="-1" data-bs-backdrop="static">
-        <div class="modal-dialog modal-dialog-centered" style="max-width: 380px;">
-            <div class="modal-content" style="border-radius: 16px; border: none;">
-                <div class="modal-header"
-                    style="border-bottom: none; background: linear-gradient(to right, #ecfdf5, #d1fae5);">
-                    <h6 class="modal-title fw-bold" style="color: #065f46;">
-                        <i class="ti tabler-check-circle me-2"></i>Assignment Berhasil
-                    </h6>
-                </div>
-                <div class="modal-body py-3">
-                    <div class="text-center mb-3">
-                        <div style="font-size: 36px;">✅</div>
-                        <p class="text-muted small mb-0">User berhasil di-assign ke RVM Machine</p>
+    <!-- API Credentials Modal - Bio-Digital (Fixed Z-Index & Layout) -->
+    <div class="modal fade" id="assignmentSuccessModal" tabindex="-1" data-bs-backdrop="static" style="z-index: 1060;">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 450px;">
+            <div class="modal-content"
+                style="border-radius: 12px; border: 1px solid #065f46; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                <div class="modal-body p-4"
+                    style="font-family: 'JetBrains Mono', 'Courier New', monospace; background: #fdfbf7; color: #1f2937;">
+                    <div
+                        style="font-weight: bold; margin-bottom: 20px; border-bottom: 1px dashed #065f46; padding-bottom: 10px;">
+                        ┌─ API Credentials ─────────────────────┐
                     </div>
 
-                    <!-- API Credentials Section -->
-                    <div class="p-3 rounded mb-3"
-                        style="background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border: 1px solid rgba(16,185,129,0.2);">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <label class="form-label small mb-0 fw-semibold" style="color: #065f46;">
-                                <i class="ti tabler-fingerprint me-1"></i>Serial Number
-                            </label>
+                    <div class="mb-4">
+                        <div class="small text-muted mb-1">Serial Number:</div>
+                        <div class="d-flex align-items-center">
+                            <input type="text" id="cred-serial" class="form-control form-control-sm" readonly
+                                style="background: white; border: 1px solid #d1d5db; font-family: monospace; font-weight: bold; color: #065f46;">
                         </div>
-                        <div class="input-group input-group-sm mb-3">
-                            <input type="text" id="cred-serial" class="form-control" readonly style="background:#fff;">
-                            <button class="btn btn-outline-secondary" type="button"
-                                onclick="assignmentCredentials.copySerial()" title="Copy">
-                                <i class="ti tabler-copy"></i>
-                            </button>
-                        </div>
+                    </div>
 
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <label class="form-label small mb-0 fw-semibold" style="color: #065f46;">
-                                <i class="ti tabler-key me-1"></i>API Key
-                            </label>
-                        </div>
+                    <div class="mb-4">
+                        <div class="small text-muted mb-1">API Key:</div>
                         <div class="input-group input-group-sm">
                             <input type="password" id="cred-apikey" class="form-control" readonly
-                                style="background:#fff;">
-                            <button class="btn btn-outline-secondary" type="button"
-                                onclick="assignmentCredentials.toggleApiKey()" title="Show/Hide" id="btn-toggle-apikey">
-                                <i class="ti tabler-eye"></i>
+                                style="background: white; border: 1px solid #d1d5db; font-family: monospace; letter-spacing: 2px;">
+                        </div>
+                        <div class="d-flex gap-2 mt-2">
+                            <button class="btn btn-sm btn-outline-secondary"
+                                onclick="assignmentCredentials.toggleApiKey()" id="btn-toggle-apikey">
+                                [👁 Show]
                             </button>
-                            <button class="btn btn-outline-secondary" type="button"
-                                onclick="assignmentCredentials.copyApiKey()" title="Copy">
-                                <i class="ti tabler-copy"></i>
+                            <button class="btn btn-sm btn-outline-secondary"
+                                onclick="assignmentCredentials.copyApiKey()">
+                                [📋 Copy]
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary"
+                                onclick="assignmentCredentials.regenerateApiKey()">
+                                [🔄 Regenerate]
                             </button>
                         </div>
                     </div>
 
-                    <div class="d-grid gap-2">
-                        <button type="button" class="btn btn-label-primary btn-sm"
+                    <div class="mb-4">
+                        <button class="btn btn-sm btn-bio w-100 text-white"
                             onclick="assignmentCredentials.downloadJson()">
-                            <i class="ti tabler-download me-1"></i>Download JSON
+                            [📥 Download JSON]
                         </button>
-                        <button type="button" class="btn btn-bio text-white" data-bs-dismiss="modal"
+                    </div>
+
+                    <div
+                        style="font-weight: bold; margin-top: 20px; border-top: 1px dashed #065f46; padding-top: 10px;">
+                        └───────────────────────────────────────┘
+                    </div>
+
+                    <div class="text-center mt-3">
+                        <button type="button" class="btn btn-label-secondary btn-sm" data-bs-dismiss="modal"
                             onclick="window.assignmentManager.loadAssignments()">
-                            Selesai
+                            Close & Refresh
                         </button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
+</div>
+</div>
+</div>
 
-    <!-- Assignment Detail Modal - Bio-Digital 350px -->
-    <div class="modal fade" id="assignmentDetailModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered" style="max-width: 350px;">
-            <div class="modal-content" style="border-radius: 16px; border: none;">
-                <div class="modal-header"
-                    style="border-bottom: none; background: linear-gradient(to right, #ecfdf5, #f0fdf4);">
-                    <h6 class="modal-title fw-bold" style="color: #065f46;"><i
-                            class="ti tabler-user-check me-2"></i>Assignment Detail</h6>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+<!-- Assignment Detail Modal - Bio-Digital 350px -->
+<div class="modal fade" id="assignmentDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 350px;">
+        <div class="modal-content" style="border-radius: 16px; border: none;">
+            <div class="modal-header"
+                style="border-bottom: none; background: linear-gradient(to right, #ecfdf5, #f0fdf4);">
+                <h6 class="modal-title fw-bold" style="color: #065f46;"><i
+                        class="ti tabler-user-check me-2"></i>Assignment Detail</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="assignment-detail-content">
+                <div class="text-center py-3">
+                    <div class="spinner-border text-primary"></div>
                 </div>
-                <div class="modal-body" id="assignment-detail-content">
-                    <div class="text-center py-3">
-                        <div class="spinner-border text-primary"></div>
-                    </div>
-                </div>
-                <div class="modal-footer" style="border-top: none;">
-                    <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
+            </div>
+            <div class="modal-footer" style="border-top: none;">
+                <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- PIN Generated Modal - Bio-Digital -->
-    <div class="modal fade" id="pinGeneratedModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered" style="max-width: 300px;">
-            <div class="modal-content text-center" style="border-radius: 16px; border: none;">
-                <div class="modal-body py-4">
-                    <div class="mb-3" style="font-size: 48px;">🔑</div>
-                    <h5 class="fw-bold" style="color: #065f46;">PIN Generated!</h5>
-                    <div class="my-3 p-3 rounded" style="background: linear-gradient(135deg, #ecfdf5, #d1fae5);">
-                        <div class="display-4 fw-bold" style="color: #065f46; letter-spacing: 8px;"
-                            id="generated-pin-value">------</div>
-                    </div>
-                    <p class="text-muted small mb-0">
-                        <i class="ti tabler-clock me-1"></i>Expires: <span id="generated-pin-expires">-</span>
-                    </p>
-                    <button type="button" class="btn btn-bio text-white px-4 mt-3" data-bs-dismiss="modal">
-                        OK
-                    </button>
+<!-- PIN Generated Modal - Bio-Digital -->
+<div class="modal fade" id="pinGeneratedModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 300px;">
+        <div class="modal-content text-center" style="border-radius: 16px; border: none;">
+            <div class="modal-body py-4">
+                <div class="mb-3" style="font-size: 48px;">🔑</div>
+                <h5 class="fw-bold" style="color: #065f46;">PIN Generated!</h5>
+                <div class="my-3 p-3 rounded" style="background: linear-gradient(135deg, #ecfdf5, #d1fae5);">
+                    <div class="display-4 fw-bold" style="color: #065f46; letter-spacing: 8px;"
+                        id="generated-pin-value">------</div>
                 </div>
+                <p class="text-muted small mb-0">
+                    <i class="ti tabler-clock me-1"></i>Expires: <span id="generated-pin-expires">-</span>
+                </p>
+                <button type="button" class="btn btn-bio text-white px-4 mt-3" data-bs-dismiss="modal">
+                    OK
+                </button>
             </div>
         </div>
     </div>
+</div>
 
-    <script>
-        // Current user info for role hierarchy
-        const currentUserRole = '{{ auth()->user()->role }}';
-        const currentUserId = {{ auth()->id() }};
+<script>
+    // Current user info for role hierarchy
+    const currentUserRole = '{{ auth()->user()->role }}';
+    const currentUserId = {{ auth()->id() }};
 
-        // Role hierarchy (lower = more permissions)
-        const roleHierarchy = {
-            'super_admin': 1,
-            'admin': 2,
-            'operator': 3,
-            'teknisi': 4,
-            'tenant': 5,
-            'user': 6
-        };
+    // Role hierarchy (lower = more permissions)
+    const roleHierarchy = {
+        'super_admin': 1,
+        'admin': 2,
+        'operator': 3,
+        'teknisi': 4,
+        'tenant': 5,
+        'user': 6
+    };
 
-        // Assignment Manager
-        window.assignmentManager = {
-            assignments: [],
-            users: [],
-            machines: [],
-            searchQuery: '',
+    // Assignment Manager
+    window.assignmentManager = {
+        assignments: [],
+        users: [],
+        machines: [],
+        searchQuery: '',
 
-            async init() {
-                await this.loadUsers();
-                await this.loadMachines();
-                await this.loadAssignments();
-                this.setupEventListeners();
-            },
+        async init() {
+            await this.loadUsers();
+            await this.loadMachines();
+            await this.loadAssignments();
+            this.setupEventListeners();
+        },
 
-            async loadUsers() {
-                try {
-                    const response = await apiHelper.get('/api/v1/dashboard/users');
-                    const data = await response.json();
-                    this.users = data.data || data || [];
-                    this.populateUserDropdowns();
-                } catch (e) {
-                    console.error('Failed to load users:', e);
+        async loadUsers() {
+            try {
+                const response = await apiHelper.get('/api/v1/dashboard/users');
+                const data = await response.json();
+                this.users = data.data || data || [];
+                this.populateUserDropdowns();
+            } catch (e) {
+                console.error('Failed to load users:', e);
+            }
+        },
+
+        async loadMachines() {
+            try {
+                const response = await apiHelper.get('/api/v1/dashboard/machines');
+                const data = await response.json();
+                this.machines = data.data || data || [];
+                this.populateMachineDropdowns();
+            } catch (e) {
+                console.error('Failed to load machines:', e);
+            }
+        },
+
+        populateUserDropdowns() {
+            // Allowed roles for RVM assignment (exclude tenant and user)
+            const allowedRoles = ['super_admin', 'admin', 'teknisi', 'operator'];
+
+            // Filter users that current user can assign (role hierarchy + allowed roles)
+            const assignableUsers = this.users.filter(u => {
+                // First check if role is allowed
+                if (!allowedRoles.includes(u.role)) return false;
+
+                // super_admin can assign anyone (in allowed roles)
+                if (currentUserRole === 'super_admin') return true;
+                // admin can assign self, teknisi, operator (not super_admin or other admin)
+                if (currentUserRole === 'admin') {
+                    if (u.id === currentUserId) return true; // self
+                    return roleHierarchy[u.role] > roleHierarchy['admin'];
                 }
-            },
+                return false;
+            });
 
-            async loadMachines() {
-                try {
-                    const response = await apiHelper.get('/api/v1/dashboard/machines');
-                    const data = await response.json();
-                    this.machines = data.data || data || [];
-                    this.populateMachineDropdowns();
-                } catch (e) {
-                    console.error('Failed to load machines:', e);
-                }
-            },
+            // Store assignable users for search
+            this.assignableUsers = assignableUsers;
+        },
 
-            populateUserDropdowns() {
-                // Allowed roles for RVM assignment (exclude tenant and user)
-                const allowedRoles = ['super_admin', 'admin', 'teknisi', 'operator'];
+        populateMachineDropdowns() {
+            // No dropdown to populate anymore - unified search handles filtering
+            // Machines are stored in this.machines for search use
+        },
 
-                // Filter users that current user can assign (role hierarchy + allowed roles)
-                const assignableUsers = this.users.filter(u => {
-                    // First check if role is allowed
-                    if (!allowedRoles.includes(u.role)) return false;
+        async loadAssignments() {
+            const grid = document.getElementById('assignments-grid');
+            if (!grid) return;
 
-                    // super_admin can assign anyone (in allowed roles)
-                    if (currentUserRole === 'super_admin') return true;
-                    // admin can assign self, teknisi, operator (not super_admin or other admin)
-                    if (currentUserRole === 'admin') {
-                        if (u.id === currentUserId) return true; // self
-                        return roleHierarchy[u.role] > roleHierarchy['admin'];
-                    }
-                    return false;
+            grid.innerHTML = '<div class="col-12 text-center py-5"><div class="spinner-border text-primary"></div></div>';
+
+            try {
+                const response = await apiHelper.get('/api/v1/dashboard/technician-assignments');
+                const data = await response.json();
+                this.assignments = data.data || data || [];
+                this.renderAssignments();
+            } catch (e) {
+                grid.innerHTML = '<div class="col-12"><div class="alert alert-danger">Failed to load assignments</div></div>';
+            }
+        },
+
+        renderAssignments() {
+            const grid = document.getElementById('assignments-grid');
+            if (!grid) return;
+
+            // Apply unified search filter
+            const searchQuery = (this.searchQuery || '').toLowerCase().trim();
+            let filtered = this.assignments;
+
+            if (searchQuery) {
+                filtered = this.assignments.filter(a => {
+                    const userName = (a.user?.name || '').toLowerCase();
+                    const userRole = (a.user?.role || '').toLowerCase();
+                    const userEmail = (a.user?.email || '').toLowerCase();
+                    const rvmName = (a.rvm_machine?.name || '').toLowerCase();
+                    const rvmLocation = (a.rvm_machine?.location || '').toLowerCase();
+
+                    return userName.includes(searchQuery) ||
+                        userRole.includes(searchQuery) ||
+                        userEmail.includes(searchQuery) ||
+                        rvmName.includes(searchQuery) ||
+                        rvmLocation.includes(searchQuery);
                 });
+            }
 
-                // Store assignable users for search
-                this.assignableUsers = assignableUsers;
-            },
-
-            populateMachineDropdowns() {
-                // No dropdown to populate anymore - unified search handles filtering
-                // Machines are stored in this.machines for search use
-            },
-
-            async loadAssignments() {
-                const grid = document.getElementById('assignments-grid');
-                if (!grid) return;
-
-                grid.innerHTML = '<div class="col-12 text-center py-5"><div class="spinner-border text-primary"></div></div>';
-
-                try {
-                    const response = await apiHelper.get('/api/v1/dashboard/technician-assignments');
-                    const data = await response.json();
-                    this.assignments = data.data || data || [];
-                    this.renderAssignments();
-                } catch (e) {
-                    grid.innerHTML = '<div class="col-12"><div class="alert alert-danger">Failed to load assignments</div></div>';
-                }
-            },
-
-            renderAssignments() {
-                const grid = document.getElementById('assignments-grid');
-                if (!grid) return;
-
-                // Apply unified search filter
-                const searchQuery = (this.searchQuery || '').toLowerCase().trim();
-                let filtered = this.assignments;
-
-                if (searchQuery) {
-                    filtered = this.assignments.filter(a => {
-                        const userName = (a.user?.name || '').toLowerCase();
-                        const userRole = (a.user?.role || '').toLowerCase();
-                        const userEmail = (a.user?.email || '').toLowerCase();
-                        const rvmName = (a.rvm_machine?.name || '').toLowerCase();
-                        const rvmLocation = (a.rvm_machine?.location || '').toLowerCase();
-
-                        return userName.includes(searchQuery) ||
-                            userRole.includes(searchQuery) ||
-                            userEmail.includes(searchQuery) ||
-                            rvmName.includes(searchQuery) ||
-                            rvmLocation.includes(searchQuery);
-                    });
-                }
-
-                if (filtered.length === 0) {
-                    const message = searchQuery
-                        ? `Tidak ada assignment yang cocok dengan "${searchQuery}"`
-                        : 'No assignments yet. Click "Add Assignment" to get started.';
-                    grid.innerHTML = `
+            if (filtered.length === 0) {
+                const message = searchQuery
+                    ? `Tidak ada assignment yang cocok dengan "${searchQuery}"`
+                    : 'No assignments yet. Click "Add Assignment" to get started.';
+                grid.innerHTML = `
                 <div class="col-12 text-center py-5">
                     <i class="ti tabler-user-off" style="font-size: 48px; color: #d1d5db;"></i>
                     <p class="text-muted mt-2">${message}</p>
                 </div>`;
-                    return;
-                }
+                return;
+            }
 
-                grid.innerHTML = filtered.map(a => `
+            grid.innerHTML = filtered.map(a => `
             <div class="col-md-4">
                 <div class="assignment-card p-3">
                     <div class="d-flex justify-content-between align-items-start mb-2">
@@ -566,16 +569,16 @@
                 </div>
             </div>
         `).join('');
-            },
+        },
 
-            async viewAssignment(id) {
-                try {
-                    const response = await apiHelper.get(`/api/v1/dashboard/technician-assignments/${id}`);
-                    const data = await response.json();
-                    const a = data.data;
+        async viewAssignment(id) {
+            try {
+                const response = await apiHelper.get(`/api/v1/dashboard/technician-assignments/${id}`);
+                const data = await response.json();
+                const a = data.data;
 
-                    // Show detail in a simple alert modal (could be enhanced later)
-                    const detail = `
+                // Show detail in a simple alert modal (could be enhanced later)
+                const detail = `
                     <div class="text-start">
                         <dl class="row mb-0">
                             <dt class="col-4">User:</dt><dd class="col-8">${a.user?.name || 'N/A'}</dd>
@@ -591,307 +594,308 @@
                         </dl>
                     </div>
                 `;
-                    document.getElementById('assignment-detail-content').innerHTML = detail;
-                    new bootstrap.Modal(document.getElementById('assignmentDetailModal')).show();
-                } catch (e) {
-                    alert('Failed to load assignment details');
-                }
-            },
-
-            async generatePin(id) {
-                if (!confirm('Generate a new 6-digit PIN for this assignment? The PIN will expire in 24 hours.')) return;
-
-                try {
-                    const response = await apiHelper.post(`/api/v1/dashboard/technician-assignments/${id}/generate-pin`);
-                    const data = await response.json();
-
-                    document.getElementById('generated-pin-value').textContent = data.data.pin;
-                    document.getElementById('generated-pin-expires').textContent = new Date(data.data.expires_at).toLocaleString();
-                    new bootstrap.Modal(document.getElementById('pinGeneratedModal')).show();
-                } catch (e) {
-                    alert('Failed to generate PIN');
-                }
-            },
-
-            async removeAssignment(id) {
-                if (!confirm('Remove this assignment? User will lose access to this RVM.')) return;
-
-                try {
-                    await apiHelper.delete(`/api/v1/dashboard/technician-assignments/${id}`);
-                    this.loadAssignments();
-                } catch (e) {
-                    alert('Failed to remove assignment');
-                }
-            },
-
-            setupEventListeners() {
-                // Unified search for filtering assignment cards
-                const unifiedSearch = document.getElementById('unified-search');
-                if (unifiedSearch) {
-                    let debounceTimer;
-                    unifiedSearch.addEventListener('input', () => {
-                        clearTimeout(debounceTimer);
-                        debounceTimer = setTimeout(() => {
-                            this.searchQuery = unifiedSearch.value;
-                            this.renderAssignments();
-                        }, 200);
-                    });
-                }
-
-                // User select change
-                document.getElementById('assign-user')?.addEventListener('change', function () {
-                    const opt = this.options[this.selectedIndex];
-                    const info = document.getElementById('user-info');
-                    if (this.value) {
-                        document.getElementById('selected-user-name').textContent = opt.dataset.name;
-                        const roleEl = document.getElementById('selected-user-role');
-                        roleEl.textContent = opt.dataset.role;
-                        roleEl.className = 'badge role-badge-' + opt.dataset.role;
-                        info.classList.remove('d-none');
-                    } else {
-                        info.classList.add('d-none');
-                    }
-                });
-
-                // RVM select change
-                document.getElementById('assign-rvm')?.addEventListener('change', function () {
-                    const opt = this.options[this.selectedIndex];
-                    const info = document.getElementById('rvm-info');
-                    if (this.value) {
-                        document.getElementById('selected-rvm-name').textContent = opt.textContent;
-                        document.getElementById('selected-rvm-location').textContent = opt.dataset.location || '';
-                        info.classList.remove('d-none');
-                    } else {
-                        info.classList.add('d-none');
-                    }
-                });
-
-                // Form submit
-                document.getElementById('addAssignmentForm')?.addEventListener('submit', async function (e) {
-                    e.preventDefault();
-                    const userId = document.getElementById('assign-user').value;
-                    const rvmId = document.getElementById('assign-rvm').value;
-
-                    if (!userId || !rvmId) {
-                        alert('Please select both user and RVM');
-                        return;
-                    }
-
-                    const btn = document.getElementById('btn-submit-assignment');
-                    btn.disabled = true;
-                    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-
-                    try {
-                        await apiHelper.post('/api/v1/dashboard/technician-assignments', {
-                            user_id: userId,
-                            rvm_machine_id: rvmId
-                        });
-
-                        // Fetch machine credentials for the newly assigned RVM
-                        try {
-                            const credResponse = await apiHelper.get(`/api/v1/rvm-machines/${rvmId}/credentials`);
-                            const credData = await credResponse.json();
-                            window.assignmentCredentials.setCredentials(
-                                credData.serial_number,
-                                credData.api_key,
-                                credData.name
-                            );
-                        } catch (credErr) {
-                            console.warn('Could not fetch credentials:', credErr);
-                            window.assignmentCredentials.setCredentials('N/A', 'N/A', 'N/A');
-                        }
-
-                        bootstrap.Modal.getInstance(document.getElementById('addAssignmentModal')).hide();
-                        new bootstrap.Modal(document.getElementById('assignmentSuccessModal')).show();
-                        assignmentWizard.reset();
-                    } catch (e) {
-                        alert('Failed to create assignment. User may already be assigned to this RVM.');
-                    } finally {
-                        btn.disabled = false;
-                        btn.innerHTML = '<i class="ti tabler-check me-1"></i>Assign';
-                    }
-                });
+                document.getElementById('assignment-detail-content').innerHTML = detail;
+                new bootstrap.Modal(document.getElementById('assignmentDetailModal')).show();
+            } catch (e) {
+                alert('Failed to load assignment details');
             }
-        };
+        },
 
-        // Assignment Wizard for modal steps
-        window.assignmentWizard = {
-            currentStep: 1,
+        async generatePin(id) {
+            if (!confirm('Generate a new 6-digit PIN for this assignment? The PIN will expire in 24 hours.')) return;
 
-            nextStep() {
-                if (!document.getElementById('assign-user').value) {
-                    alert('Please select a user first');
-                    return;
-                }
-                document.getElementById('step-user').classList.add('d-none');
-                document.getElementById('step-rvm').classList.remove('d-none');
-                document.querySelectorAll('.step-dot')[0].style.background = '#10b981';
-                document.querySelectorAll('.step-dot')[1].style.background = '#10b981';
-                this.currentStep = 2;
-            },
+            try {
+                const response = await apiHelper.post(`/api/v1/dashboard/technician-assignments/${id}/generate-pin`);
+                const data = await response.json();
 
-            prevStep() {
-                document.getElementById('step-rvm').classList.add('d-none');
-                document.getElementById('step-user').classList.remove('d-none');
-                document.querySelectorAll('.step-dot')[1].style.background = '#e5e7eb';
-                this.currentStep = 1;
-            },
-
-            reset() {
-                this.currentStep = 1;
-                document.getElementById('step-user').classList.remove('d-none');
-                document.getElementById('step-rvm').classList.add('d-none');
-                document.getElementById('addAssignmentForm').reset();
-                document.getElementById('user-info').classList.add('d-none');
-                document.getElementById('rvm-info').classList.add('d-none');
-                // Clear search fields
-                document.getElementById('search-user').value = '';
-                document.getElementById('search-rvm').value = '';
-                document.getElementById('assign-user').value = '';
-                document.getElementById('assign-rvm').value = '';
-                document.querySelectorAll('.step-dot')[1].style.background = '#e5e7eb';
+                document.getElementById('generated-pin-value').textContent = data.data.pin;
+                document.getElementById('generated-pin-expires').textContent = new Date(data.data.expires_at).toLocaleString();
+                new bootstrap.Modal(document.getElementById('pinGeneratedModal')).show();
+            } catch (e) {
+                alert('Failed to generate PIN');
             }
-        };
+        },
 
-        // Search/Autocomplete Handler
-        const assignmentSearch = {
-            debounceTimer: null,
+        async removeAssignment(id) {
+            if (!confirm('Remove this assignment? User will lose access to this RVM.')) return;
 
-            init() {
-                this.setupUserSearch();
-                this.setupRvmSearch();
-                this.setupClickOutside();
-            },
+            try {
+                await apiHelper.delete(`/api/v1/dashboard/technician-assignments/${id}`);
+                this.loadAssignments();
+            } catch (e) {
+                alert('Failed to remove assignment');
+            }
+        },
 
-            setupUserSearch() {
-                const input = document.getElementById('search-user');
-                const suggestions = document.getElementById('user-suggestions');
-                if (!input || !suggestions) return;
-
-                input.addEventListener('input', () => {
-                    clearTimeout(this.debounceTimer);
-                    this.debounceTimer = setTimeout(() => {
-                        this.searchUsers(input.value);
+        setupEventListeners() {
+            // Unified search for filtering assignment cards
+            const unifiedSearch = document.getElementById('unified-search');
+            if (unifiedSearch) {
+                let debounceTimer;
+                unifiedSearch.addEventListener('input', () => {
+                    clearTimeout(debounceTimer);
+                    debounceTimer = setTimeout(() => {
+                        this.searchQuery = unifiedSearch.value;
+                        this.renderAssignments();
                     }, 200);
                 });
+            }
 
-                input.addEventListener('focus', () => {
-                    if (input.value.length >= 1) {
-                        this.searchUsers(input.value);
-                    }
-                });
-            },
-
-            setupRvmSearch() {
-                const input = document.getElementById('search-rvm');
-                const suggestions = document.getElementById('rvm-suggestions');
-                if (!input || !suggestions) return;
-
-                input.addEventListener('input', () => {
-                    clearTimeout(this.debounceTimer);
-                    this.debounceTimer = setTimeout(() => {
-                        this.searchRvm(input.value);
-                    }, 200);
-                });
-
-                input.addEventListener('focus', () => {
-                    if (input.value.length >= 1) {
-                        this.searchRvm(input.value);
-                    }
-                });
-            },
-
-            setupClickOutside() {
-                document.addEventListener('click', (e) => {
-                    const userSuggestions = document.getElementById('user-suggestions');
-                    const rvmSuggestions = document.getElementById('rvm-suggestions');
-                    if (userSuggestions && !e.target.closest('#search-user') && !e.target.closest('#user-suggestions')) {
-                        userSuggestions.classList.add('d-none');
-                    }
-                    if (rvmSuggestions && !e.target.closest('#search-rvm') && !e.target.closest('#rvm-suggestions')) {
-                        rvmSuggestions.classList.add('d-none');
-                    }
-                });
-            },
-
-            searchUsers(query) {
-                const suggestions = document.getElementById('user-suggestions');
-                if (!suggestions) return;
-
-                if (query.length < 1) {
-                    suggestions.classList.add('d-none');
-                    return;
-                }
-
-                const users = window.assignmentManager.assignableUsers || [];
-                const filtered = users.filter(u =>
-                    u.name.toLowerCase().includes(query.toLowerCase()) ||
-                    u.email?.toLowerCase().includes(query.toLowerCase()) ||
-                    u.role.toLowerCase().includes(query.toLowerCase())
-                ).slice(0, 8);
-
-                if (filtered.length === 0) {
-                    suggestions.innerHTML = '<div class="autocomplete-no-results">No users found</div>';
+            // User select change
+            document.getElementById('assign-user')?.addEventListener('change', function () {
+                const opt = this.options[this.selectedIndex];
+                const info = document.getElementById('user-info');
+                if (this.value) {
+                    document.getElementById('selected-user-name').textContent = opt.dataset.name;
+                    const roleEl = document.getElementById('selected-user-role');
+                    roleEl.textContent = opt.dataset.role;
+                    roleEl.className = 'badge role-badge-' + opt.dataset.role;
+                    info.classList.remove('d-none');
                 } else {
-                    suggestions.innerHTML = filtered.map(u => `
+                    info.classList.add('d-none');
+                }
+            });
+
+            // RVM select change
+            document.getElementById('assign-rvm')?.addEventListener('change', function () {
+                const opt = this.options[this.selectedIndex];
+                const info = document.getElementById('rvm-info');
+                if (this.value) {
+                    document.getElementById('selected-rvm-name').textContent = opt.textContent;
+                    document.getElementById('selected-rvm-location').textContent = opt.dataset.location || '';
+                    info.classList.remove('d-none');
+                } else {
+                    info.classList.add('d-none');
+                }
+            });
+
+            // Form submit
+            document.getElementById('addAssignmentForm')?.addEventListener('submit', async function (e) {
+                e.preventDefault();
+                const userId = document.getElementById('assign-user').value;
+                const rvmId = document.getElementById('assign-rvm').value;
+
+                if (!userId || !rvmId) {
+                    alert('Please select both user and RVM');
+                    return;
+                }
+
+                const btn = document.getElementById('btn-submit-assignment');
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+                try {
+                    await apiHelper.post('/api/v1/dashboard/technician-assignments', {
+                        user_id: userId,
+                        rvm_machine_id: rvmId
+                    });
+
+                    // Fetch machine credentials for the newly assigned RVM
+                    try {
+                        const credResponse = await apiHelper.get(`/api/v1/rvm-machines/${rvmId}/credentials`);
+                        const credData = await credResponse.json();
+                        window.assignmentCredentials.setCredentials(
+                            credData.serial_number,
+                            credData.api_key,
+                            credData.name,
+                            rvmId
+                        );
+                    } catch (credErr) {
+                        console.warn('Could not fetch credentials:', credErr);
+                        window.assignmentCredentials.setCredentials('N/A', 'N/A', 'N/A', 'N/A');
+                    }
+
+                    bootstrap.Modal.getInstance(document.getElementById('addAssignmentModal')).hide();
+                    new bootstrap.Modal(document.getElementById('assignmentSuccessModal')).show();
+                    assignmentWizard.reset();
+                } catch (e) {
+                    alert('Failed to create assignment. User may already be assigned to this RVM.');
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="ti tabler-check me-1"></i>Assign';
+                }
+            });
+        }
+    };
+
+    // Assignment Wizard for modal steps
+    window.assignmentWizard = {
+        currentStep: 1,
+
+        nextStep() {
+            if (!document.getElementById('assign-user').value) {
+                alert('Please select a user first');
+                return;
+            }
+            document.getElementById('step-user').classList.add('d-none');
+            document.getElementById('step-rvm').classList.remove('d-none');
+            document.querySelectorAll('.step-dot')[0].style.background = '#10b981';
+            document.querySelectorAll('.step-dot')[1].style.background = '#10b981';
+            this.currentStep = 2;
+        },
+
+        prevStep() {
+            document.getElementById('step-rvm').classList.add('d-none');
+            document.getElementById('step-user').classList.remove('d-none');
+            document.querySelectorAll('.step-dot')[1].style.background = '#e5e7eb';
+            this.currentStep = 1;
+        },
+
+        reset() {
+            this.currentStep = 1;
+            document.getElementById('step-user').classList.remove('d-none');
+            document.getElementById('step-rvm').classList.add('d-none');
+            document.getElementById('addAssignmentForm').reset();
+            document.getElementById('user-info').classList.add('d-none');
+            document.getElementById('rvm-info').classList.add('d-none');
+            // Clear search fields
+            document.getElementById('search-user').value = '';
+            document.getElementById('search-rvm').value = '';
+            document.getElementById('assign-user').value = '';
+            document.getElementById('assign-rvm').value = '';
+            document.querySelectorAll('.step-dot')[1].style.background = '#e5e7eb';
+        }
+    };
+
+    // Search/Autocomplete Handler
+    const assignmentSearch = {
+        debounceTimer: null,
+
+        init() {
+            this.setupUserSearch();
+            this.setupRvmSearch();
+            this.setupClickOutside();
+        },
+
+        setupUserSearch() {
+            const input = document.getElementById('search-user');
+            const suggestions = document.getElementById('user-suggestions');
+            if (!input || !suggestions) return;
+
+            input.addEventListener('input', () => {
+                clearTimeout(this.debounceTimer);
+                this.debounceTimer = setTimeout(() => {
+                    this.searchUsers(input.value);
+                }, 200);
+            });
+
+            input.addEventListener('focus', () => {
+                if (input.value.length >= 1) {
+                    this.searchUsers(input.value);
+                }
+            });
+        },
+
+        setupRvmSearch() {
+            const input = document.getElementById('search-rvm');
+            const suggestions = document.getElementById('rvm-suggestions');
+            if (!input || !suggestions) return;
+
+            input.addEventListener('input', () => {
+                clearTimeout(this.debounceTimer);
+                this.debounceTimer = setTimeout(() => {
+                    this.searchRvm(input.value);
+                }, 200);
+            });
+
+            input.addEventListener('focus', () => {
+                if (input.value.length >= 1) {
+                    this.searchRvm(input.value);
+                }
+            });
+        },
+
+        setupClickOutside() {
+            document.addEventListener('click', (e) => {
+                const userSuggestions = document.getElementById('user-suggestions');
+                const rvmSuggestions = document.getElementById('rvm-suggestions');
+                if (userSuggestions && !e.target.closest('#search-user') && !e.target.closest('#user-suggestions')) {
+                    userSuggestions.classList.add('d-none');
+                }
+                if (rvmSuggestions && !e.target.closest('#search-rvm') && !e.target.closest('#rvm-suggestions')) {
+                    rvmSuggestions.classList.add('d-none');
+                }
+            });
+        },
+
+        searchUsers(query) {
+            const suggestions = document.getElementById('user-suggestions');
+            if (!suggestions) return;
+
+            if (query.length < 1) {
+                suggestions.classList.add('d-none');
+                return;
+            }
+
+            const users = window.assignmentManager.assignableUsers || [];
+            const filtered = users.filter(u =>
+                u.name.toLowerCase().includes(query.toLowerCase()) ||
+                u.email?.toLowerCase().includes(query.toLowerCase()) ||
+                u.role.toLowerCase().includes(query.toLowerCase())
+            ).slice(0, 8);
+
+            if (filtered.length === 0) {
+                suggestions.innerHTML = '<div class="autocomplete-no-results">No users found</div>';
+            } else {
+                suggestions.innerHTML = filtered.map(u => `
                         <div class="autocomplete-item" onclick="assignmentSearch.selectUser(${u.id}, '${this.escapeHtml(u.name)}', '${u.role}')">
                             <div class="item-name">${this.escapeHtml(u.name)}</div>
                             <div class="item-subtitle">${u.email || ''} • ${u.role}</div>
                         </div>
                     `).join('');
-                }
-                suggestions.classList.remove('d-none');
-            },
+            }
+            suggestions.classList.remove('d-none');
+        },
 
-            searchRvm(query) {
-                const suggestions = document.getElementById('rvm-suggestions');
-                if (!suggestions) return;
+        searchRvm(query) {
+            const suggestions = document.getElementById('rvm-suggestions');
+            if (!suggestions) return;
 
-                if (query.length < 1) {
-                    suggestions.classList.add('d-none');
-                    return;
-                }
+            if (query.length < 1) {
+                suggestions.classList.add('d-none');
+                return;
+            }
 
-                const selectedUserId = document.getElementById('assign-user').value;
-                const machines = window.assignmentManager.machines || [];
-                const assignments = window.assignmentManager.assignments || [];
+            const selectedUserId = document.getElementById('assign-user').value;
+            const machines = window.assignmentManager.machines || [];
+            const assignments = window.assignmentManager.assignments || [];
 
-                // Build set of RVM IDs already assigned to SELECTED USER (show as unavailable)
-                const assignedRvmIds = new Set(
-                    assignments
-                        .filter(a => a.user_id == selectedUserId || a.user?.id == selectedUserId)
-                        .map(a => a.rvm_machine?.id || a.rvm_machine_id)
-                );
+            // Build set of RVM IDs already assigned to SELECTED USER (show as unavailable)
+            const assignedRvmIds = new Set(
+                assignments
+                    .filter(a => a.user_id == selectedUserId || a.user?.id == selectedUserId)
+                    .map(a => a.rvm_machine?.id || a.rvm_machine_id)
+            );
 
-                // Also check if RVM is assigned to ANYONE (for "Assigned" badge)
-                const anyAssignedRvmIds = new Set(
-                    assignments.map(a => a.rvm_machine?.id || a.rvm_machine_id)
-                );
+            // Also check if RVM is assigned to ANYONE (for "Assigned" badge)
+            const anyAssignedRvmIds = new Set(
+                assignments.map(a => a.rvm_machine?.id || a.rvm_machine_id)
+            );
 
-                const filtered = machines.filter(m =>
-                    m.name.toLowerCase().includes(query.toLowerCase()) ||
-                    (m.location && m.location.toLowerCase().includes(query.toLowerCase()))
-                ).slice(0, 10);
+            const filtered = machines.filter(m =>
+                m.name.toLowerCase().includes(query.toLowerCase()) ||
+                (m.location && m.location.toLowerCase().includes(query.toLowerCase()))
+            ).slice(0, 10);
 
-                if (filtered.length === 0) {
-                    suggestions.innerHTML = '<div class="autocomplete-no-results">No RVM machines found</div>';
-                } else {
-                    suggestions.innerHTML = filtered.map(m => {
-                        const isAssignedToUser = assignedRvmIds.has(m.id);
-                        const isAssignedToAnyone = anyAssignedRvmIds.has(m.id);
+            if (filtered.length === 0) {
+                suggestions.innerHTML = '<div class="autocomplete-no-results">No RVM machines found</div>';
+            } else {
+                suggestions.innerHTML = filtered.map(m => {
+                    const isAssignedToUser = assignedRvmIds.has(m.id);
+                    const isAssignedToAnyone = anyAssignedRvmIds.has(m.id);
 
-                        // Badge: show "Assigned" (gray) if assigned to anyone, otherwise "Available" (green)
-                        const statusBadge = isAssignedToAnyone
-                            ? '<span class="badge" style="background:#9ca3af;color:white;font-size:0.65rem;padding:2px 6px;border-radius:4px;">Assigned</span>'
-                            : '<span class="badge" style="background:#10b981;color:white;font-size:0.65rem;padding:2px 6px;border-radius:4px;">Available</span>';
+                    // Badge: show "Assigned" (gray) if assigned to anyone, otherwise "Available" (green)
+                    const statusBadge = isAssignedToAnyone
+                        ? '<span class="badge" style="background:#9ca3af;color:white;font-size:0.65rem;padding:2px 6px;border-radius:4px;">Assigned</span>'
+                        : '<span class="badge" style="background:#10b981;color:white;font-size:0.65rem;padding:2px 6px;border-radius:4px;">Available</span>';
 
-                        // Only disable selection if already assigned to THIS user
-                        const itemStyle = isAssignedToUser ? 'opacity:0.5;cursor:not-allowed;' : '';
-                        const onClick = isAssignedToUser
-                            ? ''
-                            : `onclick="assignmentSearch.selectRvm(${m.id}, '${this.escapeHtml(m.name)}', '${this.escapeHtml(m.location || '')}')"`;
+                    // Only disable selection if already assigned to THIS user
+                    const itemStyle = isAssignedToUser ? 'opacity:0.5;cursor:not-allowed;' : '';
+                    const onClick = isAssignedToUser
+                        ? ''
+                        : `onclick="assignmentSearch.selectRvm(${m.id}, '${this.escapeHtml(m.name)}', '${this.escapeHtml(m.location || '')}')"`;
 
-                        return `
+                    return `
                             <div class="autocomplete-item" style="${itemStyle}" ${onClick}>
                                 <div class="d-flex justify-content-between align-items-start">
                                     <div class="item-name">${this.escapeHtml(m.name)}</div>
@@ -900,145 +904,170 @@
                                 <div class="item-subtitle">${m.location || 'No location set'}</div>
                             </div>
                         `;
-                    }).join('');
-                }
-                suggestions.classList.remove('d-none');
-            },
-
-            selectUser(id, name, role) {
-                document.getElementById('assign-user').value = id;
-                document.getElementById('search-user').value = name;
-                document.getElementById('selected-user-name').textContent = name;
-                document.getElementById('selected-user-role').textContent = role;
-                document.getElementById('selected-user-role').className = 'badge role-badge-' + role;
-                document.getElementById('user-info').classList.remove('d-none');
-                document.getElementById('user-suggestions').classList.add('d-none');
-            },
-
-            selectRvm(id, name, location) {
-                document.getElementById('assign-rvm').value = id;
-                document.getElementById('search-rvm').value = name;
-                document.getElementById('selected-rvm-name').textContent = name;
-                document.getElementById('selected-rvm-location').textContent = location || 'No location set';
-                document.getElementById('rvm-info').classList.remove('d-none');
-                document.getElementById('rvm-suggestions').classList.add('d-none');
-            },
-
-            clearUser() {
-                document.getElementById('assign-user').value = '';
-                document.getElementById('search-user').value = '';
-                document.getElementById('user-info').classList.add('d-none');
-            },
-
-            clearRvm() {
-                document.getElementById('assign-rvm').value = '';
-                document.getElementById('search-rvm').value = '';
-                document.getElementById('rvm-info').classList.add('d-none');
-            },
-
-            escapeHtml(text) {
-                const div = document.createElement('div');
-                div.textContent = text || '';
-                return div.innerHTML.replace(/'/g, "\\'");
+                }).join('');
             }
-        };
+            suggestions.classList.remove('d-none');
+        },
 
-        // Make search available globally
-        window.assignmentSearch = assignmentSearch;
+        selectUser(id, name, role) {
+            document.getElementById('assign-user').value = id;
+            document.getElementById('search-user').value = name;
+            document.getElementById('selected-user-name').textContent = name;
+            document.getElementById('selected-user-role').textContent = role;
+            document.getElementById('selected-user-role').className = 'badge role-badge-' + role;
+            document.getElementById('user-info').classList.remove('d-none');
+            document.getElementById('user-suggestions').classList.add('d-none');
+        },
 
-        // Credentials helper for API credentials modal
-        window.assignmentCredentials = {
-            serial: '',
-            apiKey: '',
-            machineName: '',
-            visible: false,
+        selectRvm(id, name, location) {
+            document.getElementById('assign-rvm').value = id;
+            document.getElementById('search-rvm').value = name;
+            document.getElementById('selected-rvm-name').textContent = name;
+            document.getElementById('selected-rvm-location').textContent = location || 'No location set';
+            document.getElementById('rvm-info').classList.remove('d-none');
+            document.getElementById('rvm-suggestions').classList.add('d-none');
+        },
 
-            setCredentials(serial, apiKey, machineName) {
-                this.serial = serial || '';
-                this.apiKey = apiKey || '';
-                this.machineName = machineName || '';
-                document.getElementById('cred-serial').value = this.serial;
-                document.getElementById('cred-apikey').value = this.apiKey;
-                this.visible = false;
-                document.getElementById('cred-apikey').type = 'password';
-                document.getElementById('btn-toggle-apikey').innerHTML = '<i class="ti tabler-eye"></i>';
-            },
+        clearUser() {
+            document.getElementById('assign-user').value = '';
+            document.getElementById('search-user').value = '';
+            document.getElementById('user-info').classList.add('d-none');
+        },
 
-            toggleApiKey() {
-                this.visible = !this.visible;
-                const input = document.getElementById('cred-apikey');
-                const btn = document.getElementById('btn-toggle-apikey');
-                if (this.visible) {
-                    input.type = 'text';
-                    btn.innerHTML = '<i class="ti tabler-eye-off"></i>';
-                } else {
-                    input.type = 'password';
-                    btn.innerHTML = '<i class="ti tabler-eye"></i>';
-                }
-            },
+        clearRvm() {
+            document.getElementById('assign-rvm').value = '';
+            document.getElementById('search-rvm').value = '';
+            document.getElementById('rvm-info').classList.add('d-none');
+        },
 
-            copySerial() {
-                navigator.clipboard.writeText(this.serial).then(() => {
-                    this.showToast('Serial Number copied!');
-                });
-            },
+        escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML.replace(/'/g, "\\'");
+        }
+    };
 
-            copyApiKey() {
-                navigator.clipboard.writeText(this.apiKey).then(() => {
-                    this.showToast('API Key copied!');
-                });
-            },
+    // Make search available globally
+    window.assignmentSearch = assignmentSearch;
 
-            downloadJson() {
-                const data = {
-                    serial_number: this.serial,
-                    api_key: this.apiKey,
-                    name: this.machineName,
-                    generated_at: new Date().toISOString()
-                };
-                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `rvm-credentials-${this.serial}.json`;
-                a.click();
-                URL.revokeObjectURL(url);
-                this.showToast('JSON downloaded!');
-            },
+    // Credentials helper for API credentials modal
+    window.assignmentCredentials = {
+        serial: '',
+        apiKey: '',
+        machineName: '',
+        rvmId: '', // Store rvmId
+        visible: false,
 
-            showToast(msg) {
-                // Simple toast notification
-                const toast = document.createElement('div');
-                toast.className = 'position-fixed bottom-0 end-0 m-3 p-2 px-3 rounded';
-                toast.style.cssText = 'background:#065f46;color:white;z-index:9999;animation:fadeIn 0.3s;';
-                toast.textContent = msg;
-                document.body.appendChild(toast);
-                setTimeout(() => toast.remove(), 2000);
-            }
-        };
+        setCredentials(serial, apiKey, machineName, rvmId) {
+            this.serial = serial || '';
+            this.apiKey = apiKey || '';
+            this.machineName = machineName || '';
+            this.rvmId = rvmId || ''; // Set rvmId
+            document.getElementById('cred-serial').value = this.serial;
+            document.getElementById('cred-apikey').value = this.apiKey;
+            this.visible = false;
+            document.getElementById('cred-apikey').type = 'password';
+            document.getElementById('btn-toggle-apikey').innerHTML = '<i class="ti tabler-eye"></i>';
+        },
 
-        // Init with apiHelper readiness check AND DOM element check
-        function initAssignments() {
-            // Check if required DOM elements exist (for SPA navigation)
-            const grid = document.getElementById('assignments-grid');
-            const hasApiHelper = typeof window.apiHelper !== 'undefined';
-
-            if (hasApiHelper && grid) {
-                // Elements ready, initialize
-                window.assignmentManager.init();
-                window.assignmentSearch.init();
+        toggleApiKey() {
+            this.visible = !this.visible;
+            const input = document.getElementById('cred-apikey');
+            const btn = document.getElementById('btn-toggle-apikey');
+            if (this.visible) {
+                input.type = 'text';
+                btn.innerHTML = '<i class="ti tabler-eye-off"></i>';
             } else {
-                // Retry after a short delay - DOM or apiHelper not ready yet
-                setTimeout(initAssignments, 100);
+                input.type = 'password';
+                btn.innerHTML = '<i class="ti tabler-eye"></i>';
             }
-        }
+        },
 
-        // Init on load - use requestAnimationFrame for SPA to ensure DOM is painted
-        if (document.readyState === 'complete' || document.readyState === 'interactive') {
-            requestAnimationFrame(() => {
-                initAssignments();
+        copySerial() {
+            navigator.clipboard.writeText(this.serial).then(() => {
+                this.showToast('Serial Number copied!');
             });
-        } else {
-            document.addEventListener('DOMContentLoaded', initAssignments);
+        },
+
+        copyApiKey() {
+            navigator.clipboard.writeText(this.apiKey).then(() => {
+                this.showToast('API Key copied!');
+            });
+        },
+
+        downloadJson() {
+            const data = {
+                serial_number: this.serial,
+                api_key: this.apiKey,
+                name: this.machineName,
+                generated_at: new Date().toISOString()
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `rvm-credentials-${this.serial}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            this.showToast('JSON downloaded!');
+        },
+
+        async regenerateApiKey() {
+            if (!confirm('Regenerate API Key? The old key will stop working immediately.')) return;
+
+            const rvmId = this.rvmId; // Use the stored rvmId
+            if (!rvmId) {
+                this.showToast('Error: RVM ID not found');
+                return;
+            }
+
+            try {
+                const response = await apiHelper.post(`/api/v1/rvm-machines/${rvmId}/regenerate-api-key`);
+                const data = await response.json();
+
+                // Update key
+                this.apiKey = data.api_key || data.data?.api_key;
+                document.getElementById('cred-apikey').value = this.apiKey;
+                this.showToast('API Key Regenerated!');
+            } catch (e) {
+                console.error(e);
+                this.showToast('Failed to regenerate key');
+            }
+        },
+
+        showToast(msg) {
+            // Simple toast notification
+            const toast = document.createElement('div');
+            toast.className = 'position-fixed bottom-0 end-0 m-3 p-2 px-3 rounded';
+            toast.style.cssText = 'background:#065f46;color:white;z-index:9999;animation:fadeIn 0.3s;';
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
         }
-    </script>
+    };
+
+    // Init with apiHelper readiness check AND DOM element check
+    function initAssignments() {
+        // Check if required DOM elements exist (for SPA navigation)
+        const grid = document.getElementById('assignments-grid');
+        const hasApiHelper = typeof window.apiHelper !== 'undefined';
+
+        if (hasApiHelper && grid) {
+            // Elements ready, initialize
+            window.assignmentManager.init();
+            window.assignmentSearch.init();
+        } else {
+            // Retry after a short delay - DOM or apiHelper not ready yet
+            setTimeout(initAssignments, 100);
+        }
+    }
+
+    // Init on load - use requestAnimationFrame for SPA to ensure DOM is painted
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        requestAnimationFrame(() => {
+            initAssignments();
+        });
+    } else {
+        document.addEventListener('DOMContentLoaded', initAssignments);
+    }
+</script>

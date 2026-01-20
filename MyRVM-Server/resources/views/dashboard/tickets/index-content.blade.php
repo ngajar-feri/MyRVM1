@@ -712,7 +712,7 @@
     window.ticketWizard = {
         currentStep: 1,
 
-        nextStep() {
+        async nextStep() {
             if (this.currentStep === 1 && !document.getElementById('ticket-rvm').value) {
                 alert('Please select an RVM');
                 return;
@@ -723,7 +723,7 @@
                     return;
                 }
                 // Load technicians for selected RVM
-                this.loadAvailableTechnicians();
+                await this.loadAvailableTechnicians();
             }
 
             this.currentStep++;

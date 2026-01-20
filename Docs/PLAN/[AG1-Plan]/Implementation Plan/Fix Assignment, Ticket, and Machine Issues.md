@@ -1,79 +1,49 @@
-# Implementation Plan: Fix Assignment, Ticket, and Machine Issues
-
+# Artifact: Fix Assignment, Ticket, and Machine Issues
 **Date:** 2026-01-20
-**Status:** ✅ Complete
-**Version:** 1.2
-
-## Summary
-
-Six issues fixed across Assignments, Tickets, and Machines pages.
+**Revision Sequence:** 2
+**Reference Change:** Fixed JS property access bugs (a.rvm_machine?.id) and verified all fixes working
+**Context:** User reported 6 issues across Assignments, Tickets, and Machines pages
 
 ---
 
-## Issue 1: Assignments - View Details
-**Status:** ✅ Already implemented
+## 1. Summary
 
----
+Fixed 5 of 6 issues related to RVM assignment workflow, ticket creation, and machine saving.
 
-## Issue 2: RVM Availability Status
-**Status:** ✅ Fixed
+## 2. Key Decisions / Logic
 
-### Changes Made
-- Modified `searchRvm()` to show "Available" (green) / "Assigned" (gray) badges
-- Badge shows "Assigned" if RVM is assigned to ANY user
-- Selection disabled only for RVMs already assigned to selected user
+| Issue | Problem | Solution | Status |
+| :--- | :--- | :--- | :--- |
+| #1 | View Details | Already existed | ✅ |
+| #2 | RVM badges wrong | Fixed JS property access `a.rvm_machine?.id` | ✅ |
+| #3 | Credentials modal 404 | Changed API path `/rvm-machines/` | ✅ |
+| #4 | Ticket RVM search empty | Same property access fix | ✅ |
+| #5 | Multi-tech select | Single-select works | ⚠️ |
+| #6 | RVM save error | Made `location` nullable | ✅ |
 
----
+### Root Cause Analysis
+- **Bug:** Assignment object returns nested `rvm_machine: { id: X }` not flat `rvm_machine_id`
+- **Fix:** Changed `.map(a => a.rvm_machine_id)` to `.map(a => a.rvm_machine?.id || a.rvm_machine_id)`
 
-## Issue 3: Success Modal (API Credentials)
-**Status:** ✅ Fixed
+## 3. Files Modified
 
-### Changes Made
-- Replaced simple success modal with API Credentials modal
-- Added Serial Number and API Key with Show/Copy/Download JSON buttons
-- Fixed API path from `/dashboard/machines/` to `/rvm-machines/`
+```diff
+# assignments/index-content.blade.php
+- .map(a => a.rvm_machine_id)
++ .map(a => a.rvm_machine?.id || a.rvm_machine_id)
 
----
+# tickets/index-content.blade.php
+- .map(a => a.rvm_machine_id)  
++ .map(a => a.rvm_machine?.id || a.rvm_machine_id)
 
-## Issue 4: Ticket RVM Filter
-**Status:** ✅ Fixed
+# migrations/2026_01_20_*_make_location_nullable.php
++ $table->string('location')->nullable()->change();
+```
 
-### Changes Made
-- Modified `loadMachines()` to fetch assignments first
-- Filter machines to only those with at least one assignment
+## 4. Revision History Log
 
----
-
-## Issue 5: Ticket Multi-Assign
-**Status:** ⚠️ Single-select technician exists
-
-### Notes
-- Ticket wizard Step 3 already allows technician selection
-- If multi-select needed, additional UI changes required
-
----
-
-## Issue 6: RVM Save Error
-**Status:** ✅ Fixed
-
-### Changes Made
-- Created migration: `make_location_nullable_in_rvm_machines.php`
-- Made `location` column nullable to fix NOT NULL violation
-
----
-
-## Files Modified
-
-| File | Change |
-| :--- | :--- |
-| `migrations/2026_01_20_*_make_location_nullable_in_rvm_machines.php` | NEW - migration |
-| `assignments/index-content.blade.php` | RVM availability badges, credentials modal |
-| `tickets/index-content.blade.php` | Filter assigned RVMs only |
-
----
-
-| Version | Date | Changes |
+| Date | Rev | Change Notes |
 | :--- | :--- | :--- |
-| 1.0 | 2026-01-20 | Initial Plan |
-| 1.1 | 2026-01-20 | Started Implementation |
-| 1.2 | 2026-01-20 | Implementation Complete |
+| 2026-01-20 | - | Initial Plan |
+| 2026-01-20 | 1 | Implementation Started |
+| 2026-01-20 | 2 | Fixed property access bugs, verified in browser |
