@@ -499,9 +499,23 @@
 
         async loadMachines() {
             try {
-                const response = await apiHelper.get('/api/v1/dashboard/machines');
-                const data = await response.json();
-                this.machines = data.data || data || [];
+                // Fetch all machines AND assignments to filter
+                const [machinesRes, assignmentsRes] = await Promise.all([
+                    apiHelper.get('/api/v1/dashboard/machines'),
+                    apiHelper.get('/api/v1/dashboard/technician-assignments')
+                ]);
+                const machinesData = await machinesRes.json();
+                const assignmentsData = await assignmentsRes.json();
+
+                const allMachines = machinesData.data || machinesData || [];
+                const assignments = assignmentsData.data || assignmentsData || [];
+
+                // Get unique RVM IDs that have assignments
+                const assignedRvmIds = new Set(assignments.map(a => a.rvm_machine_id));
+
+                // Filter machines to only those with assignments
+                this.machines = allMachines.filter(m => assignedRvmIds.has(m.id));
+                this.allMachines = allMachines; // Keep all for filter dropdown
                 this.populateMachineDropdowns();
             } catch (e) {
                 console.error('Failed to load machines:', e);
@@ -509,13 +523,16 @@
         },
 
         populateMachineDropdowns() {
-            const ticketRvm = document.getElementById('ticket-rvm');
             const filterRvm = document.getElementById('filter-rvm');
-            if (!ticketRvm || !filterRvm) return;
+            if (!filterRvm) return;
 
-            const options = this.machines.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
-            ticketRvm.innerHTML = '<option value="">Choose RVM...</option>' + options;
-            filterRvm.innerHTML = '<option value="">All RVM</option>' + options;
+            // Filter dropdown uses all machines
+            const allMachines = this.allMachines || this.machines || [];
+            const filterOptions = allMachines.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+            filterRvm.innerHTML = '<option value="">All RVM</option>' + filterOptions;
+
+            // search-ticket-rvm uses autocomplete (ticketSearch), not dropdown
+            // So we just store machines for the search
         },
 
         async loadTickets() {

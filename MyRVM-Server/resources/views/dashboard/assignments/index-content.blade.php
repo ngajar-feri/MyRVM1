@@ -287,18 +287,67 @@
         </div>
     </div>
 
-    <!-- Success Modal - Bio-Digital -->
-    <div class="modal fade" id="assignmentSuccessModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered" style="max-width: 300px;">
-            <div class="modal-content text-center" style="border-radius: 16px; border: none;">
-                <div class="modal-body py-4">
-                    <div class="mb-3" style="font-size: 48px;">✅</div>
-                    <h5 class="fw-bold" style="color: #065f46;">Berhasil!</h5>
-                    <p class="text-muted small mb-4">Assignment berhasil ditambahkan.</p>
-                    <button type="button" class="btn btn-bio text-white px-4" data-bs-dismiss="modal"
-                        onclick="window.assignmentManager.loadAssignments()">
-                        Selesai
-                    </button>
+    <!-- API Credentials Modal - Bio-Digital -->
+    <div class="modal fade" id="assignmentSuccessModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 380px;">
+            <div class="modal-content" style="border-radius: 16px; border: none;">
+                <div class="modal-header"
+                    style="border-bottom: none; background: linear-gradient(to right, #ecfdf5, #d1fae5);">
+                    <h6 class="modal-title fw-bold" style="color: #065f46;">
+                        <i class="ti tabler-check-circle me-2"></i>Assignment Berhasil
+                    </h6>
+                </div>
+                <div class="modal-body py-3">
+                    <div class="text-center mb-3">
+                        <div style="font-size: 36px;">✅</div>
+                        <p class="text-muted small mb-0">User berhasil di-assign ke RVM Machine</p>
+                    </div>
+
+                    <!-- API Credentials Section -->
+                    <div class="p-3 rounded mb-3"
+                        style="background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border: 1px solid rgba(16,185,129,0.2);">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="form-label small mb-0 fw-semibold" style="color: #065f46;">
+                                <i class="ti tabler-fingerprint me-1"></i>Serial Number
+                            </label>
+                        </div>
+                        <div class="input-group input-group-sm mb-3">
+                            <input type="text" id="cred-serial" class="form-control" readonly style="background:#fff;">
+                            <button class="btn btn-outline-secondary" type="button"
+                                onclick="assignmentCredentials.copySerial()" title="Copy">
+                                <i class="ti tabler-copy"></i>
+                            </button>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="form-label small mb-0 fw-semibold" style="color: #065f46;">
+                                <i class="ti tabler-key me-1"></i>API Key
+                            </label>
+                        </div>
+                        <div class="input-group input-group-sm">
+                            <input type="password" id="cred-apikey" class="form-control" readonly
+                                style="background:#fff;">
+                            <button class="btn btn-outline-secondary" type="button"
+                                onclick="assignmentCredentials.toggleApiKey()" title="Show/Hide" id="btn-toggle-apikey">
+                                <i class="ti tabler-eye"></i>
+                            </button>
+                            <button class="btn btn-outline-secondary" type="button"
+                                onclick="assignmentCredentials.copyApiKey()" title="Copy">
+                                <i class="ti tabler-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-label-primary btn-sm"
+                            onclick="assignmentCredentials.downloadJson()">
+                            <i class="ti tabler-download me-1"></i>Download JSON
+                        </button>
+                        <button type="button" class="btn btn-bio text-white" data-bs-dismiss="modal"
+                            onclick="window.assignmentManager.loadAssignments()">
+                            Selesai
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -638,6 +687,20 @@
                             rvm_machine_id: rvmId
                         });
 
+                        // Fetch machine credentials for the newly assigned RVM
+                        try {
+                            const credResponse = await apiHelper.get(`/api/v1/rvm-machines/${rvmId}/credentials`);
+                            const credData = await credResponse.json();
+                            window.assignmentCredentials.setCredentials(
+                                credData.serial_number,
+                                credData.api_key,
+                                credData.name
+                            );
+                        } catch (credErr) {
+                            console.warn('Could not fetch credentials:', credErr);
+                            window.assignmentCredentials.setCredentials('N/A', 'N/A', 'N/A');
+                        }
+
                         bootstrap.Modal.getInstance(document.getElementById('addAssignmentModal')).hide();
                         new bootstrap.Modal(document.getElementById('assignmentSuccessModal')).show();
                         assignmentWizard.reset();
@@ -789,21 +852,55 @@
                     return;
                 }
 
+                const selectedUserId = document.getElementById('assign-user').value;
                 const machines = window.assignmentManager.machines || [];
+                const assignments = window.assignmentManager.assignments || [];
+
+                // Build set of RVM IDs already assigned to SELECTED USER (show as unavailable)
+                const assignedRvmIds = new Set(
+                    assignments
+                        .filter(a => a.user_id == selectedUserId || a.user?.id == selectedUserId)
+                        .map(a => a.rvm_machine_id)
+                );
+
+                // Also check if RVM is assigned to ANYONE (for "Assigned" badge)
+                const anyAssignedRvmIds = new Set(
+                    assignments.map(a => a.rvm_machine_id)
+                );
+
                 const filtered = machines.filter(m =>
                     m.name.toLowerCase().includes(query.toLowerCase()) ||
                     (m.location && m.location.toLowerCase().includes(query.toLowerCase()))
-                ).slice(0, 8);
+                ).slice(0, 10);
 
                 if (filtered.length === 0) {
                     suggestions.innerHTML = '<div class="autocomplete-no-results">No RVM machines found</div>';
                 } else {
-                    suggestions.innerHTML = filtered.map(m => `
-                        <div class="autocomplete-item" onclick="assignmentSearch.selectRvm(${m.id}, '${this.escapeHtml(m.name)}', '${this.escapeHtml(m.location || '')}')">
-                            <div class="item-name">${this.escapeHtml(m.name)}</div>
-                            <div class="item-subtitle">${m.location || 'No location set'}</div>
-                        </div>
-                    `).join('');
+                    suggestions.innerHTML = filtered.map(m => {
+                        const isAssignedToUser = assignedRvmIds.has(m.id);
+                        const isAssignedToAnyone = anyAssignedRvmIds.has(m.id);
+                        
+                        // Badge: show "Assigned" (gray) if assigned to anyone, otherwise "Available" (green)
+                        const statusBadge = isAssignedToAnyone
+                            ? '<span class="badge" style="background:#9ca3af;color:white;font-size:0.65rem;padding:2px 6px;border-radius:4px;">Assigned</span>'
+                            : '<span class="badge" style="background:#10b981;color:white;font-size:0.65rem;padding:2px 6px;border-radius:4px;">Available</span>';
+                        
+                        // Only disable selection if already assigned to THIS user
+                        const itemStyle = isAssignedToUser ? 'opacity:0.5;cursor:not-allowed;' : '';
+                        const onClick = isAssignedToUser
+                            ? ''
+                            : `onclick="assignmentSearch.selectRvm(${m.id}, '${this.escapeHtml(m.name)}', '${this.escapeHtml(m.location || '')}')"`;
+
+                        return `
+                            <div class="autocomplete-item" style="${itemStyle}" ${onClick}>
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div class="item-name">${this.escapeHtml(m.name)}</div>
+                                    ${statusBadge}
+                                </div>
+                                <div class="item-subtitle">${m.location || 'No location set'}</div>
+                            </div>
+                        `;
+                    }).join('');
                 }
                 suggestions.classList.remove('d-none');
             },
@@ -848,6 +945,77 @@
 
         // Make search available globally
         window.assignmentSearch = assignmentSearch;
+
+        // Credentials helper for API credentials modal
+        window.assignmentCredentials = {
+            serial: '',
+            apiKey: '',
+            machineName: '',
+            visible: false,
+
+            setCredentials(serial, apiKey, machineName) {
+                this.serial = serial || '';
+                this.apiKey = apiKey || '';
+                this.machineName = machineName || '';
+                document.getElementById('cred-serial').value = this.serial;
+                document.getElementById('cred-apikey').value = this.apiKey;
+                this.visible = false;
+                document.getElementById('cred-apikey').type = 'password';
+                document.getElementById('btn-toggle-apikey').innerHTML = '<i class="ti tabler-eye"></i>';
+            },
+
+            toggleApiKey() {
+                this.visible = !this.visible;
+                const input = document.getElementById('cred-apikey');
+                const btn = document.getElementById('btn-toggle-apikey');
+                if (this.visible) {
+                    input.type = 'text';
+                    btn.innerHTML = '<i class="ti tabler-eye-off"></i>';
+                } else {
+                    input.type = 'password';
+                    btn.innerHTML = '<i class="ti tabler-eye"></i>';
+                }
+            },
+
+            copySerial() {
+                navigator.clipboard.writeText(this.serial).then(() => {
+                    this.showToast('Serial Number copied!');
+                });
+            },
+
+            copyApiKey() {
+                navigator.clipboard.writeText(this.apiKey).then(() => {
+                    this.showToast('API Key copied!');
+                });
+            },
+
+            downloadJson() {
+                const data = {
+                    serial_number: this.serial,
+                    api_key: this.apiKey,
+                    name: this.machineName,
+                    generated_at: new Date().toISOString()
+                };
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `rvm-credentials-${this.serial}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                this.showToast('JSON downloaded!');
+            },
+
+            showToast(msg) {
+                // Simple toast notification
+                const toast = document.createElement('div');
+                toast.className = 'position-fixed bottom-0 end-0 m-3 p-2 px-3 rounded';
+                toast.style.cssText = 'background:#065f46;color:white;z-index:9999;animation:fadeIn 0.3s;';
+                toast.textContent = msg;
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 2000);
+            }
+        };
 
         // Init with apiHelper readiness check AND DOM element check
         function initAssignments() {
