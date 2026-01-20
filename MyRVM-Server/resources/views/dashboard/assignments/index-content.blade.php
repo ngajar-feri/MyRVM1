@@ -860,12 +860,12 @@
                 const assignedRvmIds = new Set(
                     assignments
                         .filter(a => a.user_id == selectedUserId || a.user?.id == selectedUserId)
-                        .map(a => a.rvm_machine_id)
+                        .map(a => a.rvm_machine?.id || a.rvm_machine_id)
                 );
 
                 // Also check if RVM is assigned to ANYONE (for "Assigned" badge)
                 const anyAssignedRvmIds = new Set(
-                    assignments.map(a => a.rvm_machine_id)
+                    assignments.map(a => a.rvm_machine?.id || a.rvm_machine_id)
                 );
 
                 const filtered = machines.filter(m =>
@@ -879,12 +879,12 @@
                     suggestions.innerHTML = filtered.map(m => {
                         const isAssignedToUser = assignedRvmIds.has(m.id);
                         const isAssignedToAnyone = anyAssignedRvmIds.has(m.id);
-                        
+
                         // Badge: show "Assigned" (gray) if assigned to anyone, otherwise "Available" (green)
                         const statusBadge = isAssignedToAnyone
                             ? '<span class="badge" style="background:#9ca3af;color:white;font-size:0.65rem;padding:2px 6px;border-radius:4px;">Assigned</span>'
                             : '<span class="badge" style="background:#10b981;color:white;font-size:0.65rem;padding:2px 6px;border-radius:4px;">Available</span>';
-                        
+
                         // Only disable selection if already assigned to THIS user
                         const itemStyle = isAssignedToUser ? 'opacity:0.5;cursor:not-allowed;' : '';
                         const onClick = isAssignedToUser

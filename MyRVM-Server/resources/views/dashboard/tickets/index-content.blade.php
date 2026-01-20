@@ -511,7 +511,7 @@
                 const assignments = assignmentsData.data || assignmentsData || [];
 
                 // Get unique RVM IDs that have assignments
-                const assignedRvmIds = new Set(assignments.map(a => a.rvm_machine_id));
+                const assignedRvmIds = new Set(assignments.map(a => a.rvm_machine?.id || a.rvm_machine_id));
 
                 // Filter machines to only those with assignments
                 this.machines = allMachines.filter(m => assignedRvmIds.has(m.id));
