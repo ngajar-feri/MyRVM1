@@ -334,7 +334,7 @@
                         <div class="d-flex gap-2">
                             <button type="button" class="btn btn-label-secondary flex-grow-1"
                                 onclick="ticketWizard.prevStep()">Back</button>
-                            <button type="button" class="btn btn-bio flex-grow-1 text-white"
+                            <button type="button" id="btn-ticket-next-assign" class="btn btn-bio flex-grow-1 text-white"
                                 onclick="ticketWizard.nextStep()">Next: Assign</button>
                         </div>
                     </div>
@@ -722,8 +722,22 @@
                     alert('Please fill in category and description');
                     return;
                 }
+                
+                // Show loading state
+                const btn = document.getElementById('btn-ticket-next-assign');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Loading...';
+                }
+
                 // Load technicians for selected RVM
                 await this.loadAvailableTechnicians();
+
+                // Reset button state (will be hidden by step change anyway, but good practice)
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = 'Next: Assign';
+                }
             }
 
             this.currentStep++;

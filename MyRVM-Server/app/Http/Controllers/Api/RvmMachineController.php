@@ -187,7 +187,11 @@ class RvmMachineController extends Controller
             'location_name' => $machine->name,
         ]);
 
-        ActivityLog::log('RVM', 'Create', "Machine '{$machine->name}' created by {$user->name}", $user->id);
+        try {
+            ActivityLog::log('RVM', 'Create', "Machine '{$machine->name}' created by {$user->name}", $user->id);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('ActivityLog Failed: ' . $e->getMessage());
+        }
 
         // Return with credentials (one-time display)
         return response()->json([
@@ -264,7 +268,11 @@ class RvmMachineController extends Controller
 
         $machine->update($request->all());
 
-        ActivityLog::log('RVM', 'Update', "Machine '{$machine->name}' updated by {$user->name}", $user->id);
+        try {
+            ActivityLog::log('RVM', 'Update', "Machine '{$machine->name}' updated by {$user->name}", $user->id);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('ActivityLog Failed: ' . $e->getMessage());
+        }
 
         return response()->json([
             'status' => 'success',
@@ -367,12 +375,16 @@ class RvmMachineController extends Controller
             ];
         }
 
-        ActivityLog::log(
-            'RVM',
-            'Assign',
-            "Machine '{$machine->name}' assigned to " . count($assignedUsers) . " user(s) by {$assigner->name}",
-            $assigner->id
-        );
+        try {
+            ActivityLog::log(
+                'RVM',
+                'Assign',
+                "Machine '{$machine->name}' assigned to " . count($assignedUsers) . " user(s) by {$assigner->name}",
+                $assigner->id
+            );
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('ActivityLog Failed: ' . $e->getMessage());
+        }
 
         return response()->json([
             'status' => 'success',
@@ -447,7 +459,11 @@ class RvmMachineController extends Controller
         $machine = RvmMachine::findOrFail($id);
         $newKey = $machine->regenerateApiKey();
 
-        ActivityLog::log('RVM', 'Update', "API Key regenerated for '{$machine->name}' by {$user->name}", $user->id);
+        try {
+            ActivityLog::log('RVM', 'Update', "API Key regenerated for '{$machine->name}' by {$user->name}", $user->id);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('ActivityLog Failed: ' . $e->getMessage());
+        }
 
         return response()->json([
             'status' => 'success',
@@ -492,7 +508,12 @@ class RvmMachineController extends Controller
 
         $machine = RvmMachine::findOrFail($id);
 
-        ActivityLog::log('RVM', 'Read', "Credentials downloaded for '{$machine->name}' by {$user->name}", $user->id);
+        // Log activity safely
+        try {
+            ActivityLog::log('RVM', 'Read', "Credentials downloaded for '{$machine->name}' by {$user->name}", $user->id);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('ActivityLog Failed: ' . $e->getMessage());
+        }
 
         return response()->json([
             'serial_number' => $machine->serial_number,

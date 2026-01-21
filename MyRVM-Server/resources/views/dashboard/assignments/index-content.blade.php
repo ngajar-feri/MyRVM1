@@ -322,10 +322,6 @@
                                 onclick="assignmentCredentials.copyApiKey()">
                                 [📋 Copy]
                             </button>
-                            <button class="btn btn-sm btn-outline-primary"
-                                onclick="assignmentCredentials.regenerateApiKey()">
-                                [🔄 Regenerate]
-                            </button>
                         </div>
                     </div>
 
@@ -706,7 +702,12 @@
                     }
 
                     bootstrap.Modal.getInstance(document.getElementById('addAssignmentModal')).hide();
-                    new bootstrap.Modal(document.getElementById('assignmentSuccessModal')).show();
+                    
+                    // Small delay to ensure backdrop is cleared
+                    setTimeout(() => {
+                        new bootstrap.Modal(document.getElementById('assignmentSuccessModal')).show();
+                    }, 150);
+                    
                     assignmentWizard.reset();
                 } catch (e) {
                     alert('Failed to create assignment. User may already be assigned to this RVM.');
@@ -1010,29 +1011,6 @@
             a.click();
             URL.revokeObjectURL(url);
             this.showToast('JSON downloaded!');
-        },
-
-        async regenerateApiKey() {
-            if (!confirm('Regenerate API Key? The old key will stop working immediately.')) return;
-
-            const rvmId = this.rvmId; // Use the stored rvmId
-            if (!rvmId) {
-                this.showToast('Error: RVM ID not found');
-                return;
-            }
-
-            try {
-                const response = await apiHelper.post(`/api/v1/rvm-machines/${rvmId}/regenerate-api-key`);
-                const data = await response.json();
-
-                // Update key
-                this.apiKey = data.api_key || data.data?.api_key;
-                document.getElementById('cred-apikey').value = this.apiKey;
-                this.showToast('API Key Regenerated!');
-            } catch (e) {
-                console.error(e);
-                this.showToast('Failed to regenerate key');
-            }
         },
 
         showToast(msg) {
