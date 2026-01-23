@@ -5,9 +5,14 @@
                 <h5 class="card-title mb-0">
                     <i class="ti tabler-device-desktop-analytics me-2"></i>RVM Machines Management
                 </h5>
-                <div>
-                    <button type="button" class="btn btn-label-primary me-2" id="toggle-view">
-                        <i class="ti tabler-layout-grid"></i>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-outline-danger d-none" id="delete-selected-btn"
+                        onclick="machineManagement.bulkDelete()">
+                        <i class="ti tabler-trash me-1"></i>Delete Selected (<span id="selected-count">0</span>)
+                    </button>
+                    <button type="button" class="btn btn-label-secondary d-none" id="clear-selection-btn"
+                        onclick="machineManagement.clearSelection()">
+                        <i class="ti tabler-x me-1"></i>Clear
                     </button>
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal"
                         data-bs-target="#addMachineModal">
@@ -464,41 +469,124 @@
     </div>
 </div>
 
-<!-- Success Modal with Credentials -->
-<div class="modal fade modal-success modal-add-machine" id="machineSuccessModal" tabindex="-1" aria-hidden="true">
+<!-- Success Modal with Credentials - High Contrast Terminal Style -->
+<div class="modal fade" id="machineSuccessModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+        <div class="modal-content"
+            style="border-radius: 16px; border: none; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
+
+            <!-- Header - Success Banner -->
+            <div
+                style="background: linear-gradient(135deg, #10b981, #059669); padding: 16px 20px; display: flex; align-items: center; gap: 12px;">
+                <div
+                    style="background: rgba(255,255,255,0.2); border-radius: 50%; padding: 8px; display: flex; align-items: center; justify-content: center;">
+                    <i class="ti tabler-check" style="color: white; font-size: 18px;"></i>
+                </div>
+                <div>
+                    <h5 style="margin: 0; color: white; font-weight: 700; font-size: 16px;">RVM Berhasil Ditambahkan
+                    </h5>
+                    <p style="margin: 0; color: rgba(255,255,255,0.8); font-size: 12px;">API Credentials untuk
+                        konfigurasi Edge</p>
+                </div>
+                <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal"></button>
+            </div>
+
+            <!-- Body -->
+            <div style="padding: 24px; background: #ffffff;">
+
+                <!-- Serial Number -->
+                <div style="margin-bottom: 20px;">
+                    <label
+                        style="display: block; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">
+                        Serial Number
+                    </label>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <input type="text" id="successSerialNumber" readonly
+                            style="flex: 1; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 14px; font-size: 18px; font-weight: 700; color: #111827; letter-spacing: 0.5px; font-family: 'Inter', system-ui, sans-serif;">
+                        <button class="btn btn-sm" onclick="machineWizard.copySerial()"
+                            style="background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 12px; color: #374151;">
+                            <i class="ti tabler-copy"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- API Key - Terminal Style (Dark) -->
+                <div style="margin-bottom: 20px;">
+                    <label
+                        style="display: block; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">
+                        API Key
+                    </label>
+                    <div
+                        style="background: #1e293b; border-radius: 10px; padding: 14px 16px; border: 1px solid #334155; position: relative;">
+                        <code id="successApiKeyDisplay"
+                            style="display: block; color: #4ade80; font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace; font-size: 13px; word-break: break-all; line-height: 1.6; letter-spacing: 0.5px;">
+                            ••••••••••••••••••••••••••••••••
+                        </code>
+                        <input type="hidden" id="successApiKey" value="">
+                    </div>
+                    <p style="margin: 8px 0 0 0; font-size: 12px; color: #dc2626; font-style: italic;">
+                        <i class="ti tabler-alert-triangle" style="margin-right: 4px;"></i>
+                        Salin kunci ini sekarang. Kunci tidak akan ditampilkan lagi.
+                    </p>
+
+                    <!-- Action Buttons -->
+                    <div style="display: flex; gap: 8px; margin-top: 12px;">
+                        <button class="btn btn-sm" onclick="machineWizard.toggleApiKey()" id="btn-toggle-machine-apikey"
+                            style="flex: 1; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px 12px; color: #475569; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                            <i class="ti tabler-eye"></i> Show
+                        </button>
+                        <button class="btn btn-sm" onclick="machineWizard.copyApiKey()"
+                            style="flex: 1; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px 12px; color: #475569; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                            <i class="ti tabler-copy"></i> Copy
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Download JSON Button -->
+                <button class="btn w-100" onclick="machineWizard.downloadCredentials()"
+                    style="background: linear-gradient(135deg, #10b981, #059669); border: none; border-radius: 10px; padding: 12px 16px; color: white; font-weight: 600; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s;">
+                    <i class="ti tabler-download"></i> Download Credentials (JSON)
+                </button>
+
+                <!-- Done Button -->
+                <button type="button" class="btn btn-light w-100 mt-3" data-bs-dismiss="modal"
+                    style="background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px 16px; color: #374151; font-weight: 500; font-size: 14px;">
+                    Selesai
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title text-success">
-                    <i class="ti tabler-check-circle me-2"></i>RVM Berhasil Ditambahkan
+        <div class="modal-content"
+            style="border-radius: 16px; border: none; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.2);">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title d-flex align-items-center">
+                    <i class="ti tabler-alert-triangle text-danger me-2"></i>
+                    Konfirmasi Hapus
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <div class="credentials-box">
-                    <div class="mb-2">
-                        <label class="compact-label">Serial Number</label>
-                        <div class="fw-bold" id="successSerialNumber">-</div>
-                    </div>
-                    <div>
-                        <label class="compact-label">API Key</label>
-                        <div class="api-key-display" id="successApiKey">-</div>
-                    </div>
+                <div id="delete-confirm-message" class="text-center py-3">
+                    <!-- Dynamic content will be inserted here -->
                 </div>
-                <div class="btn-group-creds">
-                    <button type="button" class="btn btn-outline-secondary btn-cred"
-                        onclick="machineWizard.copyApiKey()">
-                        <i class="ti tabler-copy"></i> Copy
-                    </button>
-                    <button type="button" class="btn btn-outline-primary btn-cred"
-                        onclick="machineWizard.downloadCredentials()">
-                        <i class="ti tabler-download"></i> JSON
-                    </button>
+                <div id="delete-skipped-list" class="d-none">
+                    <div class="alert alert-warning mb-0" style="border-radius: 10px;">
+                        <small><strong>Dilewati (memiliki assignment):</strong></small>
+                        <div id="skipped-names" class="mt-1" style="font-size: 13px;"></div>
+                    </div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-wizard btn-wizard-primary" data-bs-dismiss="modal">
-                    Selesai
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">
+                    <i class="ti tabler-x me-1"></i>Batal
+                </button>
+                <button type="button" class="btn btn-danger" id="confirm-delete-btn">
+                    <i class="ti tabler-trash me-1"></i>Hapus
                 </button>
             </div>
         </div>

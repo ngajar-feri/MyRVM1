@@ -7,6 +7,10 @@ use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use OpenApi\Annotations as OA;
 
+use App\Exports\ActivityLogExport;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Maatwebsite\Excel\Facades\Excel;
+
 class LogController extends Controller
 {
     /**
@@ -160,5 +164,59 @@ class LogController extends Controller
                     ->pluck('action'),
             ]
         ]);
+    }
+    /**
+     * Export activity logs to Excel or PDF.
+     */
+    public function export(Request $request)
+    {
+        $user = $request->user();
+        if (!in_array($user->role, $this->allowedRoles)) {
+            return response()->json(['message' => 'Access denied'], 403);
+        }
+
+        $query = ActivityLog::with('user:id,name,email')->orderBy('created_at', 'desc');
+
+        // Apply same filters as index
+        if ($request->filled('module'))
+            $query->module($request->module);
+        if ($request->filled('action'))
+            $query->action($request->action);
+        if ($request->filled('date_from') || $request->filled('date_to')) {
+            $query->dateBetween($request->date_from, $request->date_to);
+        }
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('description', 'like', "%{$search}%")
+                    ->orWhere('module', 'like', "%{$search}%")
+                    ->orWhere('action', 'like', "%{$search}%")
+                    ->orWhere('ip_address', 'like', "%{$search}%");
+            });
+        }
+
+        // Limit to 1000 records for performance if not specified
+        $limit = $request->input('per_page', 1000);
+        $logs = $query->limit($limit)->get();
+
+        if ($request->input('format') === 'excel') {
+            return Excel::download(new ActivityLogExport($logs), 'activity_logs_' . date('Y-m-d_H-i') . '.xlsx');
+        }
+
+        if ($request->input('format') === 'pdf') {
+            // Ensure memory limit is sufficient for PDF generation
+            ini_set('memory_limit', '256M');
+            ini_set('max_execution_time', 300);
+
+            $pdf = Pdf::loadView('dashboard.logs.pdf', ['logs' => $logs]);
+
+            // Set Paper & Options
+            $pdf->setPaper('a4', 'landscape');
+            $pdf->setOptions(['dpi' => 150, 'defaultFont' => 'sans-serif']);
+
+            return $pdf->download('activity_logs_' . date('Y-m-d_H-i') . '.pdf');
+        }
+
+        return response()->json(['message' => 'Invalid format'], 400);
     }
 }

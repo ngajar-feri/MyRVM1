@@ -290,18 +290,70 @@ class LogsManagement {
         this.loadLogs();
     }
 
-    exportLogs() {
-        // Simple CSV export
-        const params = new URLSearchParams({
-            search: this.filters.search,
-            module: this.filters.module,
-            action: this.filters.action,
-            date_from: this.filters.date_from,
-            date_to: this.filters.date_to,
-            per_page: 1000 // Get all for export
-        });
+    async exportLogs(format = 'excel') {
+        try {
+            // Tampilkan loading indicator (opsional)
+            const btn = document.querySelector(`button[onclick="logsManagement.exportLogs('${format}')"]`);
+            const originalText = btn ? btn.innerHTML : '';
+            if (btn) btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Downloading...';
 
-        window.open(`/api/v1/logs?${params}&format=csv`, '_blank');
+            const params = new URLSearchParams({
+                search: this.filters.search,
+                module: this.filters.module,
+                action: this.filters.action,
+                date_from: this.filters.date_from,
+                date_to: this.filters.date_to,
+                per_page: 1000,
+                format: format
+            });
+
+            // Ambil Token dari localStorage atau tempat Anda menyimpannya
+            // Sesuaikan key 'access_token' dengan aplikasi Anda
+            const token = localStorage.getItem('token');
+
+            const response = await fetch(`/api/v1/logs/export?${params}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': format === 'excel' ?
+                        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' :
+                        'application/pdf',
+                }
+            });
+
+            if (!response.ok) {
+                if (response.status === 403) throw new Error('Access denied');
+                throw new Error('Export failed');
+            }
+
+            // Ubah response menjadi Blob (File)
+            const blob = await response.blob();
+
+            // Buat URL sementara untuk blob tersebut
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+
+            // Tentukan nama file
+            const timestamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+            const extension = format === 'excel' ? 'xlsx' : 'pdf';
+            a.download = `activity_logs_${timestamp}.${extension}`;
+
+            // Trigger download otomatis
+            document.body.appendChild(a);
+            a.click();
+
+            // Bersihkan
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+        } catch (error) {
+            console.error('Export error:', error);
+            alert('Gagal mengunduh file: ' + error.message);
+        } finally {
+            // Kembalikan tombol ke semula
+            if (btn) btn.innerHTML = originalText;
+        }
     }
 
     // Utility functions

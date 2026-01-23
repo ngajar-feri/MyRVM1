@@ -7,9 +7,29 @@
         <p class="text-muted mb-0">Monitor system activities and events</p>
     </div>
     <div>
-        <button class="btn btn-outline-primary" onclick="logsManagement.exportLogs()">
-            <i class="ti tabler-download me-1"></i>Export
-        </button>
+        <div class="btn-group">
+            <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown"
+                aria-expanded="false">
+                <i class="ti tabler-download me-1"></i>Export
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end"
+                style="border-radius: 12px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                <li>
+                    <a class="dropdown-item d-flex align-items-center py-2" href="javascript:void(0)"
+                        onclick="logsManagement.exportLogs('excel')">
+                        <i class="ti tabler-file-spreadsheet text-success me-2 fs-5"></i>
+                        <span>Export to Excel</span>
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item d-flex align-items-center py-2" href="javascript:void(0)"
+                        onclick="logsManagement.exportLogs('pdf')">
+                        <i class="ti tabler-file-type-pdf text-danger me-2 fs-5"></i>
+                        <span>Export to PDF</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
         <button class="btn btn-primary ms-2" onclick="logsManagement.loadLogs()">
             <i class="ti tabler-refresh me-1"></i>Refresh
         </button>

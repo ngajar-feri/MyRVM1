@@ -8,6 +8,7 @@ use App\Models\TechnicianAssignment;
 use App\Models\User;
 use App\Models\ActivityLog;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use OpenApi\Annotations as OA;
 
 class RvmMachineController extends Controller
@@ -80,8 +81,8 @@ class RvmMachineController extends Controller
             ], 403);
         }
 
-        // Build base query with eager loading
-        $query = RvmMachine::with('edgeDevice');
+        // Build base query with eager loading and counts
+        $query = RvmMachine::with('edgeDevice')->withCount('technicians');
 
         // Role-based filtering: operator/teknisi see assigned only
         if (!in_array($user->role, ['super_admin', 'admin'])) {
@@ -182,10 +183,21 @@ class RvmMachineController extends Controller
         ]);
 
         // Auto-create EdgeDevice stub for this machine
-        $machine->edgeDevice()->create([
-            'status' => 'waiting_handshake',
-            'location_name' => $machine->name,
-        ]);
+        try {
+            $machine->edgeDevice()->create([
+                'device_id' => 'PENDING-' . Str::uuid(), // Temporary unique ID
+                'type' => 'NVIDIA Jetson', // Default type
+                'controller_type' => 'NVIDIA Jetson',
+                'status' => 'waiting_handshake',
+                'location_name' => $machine->name,
+                'health_metrics' => [],
+                'network_interfaces' => [],
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('EdgeDevice Creation Failed: ' . $e->getMessage());
+            // Proceed without breaking RVM creation, but user should know?
+            // For now, suppress user error, as RVM is created.
+        }
 
         try {
             ActivityLog::log('RVM', 'Create', "Machine '{$machine->name}' created by {$user->name}", $user->id);
@@ -522,4 +534,160 @@ class RvmMachineController extends Controller
             'generated_at' => now()->toIso8601String()
         ]);
     }
+
+    /**
+     * Delete RVM machine (admin/super_admin only).
+     * Cannot delete machines with active assignments.
+     *
+     * @OA\Delete(
+     *      path="/api/v1/rvm-machines/{id}",
+     *      operationId="deleteRvmMachine",
+     *      tags={"RVM Machines"},
+     *      summary="Delete an RVM machine",
+     *      security={{"bearerAuth":{}}},
+     *      @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *      @OA\Response(response=200, description="Machine deleted"),
+     *      @OA\Response(response=403, description="Access denied or machine has assignments"),
+     *      @OA\Response(response=404, description="Machine not found")
+     * )
+     */
+    public function destroy(Request $request, $id)
+    {
+        $user = $request->user();
+
+        // Only admin/super_admin can delete
+        if (!in_array($user->role, ['admin', 'super_admin'])) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Access denied. Only Super Admin and Admin can delete machines.'
+            ], 403);
+        }
+
+        $machine = RvmMachine::find($id);
+        if (!$machine) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'RVM Machine not found.'
+            ], 404);
+        }
+
+        // Check if machine has active technician assignments
+        $assignmentCount = TechnicianAssignment::where('rvm_machine_id', $id)->count();
+        if ($assignmentCount > 0) {
+            return response()->json([
+                'status' => 'error',
+                'message' => "Cannot delete '{$machine->name}'. Machine has {$assignmentCount} active assignment(s). Remove assignments first."
+            ], 403);
+        }
+
+        // Delete associated EdgeDevice if exists
+        if ($machine->edgeDevice) {
+            $machine->edgeDevice->delete();
+        }
+
+        // Log activity
+        try {
+            ActivityLog::log('RVM', 'Delete', "Machine '{$machine->name}' (SN: {$machine->serial_number}) deleted by {$user->name}", $user->id);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('ActivityLog Failed: ' . $e->getMessage());
+        }
+
+        $machineName = $machine->name;
+        $machine->delete();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "RVM '{$machineName}' berhasil dihapus."
+        ]);
+    }
+
+    /**
+     * Bulk delete RVM machines (admin/super_admin only).
+     * Only deletes machines without assignments.
+     *
+     * @OA\Post(
+     *      path="/api/v1/rvm-machines/bulk-delete",
+     *      operationId="bulkDeleteRvmMachines",
+     *      tags={"RVM Machines"},
+     *      summary="Delete multiple RVM machines",
+     *      security={{"bearerAuth":{}}},
+     *      @OA\RequestBody(
+     *          required=true,
+     *          @OA\JsonContent(
+     *              @OA\Property(property="ids", type="array", @OA\Items(type="integer"))
+     *          )
+     *      ),
+     *      @OA\Response(response=200, description="Bulk delete result"),
+     *      @OA\Response(response=403, description="Access denied")
+     * )
+     */
+    public function destroyBulk(Request $request)
+    {
+        $user = $request->user();
+
+        // Only admin/super_admin can delete
+        if (!in_array($user->role, ['admin', 'super_admin'])) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Access denied. Only Super Admin and Admin can delete machines.'
+            ], 403);
+        }
+
+        $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer|exists:rvm_machines,id'
+        ]);
+
+        $ids = $request->ids;
+        $deleted = [];
+        $skipped = [];
+
+        foreach ($ids as $id) {
+            $machine = RvmMachine::find($id);
+            if (!$machine) {
+                $skipped[] = ['id' => $id, 'reason' => 'Not found'];
+                continue;
+            }
+
+            // Check for assignments
+            $assignmentCount = TechnicianAssignment::where('rvm_machine_id', $id)->count();
+            if ($assignmentCount > 0) {
+                $skipped[] = [
+                    'id' => $id,
+                    'name' => $machine->name,
+                    'reason' => "Has {$assignmentCount} active assignment(s)"
+                ];
+                continue;
+            }
+
+            // Delete EdgeDevice
+            if ($machine->edgeDevice) {
+                $machine->edgeDevice->delete();
+            }
+
+            $deleted[] = ['id' => $id, 'name' => $machine->name];
+            $machine->delete();
+        }
+
+        // Log activity
+        try {
+            $deletedNames = array_column($deleted, 'name');
+            ActivityLog::log(
+                'RVM',
+                'Bulk Delete',
+                "Bulk deleted " . count($deleted) . " machine(s): " . implode(', ', $deletedNames) . " by {$user->name}",
+                $user->id
+            );
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('ActivityLog Failed: ' . $e->getMessage());
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => count($deleted) . ' machine(s) deleted, ' . count($skipped) . ' skipped.',
+            'deleted' => $deleted,
+            'skipped' => $skipped
+        ]);
+    }
 }
+

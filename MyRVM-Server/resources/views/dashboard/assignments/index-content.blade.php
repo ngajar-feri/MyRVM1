@@ -286,74 +286,101 @@
             </div>
         </div>
     </div>
+</div>
 
-    <!-- API Credentials Modal - Bio-Digital (Fixed Z-Index & Layout) -->
-    <div class="modal fade" id="assignmentSuccessModal" tabindex="-1" data-bs-backdrop="static" style="z-index: 1060;">
-        <div class="modal-dialog modal-dialog-centered" style="max-width: 450px;">
-            <div class="modal-content"
-                style="border-radius: 12px; border: 1px solid #065f46; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
-                <div class="modal-body p-4"
-                    style="font-family: 'JetBrains Mono', 'Courier New', monospace; background: #fdfbf7; color: #1f2937;">
-                    <div
-                        style="font-weight: bold; margin-bottom: 20px; border-bottom: 1px dashed #065f46; padding-bottom: 10px;">
-                        ┌─ API Credentials ─────────────────────┐
-                    </div>
+<!-- API Credentials Modal - High Contrast Terminal Style -->
+<div class="modal fade" id="assignmentSuccessModal" tabindex="-1" data-bs-backdrop="static" style="z-index: 1060;"
+    role="dialog" aria-modal="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+        <div class="modal-content"
+            style="border-radius: 16px; border: none; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
 
-                    <div class="mb-4">
-                        <div class="small text-muted mb-1">Serial Number:</div>
-                        <div class="d-flex align-items-center">
-                            <input type="text" id="cred-serial" class="form-control form-control-sm" readonly
-                                style="background: white; border: 1px solid #d1d5db; font-family: monospace; font-weight: bold; color: #065f46;">
-                        </div>
-                    </div>
+            <!-- Header - Success Banner -->
+            <div
+                style="background: linear-gradient(135deg, #10b981, #059669); padding: 16px 20px; display: flex; align-items: center; gap: 12px;">
+                <div
+                    style="background: rgba(255,255,255,0.2); border-radius: 50%; padding: 8px; display: flex; align-items: center; justify-content: center;">
+                    <i class="ti tabler-check" style="color: white; font-size: 18px;"></i>
+                </div>
+                <div>
+                    <h5 style="margin: 0; color: white; font-weight: 700; font-size: 16px;">Assignment Berhasil</h5>
+                    <p style="margin: 0; color: rgba(255,255,255,0.8); font-size: 12px;">API Credentials untuk
+                        konfigurasi Edge</p>
+                </div>
+                <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal"
+                    onclick="window.assignmentManager.loadAssignments()"></button>
+            </div>
 
-                    <div class="mb-4">
-                        <div class="small text-muted mb-1">API Key:</div>
-                        <div class="input-group input-group-sm">
-                            <input type="password" id="cred-apikey" class="form-control" readonly
-                                style="background: white; border: 1px solid #d1d5db; font-family: monospace; letter-spacing: 2px;">
-                        </div>
-                        <div class="d-flex gap-2 mt-2">
-                            <button class="btn btn-sm btn-outline-secondary"
-                                onclick="assignmentCredentials.toggleApiKey()" id="btn-toggle-apikey">
-                                [👁 Show]
-                            </button>
-                            <button class="btn btn-sm btn-outline-secondary"
-                                onclick="assignmentCredentials.copyApiKey()">
-                                [📋 Copy]
-                            </button>
-                        </div>
-                    </div>
+            <!-- Body -->
+            <div style="padding: 24px; background: #ffffff;">
 
-                    <div class="mb-4">
-                        <button class="btn btn-sm btn-bio w-100 text-white"
-                            onclick="assignmentCredentials.downloadJson()">
-                            [📥 Download JSON]
-                        </button>
-                    </div>
-
-                    <div
-                        style="font-weight: bold; margin-top: 20px; border-top: 1px dashed #065f46; padding-top: 10px;">
-                        └───────────────────────────────────────┘
-                    </div>
-
-                    <div class="text-center mt-3">
-                        <button type="button" class="btn btn-label-secondary btn-sm" data-bs-dismiss="modal"
-                            onclick="window.assignmentManager.loadAssignments()">
-                            Close & Refresh
+                <!-- Serial Number -->
+                <div style="margin-bottom: 20px;">
+                    <label
+                        style="display: block; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">
+                        Serial Number
+                    </label>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <input type="text" id="cred-serial" readonly
+                            style="flex: 1; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 14px; font-size: 18px; font-weight: 700; color: #111827; letter-spacing: 0.5px; font-family: 'Inter', system-ui, sans-serif;">
+                        <button class="btn btn-sm" onclick="assignmentCredentials.copySerial()"
+                            style="background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 12px; color: #374151;">
+                            <i class="ti tabler-copy"></i>
                         </button>
                     </div>
                 </div>
+
+                <!-- API Key - Terminal Style (Dark) -->
+                <div style="margin-bottom: 20px;">
+                    <label
+                        style="display: block; font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">
+                        API Key
+                    </label>
+                    <div
+                        style="background: #1e293b; border-radius: 10px; padding: 14px 16px; border: 1px solid #334155; position: relative;">
+                        <code id="cred-apikey-display"
+                            style="display: block; color: #4ade80; font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace; font-size: 13px; word-break: break-all; line-height: 1.6; letter-spacing: 0.5px;">
+                                ••••••••••••••••••••••••••••••••
+                            </code>
+                        <input type="hidden" id="cred-apikey" value="">
+                    </div>
+                    <p style="margin: 8px 0 0 0; font-size: 12px; color: #dc2626; font-style: italic;">
+                        <i class="ti tabler-alert-triangle" style="margin-right: 4px;"></i>
+                        Salin kunci ini sekarang. Kunci tidak akan ditampilkan lagi.
+                    </p>
+
+                    <!-- Action Buttons -->
+                    <div style="display: flex; gap: 8px; margin-top: 12px;">
+                        <button class="btn btn-sm" onclick="assignmentCredentials.toggleApiKey()" id="btn-toggle-apikey"
+                            style="flex: 1; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px 12px; color: #475569; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                            <i class="ti tabler-eye"></i> Show
+                        </button>
+                        <button class="btn btn-sm" onclick="assignmentCredentials.copyApiKey()"
+                            style="flex: 1; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px 12px; color: #475569; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                            <i class="ti tabler-copy"></i> Copy
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Download JSON Button -->
+                <button class="btn w-100" onclick="assignmentCredentials.downloadJson()"
+                    style="background: linear-gradient(135deg, #10b981, #059669); border: none; border-radius: 10px; padding: 12px 16px; color: white; font-weight: 600; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s;">
+                    <i class="ti tabler-download"></i> Download Credentials (JSON)
+                </button>
+
+                <!-- Done Button -->
+                <button type="button" class="btn btn-light w-100 mt-3" data-bs-dismiss="modal"
+                    onclick="window.assignmentManager.loadAssignments()"
+                    style="background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px 16px; color: #374151; font-weight: 500; font-size: 14px;">
+                    Selesai
+                </button>
             </div>
         </div>
     </div>
 </div>
-</div>
-</div>
-</div>
 
 <!-- Assignment Detail Modal - Bio-Digital 350px -->
-<div class="modal fade" id="assignmentDetailModal" tabindex="-1">
+<div class="modal fade" id="assignmentDetailModal" tabindex="-1" role="dialog" aria-modal="true">
     <div class="modal-dialog modal-dialog-centered" style="max-width: 350px;">
         <div class="modal-content" style="border-radius: 16px; border: none;">
             <div class="modal-header"
@@ -375,7 +402,7 @@
 </div>
 
 <!-- PIN Generated Modal - Bio-Digital -->
-<div class="modal fade" id="pinGeneratedModal" tabindex="-1">
+<div class="modal fade" id="pinGeneratedModal" tabindex="-1" role="dialog" aria-modal="true">
     <div class="modal-dialog modal-dialog-centered" style="max-width: 300px;">
         <div class="modal-content text-center" style="border-radius: 16px; border: none;">
             <div class="modal-body py-4">
@@ -397,12 +424,12 @@
 </div>
 
 <script>
-    // Current user info for role hierarchy
-    const currentUserRole = '{{ auth()->user()->role }}';
-    const currentUserId = {{ auth()->id() }};
+    // Current user info for role hierarchy - Use window to prevent SPA redeclaration errors
+    window.currentUserRole = '{{ auth()->user()->role }}';
+    window.currentUserId = {{ auth()->id() }};
 
     // Role hierarchy (lower = more permissions)
-    const roleHierarchy = {
+    window.roleHierarchy = {
         'super_admin': 1,
         'admin': 2,
         'operator': 3,
@@ -457,11 +484,11 @@
                 if (!allowedRoles.includes(u.role)) return false;
 
                 // super_admin can assign anyone (in allowed roles)
-                if (currentUserRole === 'super_admin') return true;
+                if (window.currentUserRole === 'super_admin') return true;
                 // admin can assign self, teknisi, operator (not super_admin or other admin)
-                if (currentUserRole === 'admin') {
-                    if (u.id === currentUserId) return true; // self
-                    return roleHierarchy[u.role] > roleHierarchy['admin'];
+                if (window.currentUserRole === 'admin') {
+                    if (u.id === window.currentUserId) return true; // self
+                    return window.roleHierarchy[u.role] > window.roleHierarchy['admin'];
                 }
                 return false;
             });
@@ -545,6 +572,9 @@
                                 <button class="btn btn-sm btn-icon btn-label-warning" onclick="assignmentManager.generatePin(${a.id})" title="Generate PIN">
                                     <i class="ti tabler-key"></i>
                                 </button>
+                                <button class="btn btn-sm btn-icon btn-label-primary" onclick="assignmentManager.regenerateApiKey(${a.rvm_machine?.id}, '${(a.rvm_machine?.name || '').replace(/'/g, "\\'")}')" title="Regenerate RVM API Key">
+                                    <i class="ti tabler-refresh"></i>
+                                </button>
                                 <button class="btn btn-sm btn-icon btn-label-danger" onclick="assignmentManager.removeAssignment(${a.id})" title="Remove">
                                     <i class="ti tabler-trash"></i>
                                 </button>
@@ -591,8 +621,14 @@
                     </div>
                 `;
                 document.getElementById('assignment-detail-content').innerHTML = detail;
-                new bootstrap.Modal(document.getElementById('assignmentDetailModal')).show();
+
+                const modalEl = document.getElementById('assignmentDetailModal');
+                const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                modal.show();
+                // Fix: Force remove aria-hidden to prevent accessibility blocks
+                modalEl.removeAttribute('aria-hidden');
             } catch (e) {
+                console.error(e);
                 alert('Failed to load assignment details');
             }
         },
@@ -601,12 +637,15 @@
             if (!confirm('Generate a new 6-digit PIN for this assignment? The PIN will expire in 24 hours.')) return;
 
             try {
-                const response = await apiHelper.post(`/api/v1/dashboard/technician-assignments/${id}/generate-pin`);
+                const response = await apiHelper.post(`/api/v1/technician-assignments/${id}/generate-pin`);
                 const data = await response.json();
 
                 document.getElementById('generated-pin-value').textContent = data.data.pin;
                 document.getElementById('generated-pin-expires').textContent = new Date(data.data.expires_at).toLocaleString();
-                new bootstrap.Modal(document.getElementById('pinGeneratedModal')).show();
+                const pinModalEl = document.getElementById('pinGeneratedModal');
+                bootstrap.Modal.getOrCreateInstance(pinModalEl).show();
+                // Fix: Force remove aria-hidden
+                pinModalEl.removeAttribute('aria-hidden');
             } catch (e) {
                 alert('Failed to generate PIN');
             }
@@ -616,10 +655,38 @@
             if (!confirm('Remove this assignment? User will lose access to this RVM.')) return;
 
             try {
-                await apiHelper.delete(`/api/v1/dashboard/technician-assignments/${id}`);
+                await apiHelper.delete(`/api/v1/technician-assignments/${id}`);
                 this.loadAssignments();
             } catch (e) {
                 alert('Failed to remove assignment');
+            }
+        },
+
+        async regenerateApiKey(rvmId, rvmName) {
+            if (!confirm(`WARNING: Regenerating the API Key for "${rvmName}" will disconnect the Edge Device until the new key is configured. Continue?`)) return;
+
+            try {
+                const response = await apiHelper.post(`/api/v1/rvm-machines/${rvmId}/regenerate-api-key`);
+                const data = await response.json();
+
+                // Show the new key in the credentials modal
+                const credResponse = await apiHelper.get(`/api/v1/rvm-machines/${rvmId}/credentials`);
+                const credData = await credResponse.json();
+
+                window.assignmentCredentials.setCredentials(
+                    credData.serial_number,
+                    credData.api_key,
+                    credData.name,
+                    rvmId
+                );
+
+                const successModalEl = document.getElementById('assignmentSuccessModal');
+                bootstrap.Modal.getOrCreateInstance(successModalEl).show();
+                // Fix: Force remove aria-hidden
+                successModalEl.removeAttribute('aria-hidden');
+
+            } catch (e) {
+                alert('Failed to regenerate API Key');
             }
         },
 
@@ -702,12 +769,15 @@
                     }
 
                     bootstrap.Modal.getInstance(document.getElementById('addAssignmentModal')).hide();
-                    
+
                     // Small delay to ensure backdrop is cleared
                     setTimeout(() => {
-                        new bootstrap.Modal(document.getElementById('assignmentSuccessModal')).show();
+                        const successModalEl = document.getElementById('assignmentSuccessModal');
+                        bootstrap.Modal.getOrCreateInstance(successModalEl).show();
+                        // Fix: Force remove aria-hidden
+                        successModalEl.removeAttribute('aria-hidden');
                     }, 150);
-                    
+
                     assignmentWizard.reset();
                 } catch (e) {
                     alert('Failed to create assignment. User may already be assigned to this RVM.');
@@ -759,7 +829,7 @@
     };
 
     // Search/Autocomplete Handler
-    const assignmentSearch = {
+    window.assignmentSearch = {
         debounceTimer: null,
 
         init() {
@@ -948,9 +1018,6 @@
         }
     };
 
-    // Make search available globally
-    window.assignmentSearch = assignmentSearch;
-
     // Credentials helper for API credentials modal
     window.assignmentCredentials = {
         serial: '',
@@ -963,24 +1030,25 @@
             this.serial = serial || '';
             this.apiKey = apiKey || '';
             this.machineName = machineName || '';
-            this.rvmId = rvmId || ''; // Set rvmId
+            this.rvmId = rvmId || '';
             document.getElementById('cred-serial').value = this.serial;
             document.getElementById('cred-apikey').value = this.apiKey;
+            // Hide API key initially with dots
+            document.getElementById('cred-apikey-display').textContent = '••••••••••••••••••••••••••••••••';
             this.visible = false;
-            document.getElementById('cred-apikey').type = 'password';
-            document.getElementById('btn-toggle-apikey').innerHTML = '<i class="ti tabler-eye"></i>';
+            document.getElementById('btn-toggle-apikey').innerHTML = '<i class="ti tabler-eye"></i> Show';
         },
 
         toggleApiKey() {
             this.visible = !this.visible;
-            const input = document.getElementById('cred-apikey');
+            const display = document.getElementById('cred-apikey-display');
             const btn = document.getElementById('btn-toggle-apikey');
             if (this.visible) {
-                input.type = 'text';
-                btn.innerHTML = '<i class="ti tabler-eye-off"></i>';
+                display.textContent = this.apiKey;
+                btn.innerHTML = '<i class="ti tabler-eye-off"></i> Hide';
             } else {
-                input.type = 'password';
-                btn.innerHTML = '<i class="ti tabler-eye"></i>';
+                display.textContent = '••••••••••••••••••••••••••••••••';
+                btn.innerHTML = '<i class="ti tabler-eye"></i> Show';
             }
         },
 

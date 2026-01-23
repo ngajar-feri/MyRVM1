@@ -700,7 +700,7 @@
             if (!confirm('Are you sure you want to delete this ticket? This action cannot be undone.')) return;
 
             try {
-                await apiHelper.delete(`/api/v1/dashboard/maintenance-tickets/${id}`);
+                await apiHelper.delete(`/api/v1/maintenance-tickets/${id}`);
                 this.loadTickets();
             } catch (e) {
                 alert('Failed to delete ticket');
@@ -722,7 +722,7 @@
                     alert('Please fill in category and description');
                     return;
                 }
-                
+
                 // Show loading state
                 const btn = document.getElementById('btn-ticket-next-assign');
                 if (btn) {

@@ -143,22 +143,42 @@ class MachineManagement {
                     <i class="ti tabler-cpu-off"></i>
                    </span>`;
 
+            // Check if machine can be deleted (no assignments)
+            const canDelete = (machine.technicians_count || 0) === 0;
+            const deleteBtn = canDelete
+                ? `<button class="btn btn-sm btn-label-danger" onclick="event.stopPropagation(); machineManagement.deleteMachine(${machine.id}, '${this.escapeHtml(machine.name)}')" 
+                    data-bs-toggle="tooltip" title="Delete Machine">
+                    <i class="ti tabler-trash"></i>
+                   </button>`
+                : `<span class="badge bg-label-secondary" data-bs-toggle="tooltip" title="Cannot delete: Has ${machine.technicians_count} assignment(s)">
+                    <i class="ti tabler-lock"></i>
+                   </span>`;
+
             return `
             <div class="col-md-4">
-                <div class="card card-hoverable" onclick="machineManagement.viewMachine(${machine.id})">
-                    <div class="card-body">
+                <div class="card card-hoverable position-relative">
+                    <!-- Checkbox for multi-select -->
+                    <div class="position-absolute" style="top: 10px; left: 10px; z-index: 10;">
+                        <input type="checkbox" class="form-check-input machine-checkbox" 
+                               data-id="${machine.id}" 
+                               data-name="${this.escapeHtml(machine.name)}"
+                               data-can-delete="${canDelete}"
+                               onclick="event.stopPropagation(); machineManagement.updateBulkSelection()">
+                    </div>
+                    <div class="card-body" style="padding-left: 40px;" onclick="machineManagement.viewMachine(${machine.id})">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <h6 class="card-title mb-0">${this.escapeHtml(machine.name)}</h6>
-                            <div class="d-flex gap-1">
+                            <div class="d-flex gap-1 align-items-center">
                                 ${edgeStatusBadge}
                                 <span class="badge badge-status-${machine.status || 'offline'}">
                                     ${machine.status || 'offline'}
                                 </span>
+                                ${deleteBtn}
                             </div>
                         </div>
-                        <p class="text-muted small mb-2">
+                        <p class="text-muted small mb-2" title="${this.escapeHtml(machine.location_address || machine.location || '')}">
                             <i class="ti tabler-map-pin me-1"></i>
-                            ${this.escapeHtml(machine.location || 'No location')}
+                            ${this.escapeHtml(this.truncateAddress(machine.location_address || machine.location || (machine.latitude && machine.longitude ? `${machine.latitude}, ${machine.longitude}` : 'No location')))}
                         </p>
                         
                         <!-- Capacity Bar -->
@@ -401,7 +421,7 @@ class MachineManagement {
                                     <dt class="col-5">Serial:</dt>
                                     <dd class="col-7">${machine.serial_number || 'N/A'}</dd>
                                     <dt class="col-5">Location:</dt>
-                                    <dd class="col-7">${machine.location || 'N/A'}</dd>
+                                    <dd class="col-7">${machine.location_address || machine.location || (machine.latitude && machine.longitude ? `${machine.latitude}, ${machine.longitude}` : 'N/A')}</dd>
                                     <dt class="col-5">Last Ping:</dt>
                                     <dd class="col-7">${this.getLastSeen(machine.last_ping)}</dd>
                                 </dl>
@@ -470,6 +490,16 @@ class MachineManagement {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    /**
+     * Truncate address for card display (shows first part + ellipsis)
+     * @param {string} address Full address string
+     * @param {number} maxLength Maximum length before truncating (default: 35)
+     */
+    truncateAddress(address, maxLength = 35) {
+        if (!address || address.length <= maxLength) return address;
+        return address.substring(0, maxLength).trim() + '...';
     }
 
     debounce(func, wait) {
@@ -543,8 +573,18 @@ class MachineManagement {
                 machineWizard.lastMachineId = result.data?.id;
 
                 // Show success modal with credentials
-                document.getElementById('successSerialNumber').textContent = result.credentials?.serial_number || '-';
-                document.getElementById('successApiKey').textContent = result.credentials?.api_key || '-';
+                const serialInput = document.getElementById('successSerialNumber');
+                const apiKeyDisplay = document.getElementById('successApiKeyDisplay');
+                const apiKeyHidden = document.getElementById('successApiKey');
+
+                if (serialInput) serialInput.value = result.credentials?.serial_number || '-';
+                if (apiKeyHidden) apiKeyHidden.value = result.credentials?.api_key || '';
+                if (apiKeyDisplay) apiKeyDisplay.textContent = '••••••••••••••••••••••••••••••••';
+
+                // Reset toggle button state
+                machineWizard.apiKeyVisible = false;
+                const toggleBtn = document.getElementById('btn-toggle-machine-apikey');
+                if (toggleBtn) toggleBtn.innerHTML = '<i class="ti tabler-eye"></i> Show';
 
                 const successModal = new bootstrap.Modal(document.getElementById('machineSuccessModal'));
                 successModal.show();
@@ -581,9 +621,194 @@ class MachineManagement {
             spinner.classList.add('d-none');
         }
     }
+
+    /**
+     * Pending delete state
+     */
+    pendingDelete = {
+        type: null, // 'single' or 'bulk'
+        id: null,
+        name: null,
+        ids: [],
+        names: []
+    };
+
+    /**
+     * Delete single machine - shows confirmation modal
+     */
+    deleteMachine(id, name) {
+        this.pendingDelete = {
+            type: 'single',
+            id: id,
+            name: name,
+            ids: [],
+            names: []
+        };
+
+        const messageEl = document.getElementById('delete-confirm-message');
+        const skippedEl = document.getElementById('delete-skipped-list');
+
+        if (messageEl) {
+            messageEl.innerHTML = `
+                <div class="mb-3">
+                    <i class="ti tabler-trash text-danger" style="font-size: 48px;"></i>
+                </div>
+                <p class="mb-1"><strong>Apakah Anda yakin ingin menghapus:</strong></p>
+                <p class="text-danger fw-bold">"${name}"</p>
+                <p class="text-muted small mb-0">Tindakan ini tidak dapat dibatalkan.</p>
+            `;
+        }
+        skippedEl?.classList.add('d-none');
+
+        const modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+        modal.show();
+    }
+
+    /**
+     * Bulk delete - shows confirmation modal with list
+     */
+    bulkDelete() {
+        const checkboxes = document.querySelectorAll('.machine-checkbox:checked');
+        const selectedIds = [];
+        const selectedNames = [];
+        const skippedNames = [];
+
+        checkboxes.forEach(cb => {
+            const id = parseInt(cb.dataset.id);
+            const name = cb.dataset.name;
+            const canDelete = cb.dataset.canDelete === 'true';
+
+            if (canDelete) {
+                selectedIds.push(id);
+                selectedNames.push(name);
+            } else {
+                skippedNames.push(name);
+            }
+        });
+
+        if (selectedIds.length === 0) {
+            this.showError('Tidak ada RVM yang dapat dihapus. Semua RVM yang dipilih memiliki assignment aktif.');
+            return;
+        }
+
+        this.pendingDelete = {
+            type: 'bulk',
+            id: null,
+            name: null,
+            ids: selectedIds,
+            names: selectedNames
+        };
+
+        const messageEl = document.getElementById('delete-confirm-message');
+        const skippedEl = document.getElementById('delete-skipped-list');
+        const skippedNamesEl = document.getElementById('skipped-names');
+
+        if (messageEl) {
+            messageEl.innerHTML = `
+                <div class="mb-3">
+                    <i class="ti tabler-trash text-danger" style="font-size: 48px;"></i>
+                </div>
+                <p class="mb-1"><strong>Apakah Anda yakin ingin menghapus ${selectedIds.length} RVM?</strong></p>
+                <p class="text-danger small">${selectedNames.join(', ')}</p>
+                <p class="text-muted small mb-0">Tindakan ini tidak dapat dibatalkan.</p>
+            `;
+        }
+
+        if (skippedNames.length > 0) {
+            skippedEl?.classList.remove('d-none');
+            if (skippedNamesEl) skippedNamesEl.textContent = skippedNames.join(', ');
+        } else {
+            skippedEl?.classList.add('d-none');
+        }
+
+        const modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+        modal.show();
+    }
+
+    /**
+     * Execute delete after confirmation
+     */
+    async executeDelete() {
+        const modal = bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal'));
+
+        if (this.pendingDelete.type === 'single') {
+            try {
+                const response = await apiHelper.delete(`/api/v1/rvm-machines/${this.pendingDelete.id}`);
+                const result = await response.json();
+
+                if (response.ok) {
+                    modal?.hide();
+                    this.showSuccess(result.message || `RVM "${this.pendingDelete.name}" berhasil dihapus.`);
+                    this.loadMachines();
+                } else {
+                    this.showError(result.message || 'Gagal menghapus RVM.');
+                }
+            } catch (error) {
+                console.error('Delete failed:', error);
+                this.showError('Network error. Gagal menghapus RVM.');
+            }
+        } else if (this.pendingDelete.type === 'bulk') {
+            try {
+                const response = await apiHelper.post('/api/v1/rvm-machines/bulk-delete', { ids: this.pendingDelete.ids });
+                const result = await response.json();
+
+                if (response.ok) {
+                    modal?.hide();
+                    this.showSuccess(result.message);
+                    this.clearSelection();
+                    this.loadMachines();
+                } else {
+                    this.showError(result.message || 'Gagal menghapus RVM.');
+                }
+            } catch (error) {
+                console.error('Bulk delete failed:', error);
+                this.showError('Network error. Gagal menghapus RVM.');
+            }
+        }
+
+        // Reset pending delete
+        this.pendingDelete = { type: null, id: null, name: null, ids: [], names: [] };
+    }
+
+    /**
+     * Update bulk selection UI
+     * Uses static controls from blade template (matching Users page pattern)
+     */
+    updateBulkSelection() {
+        const checkboxes = document.querySelectorAll('.machine-checkbox:checked');
+        const deleteBtn = document.getElementById('delete-selected-btn');
+        const clearBtn = document.getElementById('clear-selection-btn');
+        const countSpan = document.getElementById('selected-count');
+
+        if (checkboxes.length > 0) {
+            deleteBtn?.classList.remove('d-none');
+            clearBtn?.classList.remove('d-none');
+            if (countSpan) countSpan.textContent = checkboxes.length;
+        } else {
+            deleteBtn?.classList.add('d-none');
+            clearBtn?.classList.add('d-none');
+            if (countSpan) countSpan.textContent = '0';
+        }
+    }
+
+    /**
+     * Clear selection
+     */
+    clearSelection() {
+        document.querySelectorAll('.machine-checkbox:checked').forEach(cb => cb.checked = false);
+        this.updateBulkSelection();
+    }
 }
 
 const machineManagement = new MachineManagement();
+
+// Wire up delete confirmation button
+document.addEventListener('DOMContentLoaded', () => {
+    const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+    if (confirmDeleteBtn) {
+        confirmDeleteBtn.addEventListener('click', () => machineManagement.executeDelete());
+    }
+});
 
 /**
  * Machine Wizard - Multi-Step Add Machine with Map
@@ -595,6 +820,7 @@ const machineWizard = {
     currentStep: 1,
     lastCredentials: null,
     lastMachineId: null,
+    apiKeyVisible: false,
 
     /**
      * Navigate to wizard step
@@ -712,8 +938,12 @@ const machineWizard = {
      * Copy API Key to clipboard
      */
     async copyApiKey() {
-        const apiKey = this.lastCredentials?.api_key;
-        if (!apiKey) return;
+        // Fallback to hidden input if lastCredentials was reset
+        const apiKey = this.lastCredentials?.api_key || document.getElementById('successApiKey')?.value;
+        if (!apiKey) {
+            machineManagement.showError('API Key tidak tersedia');
+            return;
+        }
 
         try {
             await navigator.clipboard.writeText(apiKey);
@@ -724,14 +954,59 @@ const machineWizard = {
     },
 
     /**
+     * Copy Serial Number to clipboard
+     */
+    async copySerial() {
+        // Fallback to input value if lastCredentials was reset
+        const serial = this.lastCredentials?.serial_number || document.getElementById('successSerialNumber')?.value;
+        if (!serial) {
+            machineManagement.showError('Serial Number tidak tersedia');
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(serial);
+            machineManagement.showSuccess('Serial Number copied to clipboard!');
+        } catch (error) {
+            console.error('Copy failed:', error);
+        }
+    },
+
+    /**
+     * Toggle API Key visibility
+     */
+    toggleApiKey() {
+        this.apiKeyVisible = !this.apiKeyVisible;
+        const display = document.getElementById('successApiKeyDisplay');
+        const btn = document.getElementById('btn-toggle-machine-apikey');
+        // Fallback to hidden input if lastCredentials was reset
+        const apiKey = this.lastCredentials?.api_key || document.getElementById('successApiKey')?.value;
+
+        if (this.apiKeyVisible) {
+            display.textContent = apiKey || '(API Key tidak tersedia)';
+            btn.innerHTML = '<i class="ti tabler-eye-off"></i> Hide';
+        } else {
+            display.textContent = '••••••••••••••••••••••••••••••••';
+            btn.innerHTML = '<i class="ti tabler-eye"></i> Show';
+        }
+    },
+
+    /**
      * Download credentials as JSON
      */
     downloadCredentials() {
-        if (!this.lastCredentials) return;
+        // Fallback to DOM elements if lastCredentials was reset
+        const serial = this.lastCredentials?.serial_number || document.getElementById('successSerialNumber')?.value;
+        const apiKey = this.lastCredentials?.api_key || document.getElementById('successApiKey')?.value;
+
+        if (!serial || !apiKey) {
+            machineManagement.showError('Credentials tidak tersedia');
+            return;
+        }
 
         const data = {
-            serial_number: this.lastCredentials.serial_number,
-            api_key: this.lastCredentials.api_key,
+            serial_number: serial,
+            api_key: apiKey,
             generated_at: new Date().toISOString()
         };
 
@@ -739,7 +1014,7 @@ const machineWizard = {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `rvm-credentials-${this.lastCredentials.serial_number}.json`;
+        a.download = `rvm-credentials-${serial}.json`;
         a.click();
         URL.revokeObjectURL(url);
 
@@ -751,8 +1026,8 @@ const machineWizard = {
      */
     reset() {
         this.currentStep = 1;
-        this.lastCredentials = null;
-        this.lastMachineId = null;
+        // Do NOT clear credentials here - they are needed for success modal
+        // Credentials will be naturally overwritten on next machine creation
         if (this.marker) {
             this.map.removeLayer(this.marker);
             this.marker = null;
@@ -765,5 +1040,10 @@ const machineWizard = {
 document.addEventListener('hidden.bs.modal', (e) => {
     if (e.target?.id === 'addMachineModal') {
         machineWizard.reset();
+    }
+    // Clear credentials when SUCCESS modal is closed
+    if (e.target?.id === 'machineSuccessModal') {
+        machineWizard.lastCredentials = null;
+        machineWizard.apiKeyVisible = false;
     }
 });

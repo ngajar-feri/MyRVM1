@@ -88,6 +88,7 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     });
 
     // RVM Management (Role-based access with assignment filtering)
+    Route::post('/rvm-machines/bulk-delete', [RvmMachineController::class, 'destroyBulk']); // Must be before apiResource
     Route::apiResource('rvm-machines', RvmMachineController::class);
     Route::post('/rvm-machines/{id}/assign', [RvmMachineController::class, 'assignMachine']);
     Route::get('/rvm-machines/{id}/assignments', [RvmMachineController::class, 'getAssignments']);
@@ -155,8 +156,9 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     Route::post('/technician/validate-pin', [TechnicianController::class, 'validatePin']);
 
     // System Logs (Role: Admin/Operator/Teknisi - with role check in controller)
-    Route::get('/logs', [LogController::class, 'index']);
     Route::get('/logs/stats', [LogController::class, 'stats']);
+    Route::get('/logs/export', [LogController::class, 'export']); // Export route
+    Route::get('/logs', [LogController::class, 'index']);
 
     // Technician Assignments (Hak Akses RVM) - Complete CRUD
     Route::get('/technician-assignments', [\App\Http\Controllers\Api\TechnicianAssignmentController::class, 'index']);
