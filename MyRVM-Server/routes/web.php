@@ -146,3 +146,11 @@ Route::middleware('auth')->group(function () {
         Route::patch('/maintenance-tickets/{id}/status', [App\Http\Controllers\Api\MaintenanceTicketController::class, 'updateStatus']);
     });
 });
+
+// =============================================================================
+// RVM-UI Kiosk Interface (Public Route - Machine UUID Validated)
+// =============================================================================
+// This route serves the touchscreen display for RVM machines.
+// No login required, but machine UUID must be valid and active.
+Route::get('/rvm-ui/{machine_uuid}', [App\Http\Controllers\Dashboard\KioskController::class, 'index'])
+    ->name('kiosk.index');

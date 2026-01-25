@@ -22,6 +22,9 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\ApiLogger::class,
         ]);
 
+        // Trust all proxies (required for Docker/Nginx/Load Balancer setups)
+        $middleware->trustProxies(at: '*');
+
         // $middleware->throttleApi();
     })
     ->withExceptions(function (Exceptions $exceptions): void {

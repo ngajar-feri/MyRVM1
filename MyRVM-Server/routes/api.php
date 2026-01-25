@@ -17,6 +17,13 @@ use App\Http\Controllers\Api\TechnicianController;
 use App\Http\Controllers\Api\CVController;
 use App\Http\Controllers\Api\AssignmentController;
 
+// Kiosk API Controllers
+use App\Http\Controllers\Api\Kiosk\SessionController as KioskSessionController;
+use App\Http\Controllers\Api\Kiosk\AuthController as KioskAuthController;
+use App\Http\Controllers\Api\Kiosk\MaintenanceController as KioskMaintenanceController;
+use App\Http\Controllers\Api\Kiosk\LogController as KioskLogController;
+use App\Http\Controllers\Api\Kiosk\ConfigController as KioskConfigController;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -176,4 +183,29 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     Route::put('/maintenance-tickets/{id}', [\App\Http\Controllers\Api\MaintenanceTicketController::class, 'update']);
     Route::delete('/maintenance-tickets/{id}', [\App\Http\Controllers\Api\MaintenanceTicketController::class, 'destroy']);
     Route::patch('/maintenance-tickets/{id}/status', [\App\Http\Controllers\Api\MaintenanceTicketController::class, 'updateStatus']);
+});
+
+// =============================================================================
+// Kiosk API Routes (Machine-Authenticated, No User Login Required)
+// =============================================================================
+// These endpoints are consumed by the RVM-UI Kiosk touchscreen interface.
+// Authentication is based on machine UUID validation via header.
+Route::prefix('v1/kiosk')->middleware(['throttle:60,1'])->group(function () {
+    // Session Management
+    Route::get('/session/token', [KioskSessionController::class, 'getToken']);
+    Route::post('/session/guest', [KioskSessionController::class, 'activateGuest']);
+    
+    // Technician Authentication (PIN-based)
+    Route::post('/auth/pin', [KioskAuthController::class, 'verifyPin']);
+    
+    // Maintenance Panel (Requires valid technician session)
+    Route::post('/maintenance/command', [KioskMaintenanceController::class, 'sendCommand']);
+    Route::get('/maintenance/status', [KioskMaintenanceController::class, 'getStatus']);
+    
+    // Log Viewer (Scoped to machine only)
+    Route::get('/logs', [KioskLogController::class, 'index']);
+    
+    // Configuration
+    Route::get('/config', [KioskConfigController::class, 'getConfig']);
+    Route::post('/config/theme', [KioskConfigController::class, 'updateTheme']);
 });

@@ -10,8 +10,8 @@
     },
     "servers": [
         {
-            "url": "http://localhost:8000",
-            "description": "Demo API Server"
+            "url": "/",
+            "description": "Default Server (Relative)"
         }
     ],
     "paths": {
