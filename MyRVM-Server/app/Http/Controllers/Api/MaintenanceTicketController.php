@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 
+use OpenApi\Annotations as OA;
+
 /**
  * MaintenanceTicket API Controller
  * 
@@ -21,7 +23,27 @@ use Illuminate\Support\Facades\Auth;
 class MaintenanceTicketController extends Controller
 {
     /**
-     * Get all tickets with relationships
+    /**
+     * @OA\Get(
+     *      path="/api/v1/maintenance-tickets",
+     *      operationId="getMaintenanceTickets",
+     *      tags={"Maintenance Tickets"},
+     *      summary="Get list of maintenance tickets",
+     *      description="Returns list of maintenance tickets",
+     *      security={{"apiAuth":{}}},
+     *      @OA\Response(
+     *          response=200,
+     *          description="Successful operation",
+     *       ),
+     *      @OA\Response(
+     *          response=401,
+     *          description="Unauthenticated",
+     *      ),
+     *      @OA\Response(
+     *          response=403,
+     *          description="Forbidden"
+     *      )
+     *     )
      */
     public function index(): JsonResponse
     {
@@ -33,7 +55,38 @@ class MaintenanceTicketController extends Controller
     }
 
     /**
-     * Create new ticket
+    /**
+     * @OA\Post(
+     *      path="/api/v1/maintenance-tickets",
+     *      operationId="storeMaintenanceTicket",
+     *      tags={"Maintenance Tickets"},
+     *      summary="Create new maintenance ticket",
+     *      description="Create new maintenance ticket",
+     *      security={{"apiAuth":{}}},
+     *      @OA\RequestBody(
+     *          required=true,
+     *          @OA\JsonContent(
+     *              required={"rvm_machine_id","category","priority","description"},
+     *              @OA\Property(property="rvm_machine_id", type="integer", example=1),
+     *              @OA\Property(property="category", type="string", example="Hardware"),
+     *              @OA\Property(property="priority", type="string", example="high"),
+     *              @OA\Property(property="description", type="string", example="RVM jammed"),
+     *              @OA\Property(property="assignee_id", type="integer", example=2)
+     *          )
+     *      ),
+     *      @OA\Response(
+     *          response=201,
+     *          description="Ticket created successfully",
+     *       ),
+     *      @OA\Response(
+     *          response=401,
+     *          description="Unauthenticated",
+     *      ),
+     *      @OA\Response(
+     *          response=403,
+     *          description="Forbidden"
+     *      )
+     * )
      */
     public function store(Request $request): JsonResponse
     {
@@ -85,7 +138,32 @@ class MaintenanceTicketController extends Controller
     }
 
     /**
-     * Get single ticket
+    /**
+     * @OA\Get(
+     *      path="/api/v1/maintenance-tickets/{id}",
+     *      operationId="getMaintenanceTicketById",
+     *      tags={"Maintenance Tickets"},
+     *      summary="Get maintenance ticket information",
+     *      description="Returns maintenance ticket data",
+     *      security={{"apiAuth":{}}},
+     *      @OA\Parameter(
+     *          name="id",
+     *          description="Ticket id",
+     *          required=true,
+     *          in="path",
+     *          @OA\Schema(
+     *              type="integer"
+     *          )
+     *      ),
+     *      @OA\Response(
+     *          response=200,
+     *          description="Successful operation",
+     *       ),
+     *      @OA\Response(
+     *          response=404,
+     *          description="Resource Not Found"
+     *      )
+     * )
      */
     public function show(int $id): JsonResponse
     {
