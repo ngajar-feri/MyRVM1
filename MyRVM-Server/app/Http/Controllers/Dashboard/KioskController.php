@@ -29,20 +29,35 @@ class KioskController extends Controller
      */
     public function index(Request $request, string $machineUuid): View|Response
     {
-        // Validate machine UUID exists and is active
-        $machine = RvmMachine::where('uuid', $machineUuid)
-            ->where('status', 'active')
-            ->first();
+        // 1. Log incoming request for debugging
+        \Illuminate\Support\Facades\Log::info("Kiosk Lookup: checking ID={$machineUuid}");
 
+        // 2. Find machine by ID
+        $machine = RvmMachine::where('id', $machineUuid)->first();
+
+        // 3. Logic Check
         if (!$machine) {
+            \Illuminate\Support\Facades\Log::error("Kiosk Lookup: Machine NOT FOUND for ID {$machineUuid}");
             return $this->renderErrorPage(
                 'Mesin Tidak Ditemukan',
-                'UUID mesin tidak valid atau mesin tidak aktif.',
+                'ID mesin tidak valid.',
                 404
             );
         }
 
-        // Get machine configuration for the kiosk
+        // 4. Status Check (Allow 'online' or 'active')
+        if (!in_array($machine->status, ['online', 'active'])) {
+             \Illuminate\Support\Facades\Log::warning("Kiosk Lookup: Machine ID {$machineUuid} found but status is {$machine->status}");
+             return $this->renderErrorPage(
+                'Mesin Tidak Aktif',
+                "Status mesin saat ini: {$machine->status}. Hubungi teknisi.",
+                503
+            );
+        }
+
+        \Illuminate\Support\Facades\Log::info("Kiosk Lookup: Success for Machine ID {$machine->id} (Serial: {$machine->serial_number})");
+
+        // 5. Get configuration
         $config = $this->getMachineConfig($machine);
 
         return view('dashboard.kiosk.index', [
@@ -64,14 +79,14 @@ class KioskController extends Controller
         $isNightTime = $currentHour >= 18 || $currentHour < 6;
 
         return [
-            'machine_uuid' => $machine->uuid,
+            'machine_uuid' => $machine->serial_number,
             'machine_name' => $machine->name,
             'location' => $machine->location ?? 'Unknown',
             'timezone' => $machine->timezone ?? 'Asia/Jakarta',
             'theme_mode' => $machine->theme_mode ?? 'auto', // auto, light, dark
             'suggested_theme' => $isNightTime ? 'dark' : 'light',
             'qr_refresh_interval' => 300, // 5 minutes in seconds
-            'websocket_channel' => "rvm.{$machine->uuid}",
+            'websocket_channel' => "rvm.{$machine->serial_number}",
             'api_base_url' => config('app.url') . '/api/v1/kiosk',
         ];
     }

@@ -39,7 +39,7 @@ class ValidateKioskMachine
         }
 
         // Validate machine exists and is active
-        $machine = RvmMachine::where('uuid', $machineUuid)
+        $machine = RvmMachine::where('serial_number', $machineUuid)
             ->where('status', 'active')
             ->first();
 
