@@ -22,40 +22,34 @@ class KioskController extends Controller
 {
     /**
      * Display the kiosk interface for a specific RVM machine.
+     * 
+     * Middleware 'signed' validates the URL signature before entering.
+     * If signature is invalid/tampered, Laravel returns 403 Forbidden.
      *
      * @param Request $request
-     * @param string $machineUuid
+     * @param string $uuid Machine UUID (36-char format)
      * @return View|Response
      */
-    public function index(Request $request, string $machineUuid): View|Response
+    public function index(Request $request, string $uuid): View|Response
     {
         // 1. Log incoming request for debugging
-        \Illuminate\Support\Facades\Log::info("Kiosk Lookup: checking ID={$machineUuid}");
+        \Illuminate\Support\Facades\Log::info("Kiosk Lookup: checking UUID={$uuid}");
 
-        // 2. Find machine by ID
-        $machine = RvmMachine::where('id', $machineUuid)->first();
+        // 2. Find machine by UUID
+        $machine = RvmMachine::where('uuid', $uuid)->first();
 
-        // 3. Logic Check
+        // 3. Logic Check (UUID not found in database)
         if (!$machine) {
-            \Illuminate\Support\Facades\Log::error("Kiosk Lookup: Machine NOT FOUND for ID {$machineUuid}");
+            \Illuminate\Support\Facades\Log::error("Kiosk Lookup: Machine NOT FOUND for UUID {$uuid}");
             return $this->renderErrorPage(
                 'Mesin Tidak Ditemukan',
-                'ID mesin tidak valid.',
+                'UUID mesin tidak valid atau tidak terdaftar.',
                 404
             );
         }
 
-        // 4. Status Check (Allow 'online' or 'active')
-        if (!in_array($machine->status, ['online', 'active'])) {
-             \Illuminate\Support\Facades\Log::warning("Kiosk Lookup: Machine ID {$machineUuid} found but status is {$machine->status}");
-             return $this->renderErrorPage(
-                'Mesin Tidak Aktif',
-                "Status mesin saat ini: {$machine->status}. Hubungi teknisi.",
-                503
-            );
-        }
-
-        \Illuminate\Support\Facades\Log::info("Kiosk Lookup: Success for Machine ID {$machine->id} (Serial: {$machine->serial_number})");
+        // 4. Status Check - Log for debugging
+        \Illuminate\Support\Facades\Log::info("Kiosk Lookup: Success for Machine UUID {$machine->uuid}. Status: {$machine->status}");
 
         // 5. Get configuration
         $config = $this->getMachineConfig($machine);

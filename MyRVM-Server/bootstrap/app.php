@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'role' => \App\Http\Middleware\EnsureUserHasRole::class,
+            'validate.rvm.apikey' => \App\Http\Middleware\ValidateRvmApiKey::class,
         ]);
 
         // Add Sanctum stateful middleware for SPA authentication
@@ -23,8 +24,15 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         // Trust all proxies (required for Docker/Nginx/Load Balancer setups)
-        $middleware->trustProxies(at: '*');
-
+        $middleware->trustProxies(
+            at: '*',
+            headers: \Illuminate\Http\Request::HEADER_X_FORWARDED_FOR |
+                \Illuminate\Http\Request::HEADER_X_FORWARDED_HOST |
+                \Illuminate\Http\Request::HEADER_X_FORWARDED_PORT |
+                \Illuminate\Http\Request::HEADER_X_FORWARDED_PROTO |
+                \Illuminate\Http\Request::HEADER_X_FORWARDED_AWS_ELB
+        );
+        
         // $middleware->throttleApi();
     })
     ->withExceptions(function (Exceptions $exceptions): void {

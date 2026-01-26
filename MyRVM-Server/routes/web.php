@@ -148,9 +148,35 @@ Route::middleware('auth')->group(function () {
 });
 
 // =============================================================================
-// RVM-UI Kiosk Interface (Public Route - Machine UUID Validated)
+// RVM-UI Kiosk Interface (Signed URL - Machine UUID Validated)
 // =============================================================================
 // This route serves the touchscreen display for RVM machines.
-// No login required, but machine UUID must be valid and active.
-Route::get('/rvm-ui/{machine_uuid}', [App\Http\Controllers\Dashboard\KioskController::class, 'index'])
-    ->name('kiosk.index');
+// Access requires valid signed URL generated during Edge handshake.
+Route::get('/rvm-ui/{uuid}', [App\Http\Controllers\Dashboard\KioskController::class, 'index'])
+    ->name('kiosk.index')
+    ->middleware('signed');
+
+// =============================================================================
+// Debug Signature - Problem Kiosk-Mode UUID
+// Konflik Skema (HTTP vs HTTPS)
+// masalah "reverse proxy behind HTTPS" dari Cloudflare
+// =============================================================================
+// Route::get('/debug-signature', function (\Illuminate\Http\Request $request) {
+//     $uuid = \App\Models\RvmMachine::first()->uuid ?? 'no-uuid';
+    
+//     // 1. Generate URL baru saat ini juga
+//     $generated = \URL::signedRoute('kiosk.index', ['uuid' => $uuid]);
+    
+//     return [
+//         'WHAT_LARAVEL_SEES' => [
+//             'current_url' => $request->url(),
+//             'current_full_url' => $request->fullUrl(),
+//             'is_secure' => $request->secure(),
+//             'scheme' => $request->getScheme(),
+//             'ip' => $request->ip(),
+//             'x_forwarded_proto' => $request->header('x-forwarded-proto'),
+//         ],
+//         'GENERATED_LINK_TEST' => $generated,
+//         'APP_URL_CONFIG' => config('app.url'),
+//     ];
+// });

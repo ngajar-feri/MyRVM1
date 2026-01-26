@@ -46,14 +46,23 @@ class EdgeDevice extends Model
         'latitude',
         'longitude',
         'address',
+
+        // Handshake data (from Setup Wizard)
+        'hardware_config',
+        'diagnostics_log',
+        'timezone',
+        'last_handshake_at',
     ];
 
     protected $casts = [
         'health_metrics' => 'array',
         'network_interfaces' => 'array',
+        'hardware_config' => 'array',
+        'diagnostics_log' => 'array',
         'latitude' => 'decimal:8',
         'longitude' => 'decimal:8',
         'threshold_full' => 'integer',
+        'last_handshake_at' => 'datetime',
     ];
 
     protected $hidden = [

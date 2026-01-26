@@ -1037,6 +1037,219 @@
                 }
             }
         },
+        "/api/v1/edge/handshake": {
+            "post": {
+                "tags": [
+                    "Edge Device"
+                ],
+                "summary": "Initial handshake for RVM-Edge Setup Wizard",
+                "description": "Syncs machine identity, hardware configuration, and health metrics. Returns kiosk URL, WebSocket config, operational policy, and AI model versioning info.",
+                "operationId": "edgeHandshake",
+                "parameters": [
+                    {
+                        "name": "X-RVM-API-KEY",
+                        "in": "header",
+                        "required": true,
+                        "description": "API Key from rvm-credentials.json",
+                        "schema": {
+                            "type": "string",
+                            "example": "sk_live_abc123..."
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "hardware_id",
+                                    "name"
+                                ],
+                                "properties": {
+                                    "hardware_id": {
+                                        "type": "string",
+                                        "example": "RVM-202601-006",
+                                        "description": "Hardware ID from rvm-credentials.json"
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "RVM KU1",
+                                        "description": "Machine display name"
+                                    },
+                                    "ip_local": {
+                                        "type": "string",
+                                        "example": "192.168.1.105"
+                                    },
+                                    "ip_vpn": {
+                                        "type": "string",
+                                        "example": "100.80.50.20"
+                                    },
+                                    "timezone": {
+                                        "type": "string",
+                                        "example": "Asia/Jakarta"
+                                    },
+                                    "firmware_version": {
+                                        "type": "string",
+                                        "example": "v1.7.0"
+                                    },
+                                    "controller_type": {
+                                        "type": "string",
+                                        "example": "NVIDIA Jetson Orin Nano"
+                                    },
+                                    "ai_model_version": {
+                                        "type": "string",
+                                        "example": "YOLO11n-v1.0.0"
+                                    },
+                                    "health_metrics": {
+                                        "type": "object",
+                                        "properties": {
+                                            "cpu_usage_percent": {
+                                                "type": "number",
+                                                "example": 15.5
+                                            },
+                                            "memory_usage_percent": {
+                                                "type": "number",
+                                                "example": 42.0
+                                            },
+                                            "disk_usage_percent": {
+                                                "type": "number",
+                                                "example": 12.8
+                                            },
+                                            "cpu_temperature": {
+                                                "type": "number",
+                                                "example": 45.0
+                                            }
+                                        }
+                                    },
+                                    "config": {
+                                        "type": "object",
+                                        "description": "Hardware configuration",
+                                        "properties": {
+                                            "cameras": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "sensors": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "actuators": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "microcontroller": {
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "diagnostics": {
+                                        "type": "object",
+                                        "properties": {
+                                            "network_check": {
+                                                "type": "string",
+                                                "example": "pass"
+                                            },
+                                            "camera_check": {
+                                                "type": "string",
+                                                "example": "pass"
+                                            },
+                                            "motor_test": {
+                                                "type": "string",
+                                                "example": "pass"
+                                            },
+                                            "ai_inference_test": {
+                                                "type": "string",
+                                                "example": "pass"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Handshake successful",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "status": "success",
+                                    "message": "Handshake successful. Configuration synced.",
+                                    "data": {
+                                        "identity": {
+                                            "rvm_id": 105,
+                                            "rvm_uuid": "550e8400-e29b-41d4-a716-446655440000",
+                                            "rvm_name": "RVM Mall Grand Indonesia - Lantai 1"
+                                        },
+                                        "kiosk": {
+                                            "url": "https://myrvm.penelitian.my.id/rvm-ui/550e8400-e29b-41d4-a716-446655440000?signature=...",
+                                            "timezone": "Asia/Jakarta"
+                                        },
+                                        "websocket": {
+                                            "channel": "rvm.550e8400-e29b-41d4-a716-446655440000",
+                                            "auth_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+                                            "host": "myrvm.penelitian.my.id",
+                                            "port": 443,
+                                            "scheme": "wss"
+                                        },
+                                        "policy": {
+                                            "is_maintenance_mode": false,
+                                            "bin_full_threshold_percent": 90,
+                                            "camera_idle_timeout_sec": 60,
+                                            "motor_speed_delay": 0.005
+                                        },
+                                        "ai_model": {
+                                            "target_version": "v1.0.0",
+                                            "hash": "a0e5156e1d53c249d4c859a4545e9505f87d6807c7113376a383da47fa45f241",
+                                            "update_source_url": "https://api.github.com/repos/ngajar-feri/MyRVM1/releases/latest"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid or missing API key",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "status": "error",
+                                    "message": "Kunci API Tidak Valid. Silakan import ulang kredensial.",
+                                    "error_code": "INVALID_API_KEY"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - Machine blocked/suspended",
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "status": "error",
+                                    "message": "Mesin ini diblokir oleh Server. Hubungi Admin.",
+                                    "error_code": "MACHINE_BLOCKED"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity - Validation error"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/api/v1/edge/devices": {
             "get": {
                 "tags": [
@@ -1507,6 +1720,265 @@
                     },
                     "500": {
                         "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/v1/kiosk/session/token": {
+            "get": {
+                "tags": [
+                    "Kiosk"
+                ],
+                "summary": "Get Kiosk Session Token (Handshake)",
+                "description": "Initialize a new kiosk session and receive a token. Requires X-Machine-UUID header.",
+                "operationId": "getKioskSessionToken",
+                "parameters": [
+                    {
+                        "name": "X-Machine-UUID",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Machine Serial Number"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Token generated"
+                    },
+                    "400": {
+                        "description": "Missing Machine UUID"
+                    },
+                    "404": {
+                        "description": "Machine Not Found"
+                    }
+                }
+            }
+        },
+        "/api/v1/kiosk/session/guest": {
+            "post": {
+                "tags": [
+                    "Kiosk"
+                ],
+                "summary": "Activate Guest Session",
+                "description": "Start a session without user login.",
+                "operationId": "activateGuestSession",
+                "parameters": [
+                    {
+                        "name": "X-Machine-UUID",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Guest session active"
+                    }
+                }
+            }
+        },
+        "/api/v1/kiosk/auth/pin": {
+            "post": {
+                "tags": [
+                    "Kiosk"
+                ],
+                "summary": "Verify Technician PIN",
+                "operationId": "verifyTechnicianPin",
+                "parameters": [
+                    {
+                        "name": "X-Machine-UUID",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "pin": {
+                                        "type": "string",
+                                        "example": "123456"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "PIN Valid"
+                    },
+                    "401": {
+                        "description": "Invalid PIN"
+                    }
+                }
+            }
+        },
+        "/api/v1/kiosk/maintenance/command": {
+            "post": {
+                "tags": [
+                    "Kiosk"
+                ],
+                "summary": "Send Hardware Command",
+                "operationId": "sendHardwareCommand",
+                "parameters": [
+                    {
+                        "name": "X-Machine-UUID",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "command": {
+                                        "type": "string",
+                                        "example": "motor_forward"
+                                    },
+                                    "params": {
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Command sent"
+                    }
+                }
+            }
+        },
+        "/api/v1/kiosk/config": {
+            "get": {
+                "tags": [
+                    "Kiosk"
+                ],
+                "summary": "Get Machine Configuration",
+                "operationId": "getKioskConfig",
+                "parameters": [
+                    {
+                        "name": "X-Machine-UUID",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Configuration data"
+                    }
+                }
+            }
+        },
+        "/api/v1/kiosk/config/theme": {
+            "post": {
+                "tags": [
+                    "Kiosk"
+                ],
+                "summary": "Update Theme Preference",
+                "operationId": "updateKioskTheme",
+                "parameters": [
+                    {
+                        "name": "X-Machine-UUID",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "theme": {
+                                        "type": "string",
+                                        "enum": [
+                                            "light",
+                                            "dark",
+                                            "auto"
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Theme updated"
+                    }
+                }
+            }
+        },
+        "/api/v1/kiosk/logs": {
+            "get": {
+                "tags": [
+                    "Kiosk"
+                ],
+                "summary": "Get Machine Logs",
+                "operationId": "getKioskLogs",
+                "parameters": [
+                    {
+                        "name": "X-Machine-UUID",
+                        "in": "header",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Log entries"
+                    }
+                }
+            }
+        },
+        "/rvm-ui/{machine_uuid}": {
+            "get": {
+                "tags": [
+                    "Kiosk UI"
+                ],
+                "summary": "Kiosk Interface (Web View)",
+                "description": "Main touchscreen interface entry point.",
+                "parameters": [
+                    {
+                        "name": "machine_uuid",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Machine Serial Number (e.g. RVM-GI-001)"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "HTML Page"
+                    },
+                    "404": {
+                        "description": "Machine Not Found"
                     }
                 }
             }

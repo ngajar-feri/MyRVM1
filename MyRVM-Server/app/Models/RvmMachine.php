@@ -13,6 +13,7 @@ class RvmMachine extends Model
 {
     protected $fillable = [
         'name',
+        'uuid',
         'location',
         'serial_number',
         'api_key',
@@ -31,6 +32,7 @@ class RvmMachine extends Model
     ];
 
     protected $casts = [
+        'uuid' => 'string',
         'last_ping' => 'datetime',
         'last_maintenance' => 'datetime',
         'last_model_sync' => 'datetime',
@@ -46,6 +48,11 @@ class RvmMachine extends Model
         parent::boot();
 
         static::creating(function ($model) {
+            // Auto-generate UUID
+            if (empty($model->uuid)) {
+                $model->uuid = Str::uuid()->toString();
+            }
+
             // Auto-generate serial number: RVM-YYYYMM-XXX
             if (empty($model->serial_number)) {
                 $count = self::count() + 1;

@@ -103,6 +103,11 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     Route::get('/rvm-machines/{id}/credentials', [RvmMachineController::class, 'getCredentials']);
 
     // Edge Device & Telemetry (IoT)
+    // Handshake endpoint - uses API key auth instead of user auth
+    Route::post('/edge/handshake', [EdgeDeviceController::class, 'handshake'])
+        ->withoutMiddleware('auth:sanctum')
+        ->middleware('validate.rvm.apikey');
+    
     Route::prefix('edge')->group(function () {
         Route::post('/register', [EdgeDeviceController::class, 'register']);
         Route::get('/model-sync', [EdgeDeviceController::class, 'modelSync']);

@@ -114,14 +114,17 @@ class AuthController extends Controller
         // Find valid technician assignment with matching PIN
         $assignment = TechnicianAssignment::where('rvm_machine_id', $machine->id)
             ->where('status', 'active')
-            ->where(function ($query) {
-                $query->whereNull('valid_until')
-                    ->orWhere('valid_until', '>', now());
-            })
             ->get()
             ->first(function ($assignment) use ($validated) {
-                return $assignment->pin_hash && 
-                       Hash::check($validated['pin'], $assignment->pin_hash);
+                // Check PIN match (plaintext comparison)
+                if ($assignment->access_pin !== $validated['pin']) {
+                    return false;
+                }
+                // Check PIN expiration
+                if ($assignment->pin_expires_at && $assignment->pin_expires_at < now()) {
+                    return false;
+                }
+                return true;
             });
 
         if (!$assignment) {
@@ -149,7 +152,7 @@ class AuthController extends Controller
 
         Log::info('Technician authenticated via PIN', [
             'machine_uuid' => $machineUuid,
-            'technician_id' => $assignment->user_id,
+            'technician_id' => $assignment->technician_id,
             'assignment_id' => $assignment->id,
         ]);
 
@@ -157,7 +160,7 @@ class AuthController extends Controller
             'success' => true,
             'message' => 'Otentikasi berhasil. Selamat datang, Teknisi.',
             'data' => [
-                'technician_name' => $assignment->user->name ?? 'Teknisi',
+                'technician_name' => $assignment->technician->name ?? 'Teknisi',
                 'assignment_id' => $assignment->id,
                 'permissions' => $this->getTechnicianPermissions($assignment),
                 'session_expires_at' => now()->addHours(2)->toIso8601String(),

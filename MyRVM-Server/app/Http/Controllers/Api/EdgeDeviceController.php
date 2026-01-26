@@ -10,6 +10,7 @@ use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\URL;
 use OpenApi\Annotations as OA;
 
 class EdgeDeviceController extends Controller
@@ -693,6 +694,282 @@ class EdgeDeviceController extends Controller
                 'generated_at' => now()->toIso8601String()
             ]
         ]);
+    }
+
+    /**
+     * Handshake endpoint for RVM-Edge Setup Wizard.
+     * 
+     * Called during initial installation to sync machine identity, hardware config,
+     * and receive operational configuration from server.
+     * 
+     * @OA\Post(
+     *      path="/api/v1/edge/handshake",
+     *      operationId="edgeHandshake",
+     *      tags={"Edge Device"},
+     *      summary="Initial handshake for RVM-Edge Setup Wizard",
+     *      description="Syncs machine identity, hardware configuration, and health metrics. Returns kiosk URL, WebSocket config, operational policy, and AI model versioning info.",
+     *      @OA\Parameter(
+     *          name="X-RVM-API-KEY",
+     *          in="header",
+     *          required=true,
+     *          description="API Key from rvm-credentials.json",
+     *          @OA\Schema(type="string", example="sk_live_abc123...")
+     *      ),
+     *      @OA\RequestBody(
+     *          required=true,
+     *          @OA\JsonContent(
+     *              required={"hardware_id", "name"},
+     *              @OA\Property(property="hardware_id", type="string", example="RVM-202601-006", description="From rvm-credentials.json"),
+     *              @OA\Property(property="name", type="string", example="RVM KU1", description="Machine display name"),
+     *              @OA\Property(property="ip_local", type="string", example="192.168.1.105"),
+     *              @OA\Property(property="ip_vpn", type="string", example="100.80.50.20"),
+     *              @OA\Property(property="timezone", type="string", example="Asia/Jakarta"),
+     *              @OA\Property(property="firmware_version", type="string", example="v1.7.0"),
+     *              @OA\Property(property="controller_type", type="string", example="NVIDIA Jetson Orin Nano"),
+     *              @OA\Property(property="ai_model_version", type="string", example="YOLO11n-v1.0.0"),
+     *              @OA\Property(property="health_metrics", type="object",
+     *                  @OA\Property(property="cpu_usage_percent", type="number", example=15.5),
+     *                  @OA\Property(property="memory_usage_percent", type="number", example=42.0),
+     *                  @OA\Property(property="disk_usage_percent", type="number", example=12.8),
+     *                  @OA\Property(property="cpu_temperature", type="number", example=45.0)
+     *              ),
+     *              @OA\Property(property="config", type="object", description="Hardware configuration",
+     *                  @OA\Property(property="cameras", type="array", @OA\Items(type="object")),
+     *                  @OA\Property(property="sensors", type="array", @OA\Items(type="object")),
+     *                  @OA\Property(property="actuators", type="array", @OA\Items(type="object")),
+     *                  @OA\Property(property="microcontroller", type="object")
+     *              ),
+     *              @OA\Property(property="diagnostics", type="object",
+     *                  @OA\Property(property="network_check", type="string", example="pass"),
+     *                  @OA\Property(property="camera_check", type="string", example="pass"),
+     *                  @OA\Property(property="motor_test", type="string", example="pass"),
+     *                  @OA\Property(property="ai_inference_test", type="string", example="pass")
+     *              )
+     *          )
+     *      ),
+     *      @OA\Response(
+     *          response=200,
+     *          description="Handshake successful",
+     *          @OA\JsonContent(
+     *              @OA\Property(property="status", type="string", example="success"),
+     *              @OA\Property(property="message", type="string", example="Handshake successful. Configuration synced."),
+     *              @OA\Property(property="data", type="object",
+     *                  @OA\Property(property="identity", type="object"),
+     *                  @OA\Property(property="kiosk", type="object"),
+     *                  @OA\Property(property="websocket", type="object"),
+     *                  @OA\Property(property="policy", type="object"),
+     *                  @OA\Property(property="ai_model", type="object")
+     *              )
+     *          )
+     *      ),
+     *      @OA\Response(response=401, description="Unauthorized - Invalid or missing API key"),
+     *      @OA\Response(response=403, description="Forbidden - Machine blocked/suspended"),
+     *      @OA\Response(response=422, description="Unprocessable Entity - Validation error"),
+     *      @OA\Response(response=500, description="Internal Server Error")
+     * )
+     */
+    public function handshake(Request $request)
+    {
+        // Get machine from middleware (ValidateRvmApiKey)
+        $machine = $request->attributes->get('rvm_machine');
+
+        if (!$machine) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Server Gangguan. Coba lagi nanti.',
+                'error_code' => 'MACHINE_NOT_FOUND',
+            ], 500);
+        }
+
+        // Validate request payload
+        $validated = $request->validate([
+            // Identity (Required)
+            'hardware_id' => 'required|string|max:100',
+            'name' => 'required|string|max:255',
+
+            // Network & Location (Auto Detect)
+            'ip_local' => 'nullable|ip',
+            'ip_vpn' => 'nullable|ip',
+            'timezone' => 'nullable|string|max:50',
+
+            // Software Info (Auto Detect)
+            'firmware_version' => 'nullable|string|max:50',
+            'controller_type' => 'nullable|string|max:100',
+            'ai_model_version' => 'nullable|string|max:100',
+
+            // Health Metrics
+            'health_metrics' => 'nullable|array',
+            'health_metrics.cpu_usage_percent' => 'nullable|numeric|min:0|max:100',
+            'health_metrics.memory_usage_percent' => 'nullable|numeric|min:0|max:100',
+            'health_metrics.disk_usage_percent' => 'nullable|numeric|min:0|max:100',
+            'health_metrics.cpu_temperature' => 'nullable|numeric',
+
+            // Hardware Configuration (JSONB)
+            'config' => 'nullable|array',
+            'config.cameras' => 'nullable|array',
+            'config.sensors' => 'nullable|array',
+            'config.actuators' => 'nullable|array',
+            'config.microcontroller' => 'nullable|array',
+
+            // Diagnostics
+            'diagnostics' => 'nullable|array',
+        ]);
+
+        // Find or create Edge Device linked to this machine
+        $edgeDevice = EdgeDevice::where('rvm_machine_id', $machine->id)->first();
+
+        if (!$edgeDevice) {
+            // Create new Edge Device
+            $edgeDevice = EdgeDevice::create([
+                'rvm_machine_id' => $machine->id,
+                'device_id' => $validated['hardware_id'],
+                'type' => $validated['controller_type'] ?? 'NVIDIA Jetson',
+                'location_name' => $machine->location ?? $validated['name'],
+                'status' => 'online',
+            ]);
+        }
+
+        // Update Edge Device with handshake data
+        $edgeDevice->update([
+            'device_id' => $validated['hardware_id'],
+            'ip_address_local' => $validated['ip_local'] ?? $edgeDevice->ip_address_local,
+            'tailscale_ip' => $validated['ip_vpn'] ?? $edgeDevice->tailscale_ip,
+            'timezone' => $validated['timezone'] ?? 'Asia/Jakarta',
+            'firmware_version' => $validated['firmware_version'] ?? $edgeDevice->firmware_version,
+            'controller_type' => $validated['controller_type'] ?? $edgeDevice->controller_type,
+            'ai_model_version' => $validated['ai_model_version'] ?? $edgeDevice->ai_model_version,
+            'health_metrics' => $validated['health_metrics'] ?? $edgeDevice->health_metrics,
+            'hardware_config' => $validated['config'] ?? $edgeDevice->hardware_config,
+            'diagnostics_log' => $validated['diagnostics'] ?? $edgeDevice->diagnostics_log,
+            'status' => 'online',
+            'last_handshake_at' => now(),
+        ]);
+
+        // Update RVM Machine status
+        $machine->update([
+            'last_ping' => now(),
+            'status' => 'online',
+        ]);
+
+        // Generate signed kiosk URL
+        $kioskUrl = $this->generateSignedKioskUrl($machine);
+
+        // Generate WebSocket auth token
+        $wsAuthToken = $this->generateWebSocketToken($machine);
+
+        // Get AI model info
+        $aiModelInfo = $this->getLatestAiModelInfo();
+
+        // Get operational policy from machine settings
+        $policy = $this->getOperationalPolicy($machine, $edgeDevice);
+
+        // Log handshake activity
+        ActivityLog::log(
+            'Edge',
+            'Handshake',
+            "Edge device {$validated['hardware_id']} handshake successful from {$validated['ip_local']}",
+            null
+        );
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Handshake successful. Configuration synced.',
+            'data' => [
+                // 1. Logical Identity (Sync with Server Database)
+                'identity' => [
+                    'rvm_id' => $machine->id,
+                    'rvm_uuid' => $machine->uuid, // 36-char UUID format
+                    'rvm_name' => $machine->name ?? $machine->location,
+                ],
+
+                // 2. Kiosk UI Configuration
+                'kiosk' => [
+                    'url' => $kioskUrl,
+                    'timezone' => $validated['timezone'] ?? 'Asia/Jakarta',
+                ],
+
+                // 3. WebSocket Configuration
+                'websocket' => [
+                    'channel' => "rvm.{$machine->uuid}",
+                    'auth_token' => $wsAuthToken,
+                    'host' => parse_url(config('app.url'), PHP_URL_HOST),
+                    'port' => 443,
+                    'scheme' => 'wss',
+                ],
+
+                // 4. Operational Policy
+                'policy' => $policy,
+
+                // 5. AI Model Versioning
+                'ai_model' => $aiModelInfo,
+            ],
+        ], 200);
+    }
+
+    /**
+     * Generate signed kiosk URL for RVM-UI browser.
+     * 
+     * Uses Laravel's URL::signedRoute() to create a cryptographically
+     * signed URL that is validated by the 'signed' middleware.
+     */
+    private function generateSignedKioskUrl(RvmMachine $machine): string
+    {
+        return URL::signedRoute('kiosk.index', [
+            'uuid' => $machine->uuid
+        ]);
+    }
+
+    /**
+     * Generate temporary WebSocket auth token.
+     */
+    private function generateWebSocketToken(RvmMachine $machine): string
+    {
+        // Generate a short-lived token for WebSocket authentication
+        $payload = [
+            'machine_id' => $machine->id,
+            'serial' => $machine->serial_number,
+            'exp' => now()->addHours(24)->timestamp,
+        ];
+        
+        return base64_encode(json_encode($payload)) . '.' . hash_hmac('sha256', json_encode($payload), config('app.key'));
+    }
+
+    /**
+     * Get latest AI model information for Edge devices.
+     */
+    private function getLatestAiModelInfo(): array
+    {
+        $latestModel = \DB::table('ai_model_versions')
+            ->where('is_active', true)
+            ->orderBy('deployed_at', 'desc')
+            ->first();
+
+        if (!$latestModel) {
+            return [
+                'target_version' => 'v1.0.0',
+                'hash' => null,
+                'update_source_url' => null,
+            ];
+        }
+
+        return [
+            'target_version' => $latestModel->version,
+            'hash' => $latestModel->sha256_hash,
+            'update_source_url' => config('app.url') . "/api/v1/edge/download-model/{$latestModel->sha256_hash}",
+        ];
+    }
+
+    /**
+     * Get operational policy for the machine.
+     */
+    private function getOperationalPolicy(RvmMachine $machine, EdgeDevice $edgeDevice): array
+    {
+        return [
+            'is_maintenance_mode' => $machine->status === 'maintenance',
+            'bin_full_threshold_percent' => $edgeDevice->threshold_full ?? 90,
+            'camera_idle_timeout_sec' => 60,
+            'motor_speed_delay' => 0.005,
+        ];
     }
 }
 
