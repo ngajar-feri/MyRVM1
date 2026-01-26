@@ -109,7 +109,7 @@ class DatabaseSeeder extends Seeder
             [
                 'name' => 'RVM Mall Grand Indonesia',
                 'location' => 'Mall Grand Indonesia, Jakarta Pusat',
-                'status' => 'online',
+                'status' => 'offline',
                 'capacity_percentage' => 25,
                 'last_ping' => now(),
             ]
@@ -120,7 +120,7 @@ class DatabaseSeeder extends Seeder
             [
                 'name' => 'RVM Central Park',
                 'location' => 'Central Park Mall, Jakarta Barat',
-                'status' => 'online',
+                'status' => 'offline',
                 'capacity_percentage' => 19,
                 'last_ping' => now()->subMinutes(5),
             ]
@@ -131,7 +131,7 @@ class DatabaseSeeder extends Seeder
             [
                 'name' => 'RVM Plaza Senayan',
                 'location' => 'Plaza Senayan, Jakarta Selatan',
-                'status' => 'maintenance',
+                'status' => 'offline',
                 'capacity_percentage' => 80,
                 'last_ping' => now()->subHours(2),
             ]
@@ -142,7 +142,7 @@ class DatabaseSeeder extends Seeder
             [
                 'name' => 'RVM Universitas Indonesia',
                 'location' => 'Kampus UI Depok',
-                'status' => 'online',
+                'status' => 'offline',
                 'capacity_percentage' => 10,
                 'last_ping' => now()->subMinute(),
             ]
