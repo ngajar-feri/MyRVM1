@@ -10,8 +10,8 @@ Selamat datang di pusat dokumentasi teknis **MyRVM-Server**. Dokumen-dokumen di 
 
 ### 1. [System Overview & Tech Stack](file:///home/my/MyRVM1/Docs/Artifacts/MyRVM-Server/Architecture/System-Overview-20260126.md)
 *   Ringkasan ekosistem pilar (Edge, Server, CV, Apps).
-*   Daftar tumpukan teknologi (PHP 8.3, Laravel 12, Vue.js, dll).
-*   Peta direktori aplikasi.
+*   Daftar tumpukan teknologi (PHP 8.3, Laravel 12, Vue 3, dll).
+*   [Peta direktori aplikasi (Directory Structure v2)](file:///home/my/MyRVM1/Docs/Artifacts/MyRVM-Server/Documentation/MyRVM-Server-Directory-Structure-20260126-v2.md).
 
 ### 2. [Security Design & Authentication](file:///home/my/MyRVM1/Docs/Artifacts/MyRVM-Server/Architecture/Security-Design-20260126.md)
 *   Strategi Signed URL (UUID) untuk Kiosk.
@@ -29,6 +29,10 @@ Selamat datang di pusat dokumentasi teknis **MyRVM-Server**. Dokumen-dokumen di 
 *   Visualisasi relasi antar entitas inti.
 *   Deskripsi tabel (rvm_machines, edge_devices, dll).
 *   Strategi indexing dan optimasi data.
+
+### 5. [Project Blueprint: Integration Roadmap](file:///home/my/MyRVM1/Docs/Project/MyRVM-Server/2026-01-26/Requirements/MyRVM-Server-Roadmap-v1.0.md)
+*   Rencana pengembangan fase integrasi Edge & Dashboard.
+*   Prioritas fitur MoSCoW (P0-P2).
 
 ---
 
