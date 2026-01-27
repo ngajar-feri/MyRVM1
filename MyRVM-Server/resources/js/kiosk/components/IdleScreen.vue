@@ -98,12 +98,12 @@ onUnmounted(() => {
 <style scoped>
 .idle-screen {
   text-align: center;
-  padding: var(--spacing-xl);
+  padding: var(--spacing-lg);
 }
 
 .kiosk-logo {
   font-size: 72px;
-  margin-bottom: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
   animation: float 3s ease-in-out infinite;
 }
 
@@ -125,7 +125,7 @@ onUnmounted(() => {
 }
 
 .qr-container {
-  margin: var(--spacing-2xl) 0;
+  margin: var(--spacing-lg) 0;
 }
 
 .qr-box {
@@ -133,7 +133,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   background: white;
-  padding: var(--spacing-lg);
+  padding: var(--spacing-md);
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow-medium);
   min-width: 280px;
@@ -149,7 +149,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  margin-top: var(--spacing-md);
+  margin-top: var(--spacing-sm);
   font-size: 14px;
   color: var(--text-secondary);
 }
@@ -163,7 +163,7 @@ onUnmounted(() => {
 }
 
 .guest-action {
-  margin-top: var(--spacing-xl);
+  margin-top: var(--spacing-md);
 }
 
 .btn-icon {

@@ -35,6 +35,15 @@
             -webkit-user-select: none;
             user-select: none;
         }
+
+        /* HOTFIX: Compact Layout & Lift Footer */
+        .idle-screen { padding: 16px !important; }
+        .kiosk-logo { margin-bottom: 12px !important; font-size: 56px !important; }
+        .welcome-title { margin-bottom: 4px !important; font-size: 28px !important; }
+        .qr-container { margin: 24px 0 !important; }
+        .qr-box { padding: 16px !important; min-width: 240px !important; min-height: 240px !important; }
+        .guest-action { margin-top: 16px !important; }
+        .kiosk-footer { padding-bottom: 48px !important; } /* Extra lift for footer */
         
         /* Loading state before Vue mounts */
         .kiosk-loading {
