@@ -318,24 +318,24 @@ class MachineManagement {
                                             <dt class="col-5 text-muted">Device ID:</dt>
                                             <dd class="col-7"><code style="background: #ecfdf5; padding: 2px 6px; border-radius: 4px;">${edgeDevice.device_id || 'N/A'}</code></dd>
                                             <dt class="col-5 text-muted">Controller:</dt>
-                                            <dd class="col-7">${edgeDevice.type || edgeDevice.processor_type || 'Jetson Orin Nano'}</dd>
+                                            <dd class="col-7">${edgeDevice.type || edgeDevice.controller_type || 'Jetson Orin Nano'}</dd>
                                             <dt class="col-5 text-muted">Firmware:</dt>
-                                            <dd class="col-7">${edgeDevice.firmware_version || 'v1.0.0'}</dd>
+                                            <dd class="col-7">${edgeDevice.system_info?.firmware_version || edgeDevice.firmware_version || 'v1.0.0'}</dd>
                                             <dt class="col-5 text-muted">Camera:</dt>
-                                            <dd class="col-7">${edgeDevice.camera_id || edgeDevice.hardware_config?.camera || 'CSI Camera'}</dd>
+                                            <dd class="col-7">${edgeDevice.hardware_config?.cameras?.[0]?.name || edgeDevice.camera_id || 'CSI Camera'}</dd>
                                         </dl>
                                     </div>
                                     <!-- Network Info -->
                                     <div class="col-md-6">
                                         <dl class="row mb-0 small">
                                             <dt class="col-5 text-muted">Tailscale IP:</dt>
-                                            <dd class="col-7"><code style="background: #dbeafe; padding: 2px 6px; border-radius: 4px;">${edgeDevice.tailscale_ip || edgeDevice.vpn_ip || 'N/A'}</code></dd>
+                                            <dd class="col-7"><code style="background: #dbeafe; padding: 2px 6px; border-radius: 4px;">${edgeDevice.tailscale_ip || 'N/A'}</code></dd>
                                             <dt class="col-5 text-muted">Local IP:</dt>
-                                            <dd class="col-7"><code style="background: #f3f4f6; padding: 2px 6px; border-radius: 4px;">${edgeDevice.local_ip || edgeDevice.ip_address || 'N/A'}</code></dd>
+                                            <dd class="col-7"><code style="background: #f3f4f6; padding: 2px 6px; border-radius: 4px;">${edgeDevice.ip_address_local || edgeDevice.ip_address || 'N/A'}</code></dd>
                                             <dt class="col-5 text-muted">AI Model:</dt>
-                                            <dd class="col-7">${edgeDevice.ai_model_version || edgeDevice.hardware_config?.ai_model || 'YOLO11n'}</dd>
+                                            <dd class="col-7">${edgeDevice.system_info?.ai_models?.model_version || edgeDevice.ai_model_version || 'v1.0.0'}</dd>
                                             <dt class="col-5 text-muted">Last Heartbeat:</dt>
-                                            <dd class="col-7">${this.getLastSeen(edgeDevice.last_heartbeat || edgeDevice.updated_at)}</dd>
+                                            <dd class="col-7">${this.getLastSeen(edgeDevice.last_handshake_at || edgeDevice.updated_at)}</dd>
                                         </dl>
                                     </div>
                                 </div>
@@ -347,25 +347,25 @@ class MachineManagement {
                                 <div class="row g-2">
                                     <div class="col-3">
                                         <div class="text-center p-2" style="background: linear-gradient(135deg, #ecfdf5, #d1fae5); border-radius: 10px;">
-                                            <div class="fw-bold" style="color: #065f46;">${(edgeDevice.health_metrics?.cpu_usage || edgeDevice.hardware_info?.cpu_usage || 0).toFixed(0)}%</div>
+                                            <div class="fw-bold" style="color: #065f46;">${(edgeDevice.health_metrics?.cpu_usage_percent || 0).toFixed(1)}%</div>
                                             <small class="text-muted">CPU</small>
                                         </div>
                                     </div>
                                     <div class="col-3">
                                         <div class="text-center p-2" style="background: linear-gradient(135deg, #eff6ff, #dbeafe); border-radius: 10px;">
-                                            <div class="fw-bold" style="color: #1e40af;">${(edgeDevice.health_metrics?.memory_usage || edgeDevice.hardware_info?.memory_usage || 0).toFixed(0)}%</div>
+                                            <div class="fw-bold" style="color: #1e40af;">${(edgeDevice.health_metrics?.memory_usage_percent || 0).toFixed(1)}%</div>
                                             <small class="text-muted">Memory</small>
                                         </div>
                                     </div>
                                     <div class="col-3">
                                         <div class="text-center p-2" style="background: linear-gradient(135deg, #fef3c7, #fde68a); border-radius: 10px;">
-                                            <div class="fw-bold" style="color: #92400e;">${edgeDevice.health_metrics?.cpu_temp || edgeDevice.hardware_info?.cpu_temp || 45}°C</div>
+                                            <div class="fw-bold" style="color: #92400e;">${(edgeDevice.health_metrics?.cpu_temperature || 0).toFixed(1)}°C</div>
                                             <small class="text-muted">Temp</small>
                                         </div>
                                     </div>
                                     <div class="col-3">
                                         <div class="text-center p-2" style="background: linear-gradient(135deg, #f3f4f6, #e5e7eb); border-radius: 10px;">
-                                            <div class="fw-bold" style="color: #374151;">${(edgeDevice.health_metrics?.disk_usage || edgeDevice.hardware_info?.disk_usage || 0).toFixed(0)}%</div>
+                                            <div class="fw-bold" style="color: #374151;">${(edgeDevice.health_metrics?.disk_usage_percent || 0).toFixed(1)}%</div>
                                             <small class="text-muted">Disk</small>
                                         </div>
                                     </div>
