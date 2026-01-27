@@ -36,14 +36,16 @@
             user-select: none;
         }
 
-        /* HOTFIX: Compact Layout & Lift Footer */
-        .idle-screen { padding: 16px !important; }
-        .kiosk-logo { margin-bottom: 12px !important; font-size: 56px !important; }
-        .welcome-title { margin-bottom: 4px !important; font-size: 28px !important; }
-        .qr-container { margin: 24px 0 !important; }
-        .qr-box { padding: 16px !important; min-width: 240px !important; min-height: 240px !important; }
-        .guest-action { margin-top: 16px !important; }
-        .kiosk-footer { padding-bottom: 48px !important; } /* Extra lift for footer */
+        /* HOTFIX V2: Aggressive Compaction & Lift */
+        .idle-screen { padding: 0 !important; }
+        .kiosk-logo { margin-bottom: 8px !important; font-size: 42px !important; }
+        .welcome-title { margin-bottom: 2px !important; font-size: 24px !important; }
+        .welcome-subtitle { font-size: 16px !important; }
+        .qr-container { margin: 16px 0 !important; }
+        .qr-box { padding: 12px !important; min-width: 200px !important; min-height: 200px !important; }
+        .guest-action { margin-top: 12px !important; }
+        /* Lift Footer significantly (80px) to clear bottom bezel */
+        .kiosk-footer { padding-bottom: 80px !important; }
         
         /* Loading state before Vue mounts */
         .kiosk-loading {
