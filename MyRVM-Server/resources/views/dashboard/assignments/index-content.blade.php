@@ -945,7 +945,8 @@
 
             const filtered = machines.filter(m =>
                 m.name.toLowerCase().includes(query.toLowerCase()) ||
-                (m.location && m.location.toLowerCase().includes(query.toLowerCase()))
+                (m.location && m.location.toLowerCase().includes(query.toLowerCase())) ||
+                (m.location_address && m.location_address.toLowerCase().includes(query.toLowerCase()))
             ).slice(0, 10);
 
             if (filtered.length === 0) {

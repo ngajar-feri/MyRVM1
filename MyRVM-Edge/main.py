@@ -137,6 +137,12 @@ def main():
         while True:
             time.sleep(10)
             print("[.] Heartbeat...")
+            if client.heartbeat():
+                pass # Success
+            else:
+                print("[!] Heartbeat failed to send.")
+            
+            # TODO: Check for pending commands from server?
     except KeyboardInterrupt:
         print("\n[!] Shutting down...")
         local_ws_process.terminate()

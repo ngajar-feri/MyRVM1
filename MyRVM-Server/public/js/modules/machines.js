@@ -8,6 +8,7 @@ class MachineManagement {
         this.machines = [];
         this.viewMode = 'grid'; // grid or list
         this.bootstrapReady = false;
+        this.pollingTimer = null;
         this.init();
     }
 
@@ -88,6 +89,10 @@ class MachineManagement {
             if (e.target && e.target.id === 'addMachineModal') {
                 document.getElementById('addMachineForm')?.reset();
                 document.getElementById('addMachineErrors')?.classList.add('d-none');
+            }
+            if (e.target && e.target.id === 'machineDetailModal') {
+                if (this.pollingTimer) clearInterval(this.pollingTimer);
+                this.pollingTimer = null;
             }
         });
     }
@@ -212,7 +217,7 @@ class MachineManagement {
                         ${edgeDevice ? `
                         <div class="mt-2 pt-2 border-top small text-muted">
                             <i class="ti tabler-heart-rate-monitor me-1"></i>
-                            Last heartbeat: ${this.getLastSeen(edgeDevice.last_heartbeat)}
+                            Last heartbeat: ${this.getLastSeen(edgeDevice.updated_at)}
                         </div>
                         ` : ''}
                     </div>
@@ -237,7 +242,268 @@ class MachineManagement {
         document.getElementById('total-transactions').textContent = totalTransactions;
     }
 
+    async loadMachineDetailContext(machineId, contentContainer, isPolling = false) {
+        try {
+            const response = await apiHelper.get(`/api/v1/rvm-machines/${machineId}`);
+
+            if (!response || !response.ok) throw new Error('Failed to load machine details');
+
+            const data = await response.json();
+            const machine = data.data || data;
+            
+            // Render content
+            const html = this.renderMachineDetailTemplate(machine);
+            
+            // Update content
+            contentContainer.innerHTML = html;
+
+            // Re-init tooltips
+            const tooltips = contentContainer.querySelectorAll('[data-bs-toggle="tooltip"]');
+            tooltips.forEach(el => new bootstrap.Tooltip(el));
+
+        } catch (error) {
+            console.error('Error loading machine details:', error);
+            if (!isPolling) {
+                 contentContainer.innerHTML = '<div class="alert alert-danger">Failed to load machine details</div>';
+            }
+        }
+    }
+
+    renderMachineDetailTemplate(machine) {
+        const edgeDevice = machine.edge_device;
+        const telemetry = edgeDevice?.telemetry || [];
+
+        return `
+            <div class="row">
+                <!-- Left Column: Stats -->
+                <div class="col-md-8">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <span class="badge badge-status-${machine.status}">${machine.status}</span>
+                                    <div class="small text-muted mt-1">Machine Status</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <h5 class="mb-0">${machine.capacity_percentage || 0}%</h5>
+                                    <div class="small text-muted">Bin Capacity</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <h5 class="mb-0">${machine.today_count || 0}</h5>
+                                    <div class="small text-muted">Today</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <h5 class="mb-0">${machine.total_count || 0}</h5>
+                                    <div class="small text-muted">All Time</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Edge Device Section - Bio-Digital 2026 -->
+                    ${edgeDevice ? `
+                    <div class="card mb-3" style="border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.2); background: linear-gradient(to bottom right, #f0fdf4, #ffffff);">
+                        <div class="card-header d-flex justify-content-between align-items-center" style="border-bottom: 1px solid rgba(16, 185, 129, 0.1); background: transparent;">
+                            <div class="d-flex align-items-center">
+                                <h6 class="mb-0 me-2" style="color: #065f46;"><i class="ti tabler-cpu me-2"></i>Edge Device</h6>
+                                <div class="spinner-grow text-success spinner-grow-sm" role="status" style="width: 0.5rem; height: 0.5rem;" title="Live Updates Active"></div>
+                            </div>
+                            <span class="badge badge-status-${edgeDevice.status || 'offline'}">${edgeDevice.status || 'offline'}</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <!-- Hardware Info -->
+                                <div class="col-md-6">
+                                    <dl class="row mb-0 small">
+                                        <dt class="col-5 text-muted">Device ID:</dt>
+                                        <dd class="col-7"><code style="background: #ecfdf5; padding: 2px 6px; border-radius: 4px;">${edgeDevice.device_id || 'N/A'}</code></dd>
+                                        <dt class="col-5 text-muted">Controller:</dt>
+                                        <dd class="col-7">${edgeDevice.type || edgeDevice.controller_type || 'Jetson Orin Nano'}</dd>
+                                        <dt class="col-5 text-muted">Firmware:</dt>
+                                        <dd class="col-7">${edgeDevice.system_info?.firmware_version || edgeDevice.firmware_version || 'v1.0.0'}</dd>
+                                        <dt class="col-5 text-muted">Camera:</dt>
+                                        <dd class="col-7">${edgeDevice.hardware_config?.cameras?.[0]?.name || edgeDevice.camera_id || 'CSI Camera'}</dd>
+                                    </dl>
+                                </div>
+                                <!-- Network Info -->
+                                <div class="col-md-6">
+                                    <dl class="row mb-0 small">
+                                        <dt class="col-5 text-muted">Tailscale IP:</dt>
+                                        <dd class="col-7"><code style="background: #dbeafe; padding: 2px 6px; border-radius: 4px;">${edgeDevice.tailscale_ip || 'N/A'}</code></dd>
+                                        <dt class="col-5 text-muted">Local IP:</dt>
+                                        <dd class="col-7"><code style="background: #f3f4f6; padding: 2px 6px; border-radius: 4px;">${edgeDevice.ip_address_local || edgeDevice.ip_address || 'N/A'}</code></dd>
+                                        <dt class="col-5 text-muted">AI Model:</dt>
+                                        <dd class="col-7">${edgeDevice.system_info?.ai_models?.model_version || edgeDevice.ai_model_version || 'v1.0.0'}</dd>
+                                        <dt class="col-5 text-muted">Last Heartbeat:</dt>
+                                        <dd class="col-7">${this.getLastSeen(edgeDevice.updated_at)}</dd>
+                                    </dl>
+                                </div>
+                            </div>
+
+                            ${edgeDevice.health_metrics || edgeDevice.hardware_info ? `
+                            <!-- Health Metrics - Bio-Digital Cards -->
+                            <hr style="border-color: rgba(16, 185, 129, 0.1);">
+                            <h6 class="small fw-semibold mb-3" style="color: #065f46;"><i class="ti tabler-activity-heartbeat me-1"></i>Health Metrics</h6>
+                            <div class="row g-2">
+                                <div class="col-3">
+                                    <div class="text-center p-2" style="background: linear-gradient(135deg, #ecfdf5, #d1fae5); border-radius: 10px;">
+                                        <div class="fw-bold" style="color: #065f46;">${(edgeDevice.health_metrics?.cpu_usage_percent || 0).toFixed(1)}%</div>
+                                        <small class="text-muted">CPU</small>
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="text-center p-2" style="background: linear-gradient(135deg, #eff6ff, #dbeafe); border-radius: 10px;">
+                                        <div class="fw-bold" style="color: #1e40af;">${(edgeDevice.health_metrics?.memory_usage_percent || 0).toFixed(1)}%</div>
+                                        <small class="text-muted">Memory</small>
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="text-center p-2" style="background: linear-gradient(135deg, #fef3c7, #fde68a); border-radius: 10px;">
+                                        <div class="fw-bold" style="color: #92400e;">${(edgeDevice.health_metrics?.cpu_temperature || 0).toFixed(1)}°C</div>
+                                        <small class="text-muted">Temp</small>
+                                    </div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="text-center p-2" style="background: linear-gradient(135deg, #f3f4f6, #e5e7eb); border-radius: 10px;">
+                                        <div class="fw-bold" style="color: #374151;">${(edgeDevice.health_metrics?.disk_usage_percent || 0).toFixed(1)}%</div>
+                                        <small class="text-muted">Disk</small>
+                                    </div>
+                                </div>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    ` : `
+                    <div class="alert mb-3" style="background: linear-gradient(to right, #fef3c7, #fff7ed); border: 1px solid #fcd34d; border-radius: 10px; color: #92400e;">
+                        <i class="ti tabler-alert-circle me-1"></i>
+                        <strong>Waiting for Handshake:</strong> Edge Device will auto-register when the physical machine connects using the API Key.
+                    </div>
+                    `}
+
+                    <!-- Telemetry Section -->
+                    ${telemetry.length > 0 ? `
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="ti tabler-chart-line me-2"></i>Latest Telemetry (${telemetry.length})</h6>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Timestamp</th>
+                                            <th>Sensor Data</th>
+                                            <th>Sync</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${telemetry.map(t => `
+                                        <tr>
+                                            <td class="small">${new Date(t.client_timestamp).toLocaleString()}</td>
+                                            <td><code class="small">${JSON.stringify(t.sensor_data).substring(0, 50)}...</code></td>
+                                            <td><span class="badge bg-${t.sync_status === 'synced' ? 'success' : 'warning'}">${t.sync_status}</span></td>
+                                        </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+
+                <!-- Right Column: Info -->
+                <div class="col-md-4">
+                    <div class="card mb-3">
+                        <div class="card-header"><h6 class="mb-0">Machine Information</h6></div>
+                        <div class="card-body">
+                            <dl class="row mb-0 small">
+                                <dt class="col-5">Serial:</dt>
+                                <dd class="col-7">${machine.serial_number || 'N/A'}</dd>
+                                <dt class="col-5">Location:</dt>
+                                <dd class="col-7">${machine.location_address || machine.location || (machine.latitude && machine.longitude ? `${machine.latitude}, ${machine.longitude}` : 'N/A')}</dd>
+                                <dt class="col-5">Last Ping:</dt>
+                                <dd class="col-7">${this.getLastSeen(machine.last_ping)}</dd>
+                            </dl>
+                        </div>
+                    </div>
+
+                    <!-- Components Overview -->
+                    <div class="card">
+                        <div class="card-header"><h6 class="mb-0">Components</h6></div>
+                        <div class="card-body">
+                            <div class="d-flex flex-wrap gap-1">
+                                <span class="badge bg-label-primary" data-bs-toggle="tooltip" title="Jetson Orin Nano">
+                                    <i class="ti tabler-cpu"></i> Edge Device
+                                </span>
+                                <span class="badge bg-label-info" data-bs-toggle="tooltip" title="CSI Camera">
+                                    <i class="ti tabler-camera"></i> Camera
+                                </span>
+                                <span class="badge bg-label-secondary" data-bs-toggle="tooltip" title="LCD Touch Screen">
+                                    <i class="ti tabler-device-tablet"></i> LCD
+                                </span>
+                                <span class="badge bg-label-warning" data-bs-toggle="tooltip" title="ESP32 Controller">
+                                    <i class="ti tabler-circuit-board"></i> ESP32
+                                </span>
+                                <span class="badge bg-label-success" data-bs-toggle="tooltip" title="Sensors">
+                                    <i class="ti tabler-radar"></i> Sensors
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
     async viewMachine(machineId) {
+        await this.waitForBootstrap();
+
+        // Clear any existing timer
+        if (this.pollingTimer) clearInterval(this.pollingTimer);
+        this.pollingTimer = null;
+
+        const modalEl = document.getElementById('machineDetailModal');
+        if (!modalEl) {
+            console.error('Machine detail modal not found');
+            return;
+        }
+
+        const modal = new bootstrap.Modal(modalEl);
+        const content = document.getElementById('machine-detail-content');
+
+        modal.show();
+        content.innerHTML = '<div class="text-center p-5"><div class="spinner-border text-primary"></div></div>';
+
+        // Initial Load
+        await this.loadMachineDetailContext(machineId, content);
+
+        // Start Auto-Polling (every 10 seconds)
+        this.pollingTimer = setInterval(() => {
+            // Only update if modal is still open
+            const currentModal = document.getElementById('machineDetailModal');
+            if (currentModal && currentModal.classList.contains('show')) {
+                this.loadMachineDetailContext(machineId, content, true);
+            } else {
+                if (this.pollingTimer) clearInterval(this.pollingTimer);
+                this.pollingTimer = null;
+            }
+        }, 10000);
+    }
+
+    async _old_viewMachine(machineId) {
         await this.waitForBootstrap();
 
         const modalEl = document.getElementById('machineDetailModal');
@@ -335,7 +601,7 @@ class MachineManagement {
                                             <dt class="col-5 text-muted">AI Model:</dt>
                                             <dd class="col-7">${edgeDevice.system_info?.ai_models?.model_version || edgeDevice.ai_model_version || 'v1.0.0'}</dd>
                                             <dt class="col-5 text-muted">Last Heartbeat:</dt>
-                                            <dd class="col-7">${this.getLastSeen(edgeDevice.last_handshake_at || edgeDevice.updated_at)}</dd>
+                                            <dd class="col-7">${this.getLastSeen(edgeDevice.updated_at)}</dd>
                                         </dl>
                                     </div>
                                 </div>

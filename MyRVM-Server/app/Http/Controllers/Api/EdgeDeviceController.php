@@ -1090,6 +1090,46 @@ class EdgeDeviceController extends Controller
     }
 
     /**
+     * Heartbeat endpoint for Edge Client (No ID in URL).
+     * 
+     * @OA\Post(
+     *      path="/api/v1/edge/heartbeat",
+     *      operationId="edgeHeartbeat",
+     *      tags={"Edge Device"},
+     *      summary="Edge Client Heartbeat",
+     *      @OA\Response(response=200, description="Heartbeat received")
+     * )
+     */
+    public function heartbeatEdge(Request $request)
+    {
+        $machine = $request->attributes->get('rvm_machine');
+        if (!$machine) {
+             return response()->json(['status' => 'error', 'message' => 'Machine auth failed'], 401);
+        }
+
+        // Update RVM Machine last_ping
+        $machine->update([
+            'last_ping' => now(),
+            'status' => 'online'
+        ]);
+
+        // Update Edge Device status/metrics
+        $edgeDevice = EdgeDevice::where('rvm_machine_id', $machine->id)->first();
+        if ($edgeDevice) {
+            $edgeDevice->update([
+                'status' => 'online',
+                'updated_at' => now(),
+                'health_metrics' => $request->health_metrics ?? $edgeDevice->health_metrics
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'server_time' => now()->toIso8601String()
+        ]);
+    }
+
+    /**
      * Generate signed kiosk URL for RVM-UI browser.
      * 
      * Uses Laravel's URL::signedRoute() to create a cryptographically

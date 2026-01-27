@@ -111,6 +111,12 @@ class TechnicianAssignmentController extends Controller
             ], 422);
         }
 
+        // Check if RVM Machine has API Key, if not generate one (First assignment initialization)
+        $rvmMachine = \App\Models\RvmMachine::find($validated['rvm_machine_id']);
+        if ($rvmMachine && empty($rvmMachine->api_key)) {
+            $rvmMachine->regenerateApiKey();
+        }
+
         $assignment = TechnicianAssignment::create([
             'technician_id' => $validated['user_id'],
             'rvm_machine_id' => $validated['rvm_machine_id'],

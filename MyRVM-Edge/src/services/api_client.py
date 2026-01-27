@@ -111,6 +111,27 @@ class RvmApiClient:
             print(f"[!] Sync Error: {str(e)}")
             return False
 
+    def heartbeat(self):
+        """
+        Sends heartbeat with health metrics.
+        """
+        endpoint = f"{self.base_url}/edge/heartbeat"
+        try:
+            payload = {
+                "hardware_id": self.device_id,
+                "status": "online",
+                "health_metrics": self._get_health_metrics()
+            }
+            # Heartbeat is lightweight, short timeout
+            response = self.session.post(endpoint, json=payload, timeout=5)
+            response.raise_for_status()
+            # Silent success (don't spam logs unless debug)
+            # print(f"[.] Heartbeat OK") 
+            return True
+        except Exception as e:
+            print(f"[!] Heartbeat Error: {str(e)}")
+            return False
+
     # ========== Helper Methods ==========
 
     def _get_ip(self):

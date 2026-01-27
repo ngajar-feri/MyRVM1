@@ -115,6 +115,10 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     Route::post('/edge/sync-offline', [EdgeDeviceController::class, 'syncOffline'])
         ->withoutMiddleware('auth:sanctum')
         ->middleware('validate.rvm.apikey');
+
+    Route::post('/edge/heartbeat', [EdgeDeviceController::class, 'heartbeatEdge'])
+        ->withoutMiddleware('auth:sanctum')
+        ->middleware('validate.rvm.apikey');
     
     
     Route::prefix('edge')->group(function () {
