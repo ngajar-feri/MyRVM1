@@ -41,7 +41,9 @@ class RvmMachine extends Model
     ];
 
     /**
-     * Auto-generate serial_number and api_key on creation.
+     * Auto-generate serial_number on creation.
+     * Note: api_key is NOT auto-generated here. It will be generated
+     * when a Technician is assigned to this machine (via Assignment flow).
      */
     protected static function boot()
     {
@@ -59,10 +61,8 @@ class RvmMachine extends Model
                 $model->serial_number = 'RVM-' . date('Ym') . '-' . str_pad($count, 3, '0', STR_PAD_LEFT);
             }
 
-            // Auto-generate API key (64 char random string)
-            if (empty($model->api_key)) {
-                $model->api_key = Str::random(64);
-            }
+            // api_key is intentionally NOT auto-generated here.
+            // It will be created during Technician Assignment for installation.
         });
     }
 

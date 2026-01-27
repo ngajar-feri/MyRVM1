@@ -470,7 +470,7 @@
 </div>
 
 <!-- Success Modal with Credentials - High Contrast Terminal Style -->
-<div class="modal fade" id="machineSuccessModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+<div class="modal fade" id="machineSuccessModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
         <div class="modal-content"
             style="border-radius: 16px; border: none; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">

@@ -1,0 +1,279 @@
+hardware_id
+name
+ip_local
+ip_vpn
+timezone
+system
+jetpack_version
+firmware_version
+python_version
+ai_models
+model_name
+model_version
+hash
+last_update
+
+hardware_info
+microcontroller
+type
+connection
+port
+baud_rate
+status
+cameras
+id
+path
+name
+connection_type
+physical_location
+serial_number
+status
+capabilities
+max_resolution
+format
+fps
+role
+sensors
+name
+friendly_name
+model
+interface
+pins
+trigger
+echo
+status
+last_reading
+unit
+actuators
+name
+friendly_name
+model
+interface
+driver
+pins
+step
+dir
+enable
+status
+last_reading
+pin
+hardware_info
+microcontroller
+type
+connection
+port
+baud_rate
+status
+cameras
+id
+path
+name
+connection_type
+physical_location
+serial_number
+status
+capabilities
+max_resolution
+format
+fps
+role
+sensors
+name
+friendly_name
+model
+interface
+pins
+trigger
+echo
+status
+last_reading
+unit
+actuators
+name
+friendly_name
+model
+interface
+driver
+pins
+step
+dir
+enable
+status
+last_reading
+pin
+hardware_info
+    microcontroller
+    type
+    connection
+    port
+    baud_rate
+    status
+    cameras
+    id
+    path
+    name
+    connection_type
+    physical_location
+    serial_number
+    status
+    capabilities
+    max_resolution
+    format
+    fps
+    role
+    sensors
+    name
+    friendly_name
+    model
+    interface
+    pins
+    trigger
+    echo
+    status
+    last_reading
+    unit
+    actuators
+    name
+    friendly_name
+    model
+    interface
+    driver
+    pins
+    step
+    dir
+    enable
+    status
+    last_reading
+    pin
+    microcontroller
+    type
+    connection
+    port
+    baud_rate
+    status
+    cameras
+    id
+    path
+    name
+    connection_type
+    physical_location
+    serial_number
+    status
+    capabilities
+    max_resolution
+    format
+    fps
+    role
+    sensors
+    name
+    friendly_name
+    model
+    interface
+    pins
+    trigger
+    echo
+    status
+    last_reading
+    unit
+    actuators
+    name
+    friendly_name
+    model
+    interface
+    driver
+    pins
+    step
+    dir
+    enable
+    status
+    last_reading
+    pin
+microcontroller
+    type
+    connection
+    port
+    baud_rate
+    status
+    cameras
+    id
+    path
+    name
+    connection_type
+    physical_location
+    serial_number
+    status
+    capabilities
+    max_resolution
+    format
+    fps
+    role
+    sensors
+    name
+    friendly_name
+    model
+    interface
+    pins
+    trigger
+    echo
+    status
+    last_reading
+    unit
+    actuators
+    name
+    friendly_name
+    model
+    interface
+    driver
+    pins
+    step
+    dir
+    enable
+    status
+    last_reading
+    pin
+microcontroller
+    type
+    connection
+    port
+    baud_rate
+    status
+cameras
+    id
+    path
+    name
+    Friendly Name
+    connection_type
+    physical_location
+        serial_number
+        status
+        capabilities
+           max_resolution
+           format
+           fps
+        role
+    sensors
+        name
+        friendly_name
+        model
+        interface
+        pins
+           trigger
+           echo
+        status
+        last_reading
+        unit
+    // dan Sensor-sensor lainnya yang akan ditambahkan.
+    actuators
+        name
+        friendly_name
+        model
+        interface
+        driver
+        pins
+           step
+           dir
+           enable
+        status
+        last_reading
+        pin
+    // dan Actuator-actuator lainnya yang akan ditambahkan.

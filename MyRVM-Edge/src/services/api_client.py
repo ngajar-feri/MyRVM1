@@ -3,12 +3,15 @@ import json
 import time
 import os
 import platform
+import subprocess
+import glob
 
 class RvmApiClient:
-    def __init__(self, base_url, api_key, device_id):
+    def __init__(self, base_url, api_key, device_id, name=None):
         self.base_url = base_url.rstrip('/')
         self.api_key = api_key
         self.device_id = device_id
+        self.name = name or platform.node()
         self.session = requests.Session()
         self.session.headers.update({
             'X-RVM-API-KEY': self.api_key,
@@ -16,25 +19,43 @@ class RvmApiClient:
         })
         self.machine_info = {}
 
-    def handshake(self, controller_type="Generic"):
+    def handshake(self, controller_type="NVIDIA Jetson"):
         """
         Performs initial handshake to sync identity and config.
+        Sends full payload per GAI-handshake.md specification.
         """
         endpoint = f"{self.base_url}/edge/handshake"
+        
+        # Build full payload per spec
         payload = {
+            # 1. Identity (Required)
             "hardware_id": self.device_id,
-            "name": platform.node(),
+            "name": self.name,
+            
+            # 2. Network & Location (Auto Detect)
             "ip_local": self._get_ip(),
+            "ip_vpn": self._get_tailscale_ip(),
+            "timezone": self._get_timezone(),
+            
+            # 3. System Info (Auto Detect)
+            "system": self._get_system_info(),
+            
+            # Legacy flat fields (backward compatibility)
             "controller_type": controller_type,
-            "health_metrics": {
-                "cpu_usage_percent": 0.0, # Placeholder
-                "disk_usage_percent": 0.0
-            }
+            
+            # 4. Hardware Info (Auto Detect)
+            "hardware_info": self._get_hardware_info(),
+            
+            # 5. Diagnostics
+            "diagnostics": self._run_diagnostics(),
+            
+            # Health Metrics
+            "health_metrics": self._get_health_metrics(),
         }
         
         try:
             print(f"[*] Handshaking with {endpoint}...")
-            response = self.session.post(endpoint, json=payload, timeout=10)
+            response = self.session.post(endpoint, json=payload, timeout=15)
             response.raise_for_status()
             data = response.json()
             
@@ -90,8 +111,10 @@ class RvmApiClient:
             print(f"[!] Sync Error: {str(e)}")
             return False
 
+    # ========== Helper Methods ==========
+
     def _get_ip(self):
-        # Dummy IP implementation for MVP
+        """Get local IP address."""
         try:
             import socket
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -101,3 +124,145 @@ class RvmApiClient:
             return ip
         except:
             return "127.0.0.1"
+
+    def _get_tailscale_ip(self):
+        """Get Tailscale VPN IP if available."""
+        try:
+            result = subprocess.run(
+                ["tailscale", "ip", "-4"],
+                capture_output=True, text=True, timeout=5
+            )
+            if result.returncode == 0:
+                return result.stdout.strip()
+        except:
+            pass
+        return None
+
+    def _get_timezone(self):
+        """Get system timezone."""
+        try:
+            if os.path.exists('/etc/timezone'):
+                with open('/etc/timezone', 'r') as f:
+                    return f.read().strip()
+            # Fallback to TZ environment variable
+            return os.environ.get('TZ', 'Asia/Jakarta')
+        except:
+            return 'Asia/Jakarta'
+
+    def _get_system_info(self):
+        """Gather system software information."""
+        info = {
+            "python_version": platform.python_version(),
+            "firmware_version": "v1.0.0",  # TODO: Read from config
+        }
+        
+        # Try to get JetPack version (NVIDIA Jetson)
+        try:
+            if os.path.exists('/etc/nv_tegra_release'):
+                with open('/etc/nv_tegra_release', 'r') as f:
+                    info["jetpack_version"] = f.read().strip()[:50]
+        except:
+            pass
+        
+        # AI model info from config
+        config_path = os.path.join(os.path.dirname(__file__), '../../config/settings.json')
+        try:
+            if os.path.exists(config_path):
+                with open(config_path, 'r') as f:
+                    config = json.load(f)
+                    info["ai_models"] = {
+                        "model_name": config.get("ai_model", "best.pt"),
+                        "model_version": config.get("ai_model_version", "v1.0.0"),
+                        "hash": config.get("ai_model_hash", "unknown"),
+                    }
+        except:
+            pass
+        
+        return info
+
+    def _get_hardware_info(self):
+        """Detect connected hardware (cameras, sensors, MCU)."""
+        info = {}
+        
+        # Detect cameras
+        info["cameras"] = self._detect_cameras()
+        
+        # Microcontroller (ESP32 via serial)
+        info["microcontroller"] = self._detect_microcontroller()
+        
+        # Sensors and Actuators - placeholder for future auto-detection
+        info["sensors"] = []
+        info["actuators"] = []
+        
+        return info
+
+    def _detect_cameras(self):
+        """Detect connected cameras via /dev/video*."""
+        cameras = []
+        try:
+            video_devices = glob.glob('/dev/video*')
+            for i, device in enumerate(video_devices[:4]):  # Limit to 4 cameras
+                cameras.append({
+                    "id": i,
+                    "path": device,
+                    "name": f"Camera {i}",
+                    "status": "ready" if os.access(device, os.R_OK) else "error"
+                })
+        except:
+            pass
+        return cameras
+
+    def _detect_microcontroller(self):
+        """Detect connected microcontroller (ESP32) via serial port."""
+        mcu = {"status": "disconnected"}
+        serial_ports = ['/dev/ttyTHS1', '/dev/ttyUSB0', '/dev/ttyACM0']
+        
+        for port in serial_ports:
+            if os.path.exists(port):
+                mcu = {
+                    "type": "ESP32",
+                    "port": port,
+                    "connection": "UART",
+                    "baud_rate": 115200,
+                    "status": "connected"
+                }
+                break
+        
+        return mcu
+
+    def _run_diagnostics(self):
+        """Run basic hardware diagnostics."""
+        return {
+            "network_check": "pass" if self._get_ip() != "127.0.0.1" else "fail",
+            "camera_check": "pass" if glob.glob('/dev/video*') else "fail",
+            "motor_test": "skip",  # Requires hardware
+            "ai_inference_test": "skip"  # Requires model loaded
+        }
+
+    def _get_health_metrics(self):
+        """Get current system health metrics."""
+        metrics = {
+            "cpu_usage_percent": 0.0,
+            "memory_usage_percent": 0.0,
+            "disk_usage_percent": 0.0,
+            "cpu_temperature": 0.0
+        }
+        
+        try:
+            import psutil
+            metrics["cpu_usage_percent"] = psutil.cpu_percent(interval=0.5)
+            metrics["memory_usage_percent"] = psutil.virtual_memory().percent
+            metrics["disk_usage_percent"] = psutil.disk_usage('/').percent
+        except ImportError:
+            pass
+        
+        # Jetson CPU temperature
+        try:
+            temp_path = '/sys/devices/virtual/thermal/thermal_zone0/temp'
+            if os.path.exists(temp_path):
+                with open(temp_path, 'r') as f:
+                    metrics["cpu_temperature"] = int(f.read().strip()) / 1000.0
+        except:
+            pass
+        
+        return metrics

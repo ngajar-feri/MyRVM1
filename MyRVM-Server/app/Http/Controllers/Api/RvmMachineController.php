@@ -205,15 +205,12 @@ class RvmMachineController extends Controller
             \Illuminate\Support\Facades\Log::error('ActivityLog Failed: ' . $e->getMessage());
         }
 
-        // Return with credentials (one-time display)
+        // Return simple success - credentials NOT provided here.
+        // Credentials will be generated when a Technician is assigned.
         return response()->json([
             'status' => 'success',
-            'message' => 'RVM berhasil ditambahkan',
-            'data' => $machine,
-            'credentials' => [
-                'serial_number' => $machine->serial_number,
-                'api_key' => $machine->getApiKeyForConfig()
-            ]
+            'message' => 'RVM berhasil ditambahkan. Silakan tugaskan Teknisi untuk menerima kredensial instalasi.',
+            'data' => $machine
         ], 201);
     }
 
@@ -571,34 +568,35 @@ class RvmMachineController extends Controller
             ], 404);
         }
 
-        // Check if machine has active technician assignments
-        $assignmentCount = TechnicianAssignment::where('rvm_machine_id', $id)->count();
-        if ($assignmentCount > 0) {
+        try {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($machine, $user) {
+                // Delete associated EdgeDevice (though cascade should handle it if defined in DB, 
+                // but this ensures any specific model-level logic/events are triggered)
+                if ($machine->edgeDevice) {
+                    $machine->edgeDevice->delete();
+                }
+
+                // Log activity
+                ActivityLog::log('RVM', 'Delete', "Machine '{$machine->name}' (SN: {$machine->serial_number}) deleted by {$user->name}", $user->id);
+
+                // Delete the machine (cascades to assignments, transactions, logs, etc. via DB constraints)
+                $machine->delete();
+            });
+
+            return response()->json([
+                'status' => 'success',
+                'message' => "RVM '{$machine->name}' berhasil dihapus beserta seluruh data terkait."
+            ]);
+
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('RVM Deletion Failed: ' . $e->getMessage());
+            
             return response()->json([
                 'status' => 'error',
-                'message' => "Cannot delete '{$machine->name}'. Machine has {$assignmentCount} active assignment(s). Remove assignments first."
-            ], 403);
+                'message' => 'Gagal menghapus RVM. Terjadi kesalahan pada server atau batasan database.',
+                'debug' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
         }
-
-        // Delete associated EdgeDevice if exists
-        if ($machine->edgeDevice) {
-            $machine->edgeDevice->delete();
-        }
-
-        // Log activity
-        try {
-            ActivityLog::log('RVM', 'Delete', "Machine '{$machine->name}' (SN: {$machine->serial_number}) deleted by {$user->name}", $user->id);
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('ActivityLog Failed: ' . $e->getMessage());
-        }
-
-        $machineName = $machine->name;
-        $machine->delete();
-
-        return response()->json([
-            'status' => 'success',
-            'message' => "RVM '{$machineName}' berhasil dihapus."
-        ]);
     }
 
     /**

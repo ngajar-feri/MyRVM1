@@ -134,7 +134,7 @@ Antarmuka lokal sederhana berbasis web yang tampil di layar RVM untuk teknisi. T
 1.  **Booting:** Script Python berjalan otomatis via `systemd`.
 2.  **Hardware Check:** Script memindai `/dev/video*`, `lsusb`, dan GPIO untuk mendeteksi hardware yang terpasang.
 3.  **API Handshake:** Script mengirim JSON spesifikasi hardware ke `MyRVM-Server/api/v1/edge/handshake`.
-    *   *Tujuannya:* Melaporkan status hidup, update IP terbaru, dan mendapatkan konfigurasi/token terbaru. Pada langkah 4. **Model Update Check:**, fungsi `check_for_update(current_version)` dipanggil setelah Handshake berhasil, karena butuh model_version dari server (response handshake) sebagai pembanding, atau config.json menyimpan versi lokal. Pastikan alurnya konsisten: Handshake -> Server bilang "Versi terbaru v1.0.0" -> Edge cek lokal -> Jika beda -> Update (Panggil fungsi `check_for_update(current_version)`).
+    *   *Tujuannya:* Melaporkan status hidup, update IP terbaru, dan mendapatkan konfigurasi/token terbaru. Pada langkah 4. **Model Update Check:**, fungsi `check_for_update(current_version)` dipanggil setelah Handshake berhasil, karena butuh model_version dari server (response handshake) sebagai pembanding, atau `config.json` menyimpan versi lokal. Pastikan alurnya konsisten: Handshake -> Server bilang "Versi terbaru v1.0.0" -> Edge cek lokal -> Jika beda -> Update (Panggil fungsi `check_for_update(current_version)`).
     *   **Endpoint:** `POST /api/v1/edge/handshake`
     *   **Payload:**
         ```json

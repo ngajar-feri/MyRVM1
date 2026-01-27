@@ -795,7 +795,17 @@ class EdgeDeviceController extends Controller
             'ip_vpn' => 'nullable|ip',
             'timezone' => 'nullable|string|max:50',
 
-            // Software Info (Auto Detect)
+            // System Info (Auto Detect) - NEW per GAI-handshake.md
+            'system' => 'nullable|array',
+            'system.jetpack_version' => 'nullable|string|max:50',
+            'system.firmware_version' => 'nullable|string|max:50',
+            'system.python_version' => 'nullable|string|max:50',
+            'system.ai_models' => 'nullable|array',
+            'system.ai_models.model_name' => 'nullable|string|max:100',
+            'system.ai_models.model_version' => 'nullable|string|max:100',
+            'system.ai_models.hash' => 'nullable|string|max:100',
+
+            // Legacy flat fields (for backward compatibility)
             'firmware_version' => 'nullable|string|max:50',
             'controller_type' => 'nullable|string|max:100',
             'ai_model_version' => 'nullable|string|max:100',
@@ -807,12 +817,12 @@ class EdgeDeviceController extends Controller
             'health_metrics.disk_usage_percent' => 'nullable|numeric|min:0|max:100',
             'health_metrics.cpu_temperature' => 'nullable|numeric',
 
-            // Hardware Configuration (JSONB)
-            'config' => 'nullable|array',
-            'config.cameras' => 'nullable|array',
-            'config.sensors' => 'nullable|array',
-            'config.actuators' => 'nullable|array',
-            'config.microcontroller' => 'nullable|array',
+            // Hardware Info (cameras, sensors, actuators, microcontroller)
+            'hardware_info' => 'nullable|array',
+            'hardware_info.cameras' => 'nullable|array',
+            'hardware_info.sensors' => 'nullable|array',
+            'hardware_info.actuators' => 'nullable|array',
+            'hardware_info.microcontroller' => 'nullable|array',
 
             // Diagnostics
             'diagnostics' => 'nullable|array',
@@ -838,11 +848,20 @@ class EdgeDeviceController extends Controller
             'ip_address_local' => $validated['ip_local'] ?? $edgeDevice->ip_address_local,
             'tailscale_ip' => $validated['ip_vpn'] ?? $edgeDevice->tailscale_ip,
             'timezone' => $validated['timezone'] ?? 'Asia/Jakarta',
-            'firmware_version' => $validated['firmware_version'] ?? $edgeDevice->firmware_version,
+            // Prefer system.firmware_version, fallback to flat field
+            'firmware_version' => $validated['system']['firmware_version'] 
+                ?? $validated['firmware_version'] 
+                ?? $edgeDevice->firmware_version,
             'controller_type' => $validated['controller_type'] ?? $edgeDevice->controller_type,
-            'ai_model_version' => $validated['ai_model_version'] ?? $edgeDevice->ai_model_version,
+            // Prefer system.ai_models.model_version, fallback to flat field
+            'ai_model_version' => $validated['system']['ai_models']['model_version'] 
+                ?? $validated['ai_model_version'] 
+                ?? $edgeDevice->ai_model_version,
             'health_metrics' => $validated['health_metrics'] ?? $edgeDevice->health_metrics,
-            'hardware_config' => $validated['config'] ?? $edgeDevice->hardware_config,
+            // Store hardware_info → hardware_config column
+            'hardware_config' => $validated['hardware_info'] ?? $edgeDevice->hardware_config,
+            // Store system info in system_info column (requires migration)
+            'system_info' => $validated['system'] ?? $edgeDevice->system_info ?? null,
             'diagnostics_log' => $validated['diagnostics'] ?? $edgeDevice->diagnostics_log,
             'status' => 'online',
             'last_handshake_at' => now(),

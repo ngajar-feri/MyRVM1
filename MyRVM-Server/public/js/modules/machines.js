@@ -568,33 +568,12 @@ class MachineManagement {
                 const addModal = bootstrap.Modal.getInstance(document.getElementById('addMachineModal'));
                 if (addModal) addModal.hide();
 
-                // Store credentials for display
-                machineWizard.lastCredentials = result.credentials;
-                machineWizard.lastMachineId = result.data?.id;
-
-                // Show success modal with credentials
-                const serialInput = document.getElementById('successSerialNumber');
-                const apiKeyDisplay = document.getElementById('successApiKeyDisplay');
-                const apiKeyHidden = document.getElementById('successApiKey');
-
-                if (serialInput) serialInput.value = result.credentials?.serial_number || '-';
-                if (apiKeyHidden) apiKeyHidden.value = result.credentials?.api_key || '';
-                if (apiKeyDisplay) apiKeyDisplay.textContent = '••••••••••••••••••••••••••••••••';
-
-                // Reset toggle button state
-                machineWizard.apiKeyVisible = false;
-                const toggleBtn = document.getElementById('btn-toggle-machine-apikey');
-                if (toggleBtn) toggleBtn.innerHTML = '<i class="ti tabler-eye"></i> Show';
-
-                const successModal = new bootstrap.Modal(document.getElementById('machineSuccessModal'));
-                successModal.show();
-
                 // Reset wizard to step 1
                 machineWizard.goToStep(1);
                 form.reset();
 
-                // Show toast notification
-                this.showSuccess('RVM berhasil ditambahkan!');
+                // Show toast notification with backend message
+                this.showSuccess(result.message || 'RVM berhasil ditambahkan!');
 
                 // Refresh machine list
                 this.loadMachines();
@@ -1046,4 +1025,17 @@ document.addEventListener('hidden.bs.modal', (e) => {
         machineWizard.lastCredentials = null;
         machineWizard.apiKeyVisible = false;
     }
+
+    // Force cleanup any lingering modal backdrops
+    // This fixes the overlay bug where backdrop stays after modal close
+    setTimeout(() => {
+        const backdrops = document.querySelectorAll('.modal-backdrop');
+        const openModals = document.querySelectorAll('.modal.show');
+        if (openModals.length === 0 && backdrops.length > 0) {
+            backdrops.forEach(b => b.remove());
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+        }
+    }, 100);
 });
