@@ -28,10 +28,10 @@ trigger: ssh, ip, deploy, network, architecture
 
 ## 🔑 SSH Access Credentials
 
-| Target | Command | Password |
-| :--- | :--- | :--- |
-| **MyRVM-Server** | `ssh my@100.123.143.87` | `f3rifeb` |
-| **MyRVM-Edge** | `ssh my@100.117.234.2` | `f3rifeb` |
+| Target | Command | Password | Automated Command (sshpass) |
+| :--- | :--- | :--- | :--- |
+| **MyRVM-Server** | `ssh my@100.123.143.87` | `f3rifeb` | `sshpass -p 'f3rifeb' ssh -o StrictHostKeyChecking=no my@100.123.143.87` |
+| **MyRVM-Edge** | `ssh my@100.117.234.2` | `f3rifeb` | `sshpass -p 'f3rifeb' ssh -o StrictHostKeyChecking=no my@100.117.234.2` |
 
 ## 🌐 Domain & Routing Flow
 
@@ -54,7 +54,8 @@ graph LR
 ## 🔄 Git Workflow Protocol (STRICT)
 
 1.  **Orin Synchronization:**
-    - SEBELUM melakukan ujicoba di Edge Device: **SSH Remote** -> **`git pull origin master`**.
+    - SEBELUM melakukan ujicoba di Edge Device, gunakan perintah otomatis:
+      `sshpass -p 'f3rifeb' ssh -o StrictHostKeyChecking=no my@100.117.234.2 "cd MyRVM1/MyRVM-Edge && git pull origin master"`
     - Pastikan berada di branch `master` untuk eksekusi/runtime (Status: Clean).
 
 2.  **Agent Pushes:**

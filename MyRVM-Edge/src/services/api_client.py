@@ -16,7 +16,7 @@ class RvmApiClient:
         })
         self.machine_info = {}
 
-    def handshake(self):
+    def handshake(self, controller_type="Generic"):
         """
         Performs initial handshake to sync identity and config.
         """
@@ -25,7 +25,7 @@ class RvmApiClient:
             "hardware_id": self.device_id,
             "name": platform.node(),
             "ip_local": self._get_ip(),
-            "controller_type": "NVIDIA Jetson Orin" if "aarch64" in platform.machine() else "Generic",
+            "controller_type": controller_type,
             "health_metrics": {
                 "cpu_usage_percent": 0.0, # Placeholder
                 "disk_usage_percent": 0.0

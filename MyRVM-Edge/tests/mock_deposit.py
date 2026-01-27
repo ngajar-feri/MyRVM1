@@ -37,32 +37,32 @@ def main():
     print("[*] Initializing Mock Deposit...")
     
     # 1. Create dummy image
-    img_path = os.path.join(os.path.dirname(__file__), 'test_bottle.jpg')
-    create_dummy_image(img_path)
-    print(f"[*] Generated dummy image: {img_path}")
+    mock_img_path = os.path.join(os.path.dirname(__file__), 'mock_test_bottle.jpg')
+    create_dummy_image(mock_img_path)
+    print(f"[*] Generated mock image: {mock_img_path}")
     
     # 2. Prepare Metadata
-    metadata = {
-        "session_id": f"TEST-{int(time.time())}",
+    mock_metadata = {
+        "session_id": f"MOCK-SESSION-{int(time.time())}",
         "material": "PLASTIC",
         "weight_g": 15.5,
         "classification_confidence": 0.98,
         "is_accepted": True
     }
-    print(f"[*] Payload: {json.dumps(metadata, indent=2)}")
+    print(f"[*] Mock Payload: {json.dumps(mock_metadata, indent=2)}")
     
     # 3. Send
     print("[*] Sending to Server...")
-    success = client.deposit(img_path, metadata)
+    success = client.deposit(mock_img_path, mock_metadata)
     
     if success:
-        print("[+] TEST PASSED: Deposit accepted.")
+        print("[+] MOCK TEST PASSED: Deposit accepted.")
     else:
-        print("[-] TEST FAILED: Deposit rejected.")
+        print("[-] MOCK TEST FAILED: Deposit rejected.")
         
     # Cleanup
-    if os.path.exists(img_path):
-        os.remove(img_path)
+    if os.path.exists(mock_img_path):
+        os.remove(mock_img_path)
 
 if __name__ == "__main__":
     main()
