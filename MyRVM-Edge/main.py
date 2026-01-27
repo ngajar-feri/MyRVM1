@@ -2,11 +2,19 @@ import sys
 import time
 import json
 import os
+import subprocess
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Add project root to path
+sys.path.append(os.path.dirname(__file__))
+
 from src.services.api_client import RvmApiClient
 
 # Constants
-CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'config', 'settings.json')
-CREDENTIALS_PATH = os.path.join(os.path.dirname(__file__), 'config', 'credentials.json')
+BASE_DIR = Path(__file__).parent
+CONFIG_DIR = BASE_DIR / "config"
+SECRETS_PATH = CONFIG_DIR / "secrets.env"
 
 def get_device_info():
     """Extracts physical hardware serial and model name (Jetson/Pi)."""
@@ -38,62 +46,101 @@ def get_device_info():
 
     return "generic_dev", "Generic Linux Device"
 
-def load_config():
-    if not os.path.exists(CONFIG_PATH):
-        print("[!] Settings file not found. Generating default...")
-        return {
-            "api_url": "http://100.123.143.87:8001/api/v1", 
-            "timeout": 10
-        }
-    with open(CONFIG_PATH, 'r') as f:
-        return json.load(f)
-
-def load_credentials():
-    if os.path.exists(CREDENTIALS_PATH):
-        with open(CREDENTIALS_PATH, 'r') as f:
-            return json.load(f)
-    print("[!] Credentials not found! Please provide config/credentials.json")
-    return None
+def run_setup_wizard():
+    """Launches the FastAPI Setup Wizard in a blocking sub-process."""
+    print("=== STARTING SETUP WIZARD (Day-0) ===")
+    print("[*] No configuration found.")
+    print("[*] Launching Web Interface at http://0.0.0.0:8080")
+    print("[*] Please upload rvm-credentials.json to provision.")
+    
+    try:
+        # Run uvicorn as a subprocess
+        subprocess.run(
+            ["uvicorn", "src.setup_wizard.app:app", "--host", "0.0.0.0", "--port", "8080"], 
+            check=True
+        )
+    except KeyboardInterrupt:
+        print("\n[!] Wizard stopped.")
+        sys.exit(0)
+    except Exception as e:
+        print(f"[!] Wizard crashed: {e}")
+        sys.exit(1)
 
 def main():
-    print("=== MyRVM Edge Client v2.1 ===")
+    print("=== MyRVM Edge Client v2.0 (Day-0 Ready) ===")
     
-    # 1. Load Configuration & Hardware Info
-    config = load_config()
-    creds = load_credentials()
-    if not creds:
-        return
-        
-    serial, model = get_device_info()
+    # 1. Check for Provisioning
+    if not SECRETS_PATH.exists():
+        run_setup_wizard()
+        # If wizard finishes (returns), it means we might want to restart?
+        # Typically uvicorn runs forever until killed.
+        # But if we implement a restart mechanism in app.py, this script might exit.
+        print("[*] Wizard exited. Checking for config...")
+        if not SECRETS_PATH.exists():
+            print("[!] Still not provisioned. Exiting.")
+            sys.exit(1)
+        print("[*] Provisioned! Proceeding to boot...")
+
+    # 2. Load Credentials
+    load_dotenv(SECRETS_PATH)
+    api_key = os.getenv("RVM_API_KEY")
+    serial_number = os.getenv("RVM_SERIAL_NUMBER")
     
-    print(f"[*] Hardware ID (Serial): {serial}")
+    if not api_key:
+        print("[!] Invalid secrets.env. Missing API Key.")
+        sys.exit(1)
+
+    # 3. Hardware Info
+    hw_serial, model = get_device_info()
+    
+    # Override HW Serial if provided in JSON (usually we want Physical, but maybe Logic ID?)
+    # Spec says: hardware_id: "RVM-202601-006" from json.
+    # But physical ID is useful for asset tracking. 
+    # Let's use the one from secrets as the "Logical ID" for Handshake.
+    
+    print(f"[*] Logic ID: {serial_number}")
+    print(f"[*] Physical ID: {hw_serial}")
     print(f"[*] Controller: {model}")
-    print(f"[*] Server URL: {config.get('api_url')}")
     
-    # 2. Initialize API Client
+    # 4. Initialize API Client
+    # Default URL from spec
+    server_url = "https://myrvm.penelitian.my.id/api/v1" 
+    
     client = RvmApiClient(
-        base_url=config.get('api_url'), 
-        api_key=creds.get('api_key'),
-        device_id=serial # Use Physical Serial as Device ID
+        base_url=server_url, 
+        api_key=api_key,
+        device_id=serial_number # Using Logical Serial from JSON
     )
     
-    # 3. Handshake Loop
+    # 5. Handshake Loop
+    print("[*] Initiating Handshake...")
     handshake_success = False
+    config = {}
+    
     while not handshake_success:
-        handshake_success, machine_info = client.handshake(controller_type=model)
+        handshake_success, config = client.handshake(controller_type=model)
         if not handshake_success:
             print("[!] Handshake failed. Retrying in 5 seconds...")
             time.sleep(5)
             
-    # 4. Main Loop (Placeholder for Controller)
+    print(f"[*] Handshake Success! Kiosk URL: {config.get('kiosk', {}).get('url')}")
+            
+    # 6. Main Loop
+    print("[*] Starting Local WebSocket Bridge provided by RVM-Edge...")
+    local_ws_process = subprocess.Popen(
+        [sys.executable, "src/network/ws_local.py"],
+        cwd=BASE_DIR
+    )
+
     print("[*] Entering Main Loop...")
     try:
         while True:
-            # Here we would poll GPIO / Serial / Camera
             time.sleep(10)
             print("[.] Heartbeat...")
     except KeyboardInterrupt:
         print("\n[!] Shutting down...")
+        local_ws_process.terminate()
+        local_ws_process.wait()
 
 if __name__ == "__main__":
     main()

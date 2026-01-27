@@ -1,4 +1,11 @@
-requests
-python-socketio[client]
-pyserial
+fastapi
+uvicorn
+python-multipart
 python-dotenv
+requests
+websockets
+jinja2
+psutil
+pyserial
+ultralytics
+opencv-python-headless
