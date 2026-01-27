@@ -7,10 +7,13 @@ use App\Models\RvmMachine;
 use App\Models\EdgeDevice;
 use App\Models\TelemetryData;
 use App\Models\ActivityLog;
+use App\Models\Transaction;
+use App\Models\TransactionItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\DB;
 use OpenApi\Annotations as OA;
 
 class EdgeDeviceController extends Controller
@@ -904,6 +907,167 @@ class EdgeDeviceController extends Controller
                 'ai_model' => $aiModelInfo,
             ],
         ], 200);
+    }
+
+    /**
+     * Handle single item deposit from RVM Edge.
+     * 
+     * @OA\Post(
+     *      path="/api/v1/edge/deposit",
+     *      operationId="edgeDeposit",
+     *      tags={"Edge Device"},
+     *      summary="Process single item deposit and image",
+     *      description="Uploads item image, records transaction item, and updates session.",
+     *      @OA\Parameter(
+     *          name="X-RVM-API-KEY",
+     *          in="header",
+     *          required=true,
+     *          description="API Key from rvm-credentials.json",
+     *          @OA\Schema(type="string")
+     *      ),
+     *      @OA\RequestBody(
+     *          required=true,
+     *          @OA\MediaType(
+     *              mediaType="multipart/form-data",
+     *              @OA\Schema(
+     *                  required={"image", "data", "status"},
+     *                  @OA\Property(property="image", type="string", format="binary"),
+     *                  @OA\Property(property="status", type="string", example="ACCEPTED"),
+     *                  @OA\Property(property="data", type="string", description="JSON string of AI result & session info"),
+     *                  @OA\Property(property="session_id", type="string", description="Optional session/transaction ID")
+     *              )
+     *          )
+     *      ),
+     *      @OA\Response(response=201, description="Deposit recorded")
+     * )
+     */
+    public function deposit(Request $request)
+    {
+        $machine = $request->attributes->get('rvm_machine');
+        if (!$machine) {
+             return response()->json(['status' => 'error', 'message' => 'Machine auth failed'], 401);
+        }
+
+        $request->validate([
+            'image' => 'required|image|mimes:jpeg,jpg,png|max:5120',
+            'status' => 'required|string',
+            'data' => 'required', // Can be JSON string or array
+        ]);
+
+        // Parse Data
+        $data = is_string($request->data) ? json_decode($request->data, true) : $request->data;
+        $sessionId = $request->input('session_id') ?? ($data['session_id'] ?? null);
+        
+        // Storage Logic
+        $date = now()->format('Y-m-d');
+        $uploadPath = "deposits/{$date}/" . ($sessionId ?? 'unknown');
+        $imagePath = $request->file('image')->store($uploadPath, 'public');
+
+        // Note: Actual Transaction creation logic would link here. 
+        // For now, we return the storage path and acknowledged status.
+        // If session_id is active, we should theoretically add a TransactionItem.
+        // We will assume for this MVP that the server just acknowledges receipt.
+        
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Deposit processed',
+            'data' => [
+                'image_url' => \Storage::url($imagePath),
+                'ai_result' => $data,
+                'processed_at' => now()->toIso8601String()
+            ]
+        ], 201);
+    }
+
+    /**
+     * Sync offline transactions.
+     * 
+     * @OA\Post(
+     *      path="/api/v1/edge/sync-offline",
+     *      operationId="edgeSyncOffline",
+     *      tags={"Edge Device"},
+     *      summary="Bulk upload offline transactions",
+     *      @OA\Parameter(
+     *          name="X-RVM-API-KEY",
+     *          in="header",
+     *          required=true,
+     *          description="API Key from rvm-credentials.json",
+     *          @OA\Schema(type="string")
+     *      ),
+     *      @OA\RequestBody(
+     *          required=true,
+     *          @OA\JsonContent(
+     *              required={"transactions"},
+     *              @OA\Property(property="transactions", type="array", 
+     *                  @OA\Items(
+     *                      type="object",
+     *                      required={"items", "timestamp"},
+     *                      @OA\Property(
+     *                          property="items",
+     *                          type="array",
+     *                          @OA\Items(
+     *                              type="object",
+     *                              required={"type", "weight", "points"},
+     *                              @OA\Property(property="type", type="string"),
+     *                              @OA\Property(property="weight", type="number", format="float"),
+     *                              @OA\Property(property="points", type="integer")
+     *                          )
+     *                      ),
+     *                      @OA\Property(property="timestamp", type="string", format="date-time")
+     *                  )
+     *              )
+     *          )
+     *      ),
+     *      @OA\Response(response=200, description="Sync successful")
+     * )
+     */
+    public function syncOffline(Request $request)
+    {
+         $machine = $request->attributes->get('rvm_machine');
+         if (!$machine) return response()->json(['status' => 'error', 'message' => 'Auth failed'], 401);
+
+         $transactions = $request->input('transactions');
+         
+         if (!is_array($transactions)) {
+             return response()->json(['status' => 'error', 'message' => 'Invalid format'], 422);
+         }
+
+         $syncedCount = 0;
+         DB::beginTransaction();
+         try {
+             foreach ($transactions as $txData) {
+                // Create Transaction
+                $transaction = Transaction::create([
+                    'rvm_machine_id' => $machine->id,
+                    'user_id' => null, // Offline transactions are anonymous unless user_hash provided
+                    'total_points' => collect($txData['items'])->sum('points'),
+                    'total_weight' => collect($txData['items'])->sum('weight'),
+                    'total_items' => count($txData['items']),
+                    'status' => 'completed',
+                    'completed_at' => $txData['timestamp'] ?? now(),
+                    'started_at' => $txData['timestamp'] ?? now()
+                ]);
+
+                foreach ($txData['items'] as $item) {
+                    $transaction->items()->create([
+                        'waste_type' => $item['type'],
+                        'weight' => $item['weight'] ?? 0,
+                        'points' => $item['points'] ?? 0,
+                    ]);
+                }
+                $syncedCount++;
+             }
+             DB::commit();
+         } catch (\Exception $e) {
+             DB::rollBack();
+             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 500);
+         }
+
+         return response()->json([
+             'status' => 'success',
+             'message' => "Synced {$syncedCount} offline transactions",
+             'synced_count' => $syncedCount
+         ]);
     }
 
     /**

@@ -42,16 +42,30 @@ class ValidateRvmApiKey
             ], 401);
         }
 
-        // Find machine by API key
-        $machine = RvmMachine::where('api_key', $apiKey)->first();
+        // Hash the incoming key to match storage (SHA-256)
+        $hashedKey = hash('sha256', $apiKey);
+
+        // Find Edge Device by API key
+        $edgeDevice = \App\Models\EdgeDevice::where('api_key', $hashedKey)->first();
 
         // 401 - Invalid API key
-        if (!$machine) {
+        if (!$edgeDevice) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Kunci API Tidak Valid. Silakan import ulang kredensial.',
                 'error_code' => 'INVALID_API_KEY',
             ], 401);
+        }
+
+        // Get associated RVM Machine
+        $machine = $edgeDevice->rvmMachine;
+
+        if (!$machine) {
+             return response()->json([
+                'status' => 'error',
+                'message' => 'Edge Device tidak terhubung ke RVM Machine.',
+                'error_code' => 'ORPHAN_DEVICE',
+            ], 403);
         }
 
         // 403 - Machine is blocked/suspended

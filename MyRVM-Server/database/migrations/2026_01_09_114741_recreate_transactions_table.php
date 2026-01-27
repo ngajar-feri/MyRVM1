@@ -15,7 +15,7 @@ return new class extends Migration
 
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained('users');
+            $table->foreignId('user_id')->nullable()->constrained('users');
             $table->foreignId('rvm_machine_id')->constrained('rvm_machines');
             $table->integer('total_points')->default(0);
             $table->decimal('total_weight', 10, 3)->default(0);

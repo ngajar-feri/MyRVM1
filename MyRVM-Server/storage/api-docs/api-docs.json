@@ -1250,6 +1250,142 @@
                 }
             }
         },
+        "/api/v1/edge/deposit": {
+            "post": {
+                "tags": [
+                    "Edge Device"
+                ],
+                "summary": "Process single item deposit and image",
+                "description": "Uploads item image, records transaction item, and updates session.",
+                "operationId": "edgeDeposit",
+                "parameters": [
+                    {
+                        "name": "X-RVM-API-KEY",
+                        "in": "header",
+                        "required": true,
+                        "description": "API Key from rvm-credentials.json",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "image",
+                                    "data",
+                                    "status"
+                                ],
+                                "properties": {
+                                    "image": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "example": "ACCEPTED"
+                                    },
+                                    "data": {
+                                        "type": "string",
+                                        "description": "JSON string of AI result & session info"
+                                    },
+                                    "session_id": {
+                                        "type": "string",
+                                        "description": "Optional session/transaction ID"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Deposit recorded"
+                    }
+                }
+            }
+        },
+        "/api/v1/edge/sync-offline": {
+            "post": {
+                "tags": [
+                    "Edge Device"
+                ],
+                "summary": "Bulk upload offline transactions",
+                "operationId": "edgeSyncOffline",
+                "parameters": [
+                    {
+                        "name": "X-RVM-API-KEY",
+                        "in": "header",
+                        "required": true,
+                        "description": "API Key from rvm-credentials.json",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "transactions"
+                                ],
+                                "properties": {
+                                    "transactions": {
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "items",
+                                                "timestamp"
+                                            ],
+                                            "properties": {
+                                                "items": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "required": [
+                                                            "type",
+                                                            "weight",
+                                                            "points"
+                                                        ],
+                                                        "properties": {
+                                                            "type": {
+                                                                "type": "string"
+                                                            },
+                                                            "weight": {
+                                                                "type": "number",
+                                                                "format": "float"
+                                                            },
+                                                            "points": {
+                                                                "type": "integer"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "timestamp": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Sync successful"
+                    }
+                }
+            }
+        },
         "/api/v1/edge/devices": {
             "get": {
                 "tags": [

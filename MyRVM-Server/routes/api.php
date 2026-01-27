@@ -107,6 +107,15 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
     Route::post('/edge/handshake', [EdgeDeviceController::class, 'handshake'])
         ->withoutMiddleware('auth:sanctum')
         ->middleware('validate.rvm.apikey');
+
+    Route::post('/edge/deposit', [EdgeDeviceController::class, 'deposit'])
+        ->withoutMiddleware('auth:sanctum')
+        ->middleware('validate.rvm.apikey');
+
+    Route::post('/edge/sync-offline', [EdgeDeviceController::class, 'syncOffline'])
+        ->withoutMiddleware('auth:sanctum')
+        ->middleware('validate.rvm.apikey');
+    
     
     Route::prefix('edge')->group(function () {
         Route::post('/register', [EdgeDeviceController::class, 'register']);
