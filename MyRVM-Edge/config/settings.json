@@ -1,1 +1,5 @@
-{"api_url": "http://100.123.143.87:8001/api/v1", "device_id": "orin1", "timeout": 10}
+{
+    "api_url": "https://myrvm.penelitian.my.id/api/v1", 
+    "device_id": "orin1", 
+    "timeout": 10
+}

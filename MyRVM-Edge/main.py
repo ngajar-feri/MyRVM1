@@ -11,7 +11,11 @@ CREDENTIALS_PATH = os.path.join(os.path.dirname(__file__), 'config', 'credential
 def load_config():
     if not os.path.exists(CONFIG_PATH):
         print("[!] Settings file not found. Generating default...")
-        return {"api_url": "http://100.123.143.87:8000/api/v1", "device_id": "unknown", "timeout": 10}
+        return {
+            "api_url": "https://myrvm.penelitian.my.id/api/v1", 
+            "device_id": "orin1", 
+            "timeout": 10
+        }
     with open(CONFIG_PATH, 'r') as f:
         return json.load(f)
 
