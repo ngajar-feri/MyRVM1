@@ -6,3 +6,6 @@ trae_backup.zip
 trae-configuration.zip
 trae_backup.tar.gz
 .agent/
+venv/
+__pycache__/
+*.pyc
