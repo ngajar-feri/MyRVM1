@@ -49,6 +49,7 @@ class EdgeDevice extends Model
 
         // Handshake data (from Setup Wizard)
         'hardware_config',
+        'system_info',
         'diagnostics_log',
         'timezone',
         'last_handshake_at',
@@ -58,6 +59,7 @@ class EdgeDevice extends Model
         'health_metrics' => 'array',
         'network_interfaces' => 'array',
         'hardware_config' => 'array',
+        'system_info' => 'array',
         'diagnostics_log' => 'array',
         'latitude' => 'decimal:8',
         'longitude' => 'decimal:8',
