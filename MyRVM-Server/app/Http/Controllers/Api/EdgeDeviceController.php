@@ -860,8 +860,8 @@ class EdgeDeviceController extends Controller
             'health_metrics' => $validated['health_metrics'] ?? $edgeDevice->health_metrics,
             // Store hardware_info → hardware_config column
             'hardware_config' => $validated['hardware_info'] ?? $edgeDevice->hardware_config,
-            // Store system info in system_info column (requires migration)
-            'system_info' => $validated['system'] ?? $edgeDevice->system_info ?? null,
+            'hardware_config' => $validated['hardware_info'] ?? $edgeDevice->hardware_config,
+            'system_info' => $validated['system'] ?? $edgeDevice->system_info,
             'diagnostics_log' => $validated['diagnostics'] ?? $edgeDevice->diagnostics_log,
             'status' => 'online',
             'last_handshake_at' => now(),
