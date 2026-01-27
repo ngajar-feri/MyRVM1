@@ -73,7 +73,7 @@ class KioskController extends Controller
         $isNightTime = $currentHour >= 18 || $currentHour < 6;
 
         return [
-            'machine_uuid' => $machine->serial_number,
+            'machine_uuid' => $machine->uuid,
             'machine_name' => $machine->name,
             'location' => $machine->location ?? 'Unknown',
             'timezone' => $machine->timezone ?? 'Asia/Jakarta',
