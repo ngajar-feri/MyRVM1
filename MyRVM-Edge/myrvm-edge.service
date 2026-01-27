@@ -1,0 +1,16 @@
+[Unit]
+Description=MyRVM Edge Client v2.0
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+User=my
+Group=my
+WorkingDirectory=/home/my/MyRVM1/MyRVM-Edge
+ExecStart=/home/my/MyRVM1/MyRVM-Edge/venv/bin/python -u main.py
+Restart=always
+RestartSec=10
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
