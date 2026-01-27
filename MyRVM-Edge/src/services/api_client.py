@@ -197,36 +197,112 @@ class RvmApiClient:
         return info
 
     def _detect_cameras(self):
-        """Detect connected cameras via /dev/video*."""
+        """
+        Detect connected cameras using v4l2-ctl.
+        Groups video nodes by physical device to avoid double-counting.
+        """
         cameras = []
         try:
+            # Use v4l2-ctl to get actual device list
+            result = subprocess.run(
+                ["v4l2-ctl", "--list-devices"],
+                capture_output=True, text=True, timeout=5
+            )
+            if result.returncode == 0:
+                # Parse output to get unique physical cameras
+                lines = result.stdout.strip().split('\n')
+                current_device = None
+                camera_id = 0
+                
+                for line in lines:
+                    if line and not line.startswith('\t') and not line.startswith(' '):
+                        # This is a device name line
+                        current_device = line.split(':')[0].strip()
+                    elif line.strip().startswith('/dev/video') and current_device:
+                        # Only take first video node per device
+                        if not any(c.get('name') == current_device for c in cameras):
+                            video_path = line.strip()
+                            cameras.append({
+                                "id": camera_id,
+                                "path": video_path,
+                                "name": current_device,
+                                "status": "ready" if os.access(video_path, os.R_OK) else "error"
+                            })
+                            camera_id += 1
+        except (subprocess.TimeoutExpired, FileNotFoundError):
+            # Fallback: simple glob if v4l2-ctl not available
+            print("[MOCK] v4l2-ctl not found, using basic detection")
             video_devices = glob.glob('/dev/video*')
-            for i, device in enumerate(video_devices[:4]):  # Limit to 4 cameras
+            for i, device in enumerate(video_devices[:2]):
                 cameras.append({
                     "id": i,
                     "path": device,
-                    "name": f"Camera {i}",
-                    "status": "ready" if os.access(device, os.R_OK) else "error"
+                    "name": f"[MOCK] Camera {i}",
+                    "status": "ready"
                 })
-        except:
-            pass
+        except Exception as e:
+            print(f"[MOCK] Camera detection error: {e}")
+        
+        # If no cameras found, return empty with note
+        if not cameras:
+            print("[INFO] No cameras detected")
+        
         return cameras
 
     def _detect_microcontroller(self):
-        """Detect connected microcontroller (ESP32) via serial port."""
-        mcu = {"status": "disconnected"}
-        serial_ports = ['/dev/ttyTHS1', '/dev/ttyUSB0', '/dev/ttyACM0']
+        """
+        Detect connected microcontroller via USB serial chips.
+        Only reports 'connected' if an actual USB-to-Serial chip is found.
+        /dev/ttyTHS* are Jetson built-in ports and don't indicate device presence.
+        """
+        mcu = {"status": "not_connected"}
         
-        for port in serial_ports:
-            if os.path.exists(port):
-                mcu = {
-                    "type": "ESP32",
-                    "port": port,
-                    "connection": "UART",
-                    "baud_rate": 115200,
-                    "status": "connected"
-                }
-                break
+        try:
+            # Check for USB serial chips (ESP32 uses CP210x, CH340, or FTDI)
+            result = subprocess.run(
+                ["lsusb"],
+                capture_output=True, text=True, timeout=5
+            )
+            
+            usb_serial_chips = ['cp210', 'ch340', 'ch341', 'ftdi', 'silabs', 'esp']
+            found_chip = None
+            
+            for line in result.stdout.lower().split('\n'):
+                for chip in usb_serial_chips:
+                    if chip in line:
+                        found_chip = chip.upper()
+                        break
+                if found_chip:
+                    break
+            
+            if found_chip:
+                # Found USB serial chip, now find the port
+                port = None
+                for p in ['/dev/ttyUSB0', '/dev/ttyACM0', '/dev/ttyUSB1']:
+                    if os.path.exists(p):
+                        port = p
+                        break
+                
+                if port:
+                    mcu = {
+                        "type": "ESP32",
+                        "port": port,
+                        "connection": "USB-Serial",
+                        "chip": found_chip,
+                        "baud_rate": 115200,
+                        "status": "connected"
+                    }
+                else:
+                    mcu = {
+                        "type": "ESP32",
+                        "chip": found_chip,
+                        "status": "detected_no_port"
+                    }
+            else:
+                print("[INFO] No USB serial chip found (ESP32 not connected)")
+                
+        except Exception as e:
+            print(f"[MOCK] MCU detection error: {e}")
         
         return mcu
 
