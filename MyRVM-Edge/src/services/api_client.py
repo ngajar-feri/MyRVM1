@@ -137,6 +137,9 @@ class RvmApiClient:
             # Heartbeat is lightweight, short timeout
             response = self.session.post(endpoint, json=payload, timeout=5)
             response.raise_for_status()
+            
+            # Silent success (don't spam logs unless debug)
+            # print(f"[.] Heartbeat OK") 
             return True
         except Exception as e:
             print(f"[!] Heartbeat Error: {str(e)}")
