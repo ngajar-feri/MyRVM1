@@ -16,6 +16,9 @@ composer.json
 venv/
 __pycache__/
 *.pyc
+.env
+secrets.env
+MyRVM-Edge/api_client.py
 
 # OS/IDE
 .DS_Store
