@@ -4,7 +4,14 @@ import json
 import os
 import subprocess
 from pathlib import Path
-from dotenv import load_dotenv
+def load_env_file(path):
+    """Simple replacement for load_dotenv to avoid external dependency."""
+    if not os.path.exists(path): return
+    with open(path, 'r') as f:
+        for line in f:
+            if '=' in line:
+                key, val = line.strip().split('=', 1)
+                os.environ[key] = val
 
 # Add project root to path
 sys.path.append(os.path.dirname(__file__))
@@ -36,12 +43,21 @@ def get_device_info():
     # 2. Check for Raspberry Pi
     if os.path.exists('/proc/cpuinfo'):
         try:
+            is_pi = False
             serial = "unknown_pi"
             with open('/proc/cpuinfo', 'r') as f:
-                for line in f:
-                    if line.startswith('Serial'):
-                        serial = line.split(':')[1].strip()
-            return serial, "Raspberry Pi"
+                content = f.read()
+                if 'Raspberry Pi' in content or 'BCM2835' in content or 'BCM2711' in content:
+                    is_pi = True
+                
+                # Extract serial if available
+                import re
+                match = re.search(r'^Serial\s*:\s*([0-9a-fA-F]+)', content, re.MULTILINE)
+                if match:
+                    serial = match.group(1)
+            
+            if is_pi:
+                return serial, "Raspberry Pi"
         except Exception as e:
             print(f"[!] Error reading Pi info: {e}")
 
@@ -83,7 +99,7 @@ def main():
         print("[*] Provisioned! Proceeding to boot...")
 
     # 2. Load Credentials
-    load_dotenv(SECRETS_PATH)
+    load_env_file(SECRETS_PATH)
     api_key = os.getenv("RVM_API_KEY")
     serial_number = os.getenv("RVM_SERIAL_NUMBER")
     
