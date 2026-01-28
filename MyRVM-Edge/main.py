@@ -69,6 +69,8 @@ def run_setup_wizard():
 
 def main():
     print("=== MyRVM Edge Client v2.0 (Day-0 Ready) ===")
+    from src.services.api_client import RvmApiClient
+    from src.hardware.hardware_manager import HardwareManager
     
     # 1. Check for Provisioning
     if not SECRETS_PATH.exists():
