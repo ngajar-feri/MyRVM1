@@ -12,7 +12,7 @@ composer.lock
 composer.json
 
 # Edge Dependencies & Environment (Remote)
-.agent/
+.agent/*
 venv/
 __pycache__/
 *.pyc
@@ -20,4 +20,3 @@ __pycache__/
 # OS/IDE
 .DS_Store
 .idea/
-.agent/rules/mock-data-consistency.md
