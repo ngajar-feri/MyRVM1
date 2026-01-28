@@ -188,14 +188,20 @@ class MachineManagement {
                         
                         <!-- Capacity Bar -->
                         <div class="mb-2">
-                            <div class="d-flex justify-content-between small mb-1">
-                                <span>Bin Capacity</span>
-                                <span>${machine.capacity_percentage || 0}%</span>
-                            </div>
-                            <div class="progress" style="height: 8px;">
-                                <div class="progress-bar ${this.getCapacityColor(machine.capacity_percentage)}" 
-                                     style="width: ${machine.capacity_percentage || 0}%"></div>
-                            </div>
+                            ${(() => {
+                                const styles = this.getCapacityStyles(machine.capacity_percentage);
+                                return `
+                                <div class="d-flex justify-content-between small mb-1">
+                                    <span>Bin Capacity</span>
+                                    <span style="color: ${styles.color}; font-weight: 600;">${styles.percentage}%</span>
+                                </div>
+                                <div class="progress ${styles.pulseClass}" style="height: 8px; background-color: rgba(0,0,0,0.05);">
+                                    <div class="progress-bar" role="progressbar" 
+                                         style="width: ${styles.percentage}%; background-color: ${styles.color}; transition: width 1s ease-in-out;" 
+                                         aria-valuenow="${styles.percentage}" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                                `;
+                            })()}
                         </div>
                         
                         <!-- Stats -->
@@ -272,6 +278,11 @@ class MachineManagement {
     renderMachineDetailTemplate(machine) {
         const edgeDevice = machine.edge_device;
         const telemetry = edgeDevice?.telemetry || [];
+        const hwInfo = edgeDevice?.hardware_info || {};
+        const sensors = hwInfo.sensors || [];
+        const actuators = hwInfo.actuators || [];
+        const cameras = hwInfo.cameras || [];
+        const mcu = hwInfo.microcontroller || {};
 
         return `
             <div class="row">
@@ -287,12 +298,22 @@ class MachineManagement {
                             </div>
                         </div>
                         <div class="col-md-3">
-                            <div class="card text-center">
-                                <div class="card-body">
-                                    <h5 class="mb-0">${machine.capacity_percentage || 0}%</h5>
-                                    <div class="small text-muted">Bin Capacity</div>
+                            ${(() => {
+                                const styles = this.getCapacityStyles(machine.capacity_percentage);
+                                return `
+                                <div class="card text-center ${styles.pulseClass}" style="background-color: ${styles.bg}; border-color: ${styles.color}44; transition: all 0.5s ease;">
+                                    <div class="card-body p-3">
+                                        <h5 class="mb-1" style="color: ${styles.color}; font-weight: 700;">${styles.percentage}%</h5>
+                                        <div class="small text-muted mb-2">Bin Capacity</div>
+                                        <div class="progress" style="height: 6px; background-color: rgba(0,0,0,0.05); border-radius: 10px;">
+                                            <div class="progress-bar" role="progressbar" 
+                                                style="width: ${styles.percentage}%; background-color: ${styles.color}; transition: width 1s ease-in-out;" 
+                                                aria-valuenow="${styles.percentage}" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
+                                `;
+                            })()}
                         </div>
                         <div class="col-md-3">
                             <div class="card text-center">
@@ -323,18 +344,27 @@ class MachineManagement {
                             <span class="badge badge-status-${edgeDevice.status || 'offline'}">${edgeDevice.status || 'offline'}</span>
                         </div>
                         <div class="card-body">
-                            <div class="row g-3">
+                            <div class="row g-3 mb-3">
                                 <!-- Hardware Info -->
                                 <div class="col-md-6">
                                     <dl class="row mb-0 small">
                                         <dt class="col-5 text-muted">Device ID:</dt>
                                         <dd class="col-7"><code style="background: #ecfdf5; padding: 2px 6px; border-radius: 4px;">${edgeDevice.device_id || 'N/A'}</code></dd>
-                                        <dt class="col-5 text-muted">Controller:</dt>
-                                        <dd class="col-7">${edgeDevice.type || edgeDevice.controller_type || 'Jetson Orin Nano'}</dd>
                                         <dt class="col-5 text-muted">Firmware:</dt>
                                         <dd class="col-7">${edgeDevice.system_info?.firmware_version || edgeDevice.firmware_version || 'v1.0.0'}</dd>
-                                        <dt class="col-5 text-muted">Camera:</dt>
-                                        <dd class="col-7">${edgeDevice.hardware_config?.cameras?.[0]?.name || edgeDevice.camera_id || 'CSI Camera'}</dd>
+                                        <dt class="col-5 text-muted">JetPack:</dt>
+                                        <dd class="col-7">${(() => {
+                                            const raw = edgeDevice.system_info?.jetpack_version || 'N/A';
+                                            if (raw.includes('# R')) {
+                                                const relMatch = raw.match(/# R(\d+)/);
+                                                const revMatch = raw.match(/REVISION:\s*([\d.]+)/);
+                                                if (relMatch && revMatch) return `L4T R${relMatch[1]}.${revMatch[1]}`;
+                                                if (relMatch) return `L4T R${relMatch[1]}`;
+                                            }
+                                            return raw;
+                                        })()}</dd>
+                                        <dt class="col-5 text-muted">AI Model:</dt>
+                                        <dd class="col-7">${edgeDevice.system_info?.ai_models?.model_version || edgeDevice.ai_model_version || 'v1.0.0'}</dd>
                                     </dl>
                                 </div>
                                 <!-- Network Info -->
@@ -344,8 +374,6 @@ class MachineManagement {
                                         <dd class="col-7"><code style="background: #dbeafe; padding: 2px 6px; border-radius: 4px;">${edgeDevice.tailscale_ip || 'N/A'}</code></dd>
                                         <dt class="col-5 text-muted">Local IP:</dt>
                                         <dd class="col-7"><code style="background: #f3f4f6; padding: 2px 6px; border-radius: 4px;">${edgeDevice.ip_address_local || edgeDevice.ip_address || 'N/A'}</code></dd>
-                                        <dt class="col-5 text-muted">AI Model:</dt>
-                                        <dd class="col-7">${edgeDevice.system_info?.ai_models?.model_version || edgeDevice.ai_model_version || 'v1.0.0'}</dd>
                                         <dt class="col-5 text-muted">Last Heartbeat:</dt>
                                         <dd class="col-7">${this.getLastSeen(edgeDevice.updated_at)}</dd>
                                     </dl>
@@ -353,10 +381,9 @@ class MachineManagement {
                             </div>
 
                             ${edgeDevice.health_metrics || edgeDevice.hardware_info ? `
-                            <!-- Health Metrics - Bio-Digital Cards -->
-                            <hr style="border-color: rgba(16, 185, 129, 0.1);">
-                            <h6 class="small fw-semibold mb-3" style="color: #065f46;"><i class="ti tabler-activity-heartbeat me-1"></i>Health Metrics</h6>
-                            <div class="row g-2">
+                            <!-- Health Metrics -->
+                            <h6 class="small fw-semibold mb-2" style="color: #065f46;"><i class="ti tabler-activity-heartbeat me-1"></i>Health Metrics</h6>
+                            <div class="row g-2 mb-3">
                                 <div class="col-3">
                                     <div class="text-center p-2" style="background: linear-gradient(135deg, #ecfdf5, #d1fae5); border-radius: 10px;">
                                         <div class="fw-bold" style="color: #065f46;">${(edgeDevice.health_metrics?.cpu_usage_percent || 0).toFixed(1)}%</div>
@@ -383,6 +410,50 @@ class MachineManagement {
                                 </div>
                             </div>
                             ` : ''}
+
+                            <!-- Detailed Hardware - Spec v2.0 -->
+                            ${(sensors.length > 0 || actuators.length > 0) ? `
+                            <nav>
+                                <div class="nav nav-tabs nav-fill mb-3" id="nav-tab" role="tablist">
+                                    <button class="nav-link active small py-1" id="nav-sensors-tab" data-bs-toggle="tab" data-bs-target="#nav-sensors" type="button" role="tab">Sensors (${sensors.length})</button>
+                                    <button class="nav-link small py-1" id="nav-actuators-tab" data-bs-toggle="tab" data-bs-target="#nav-actuators" type="button" role="tab">Actuators (${actuators.length})</button>
+                                    <button class="nav-link small py-1" id="nav-cameras-tab" data-bs-toggle="tab" data-bs-target="#nav-cameras" type="button" role="tab">Cameras (${cameras.length})</button>
+                                </div>
+                            </nav>
+                            <div class="tab-content" id="nav-tabContent">
+                                <div class="tab-pane fade show active" id="nav-sensors" role="tabpanel">
+                                    <div class="table-responsive" style="max-height: 200px; overflow-y: auto;">
+                                        <table class="table table-sm table-striped small mb-0">
+                                            <thead><tr><th>Name</th><th>Model</th><th>Unit</th><th>Interface</th></tr></thead>
+                                            <tbody>
+                                                ${sensors.map(s => `<tr><td>${s.friendly_name || s.name}</td><td>${s.model}</td><td>${s.unit || '-'}</td><td>${s.interface}</td></tr>`).join('')}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div class="tab-pane fade" id="nav-actuators" role="tabpanel">
+                                    <div class="table-responsive" style="max-height: 200px; overflow-y: auto;">
+                                        <table class="table table-sm table-striped small mb-0">
+                                            <thead><tr><th>Name</th><th>Model</th><th>Interface</th></tr></thead>
+                                            <tbody>
+                                                ${actuators.map(a => `<tr><td>${a.friendly_name || a.name}</td><td>${a.model}</td><td>${a.interface}</td></tr>`).join('')}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div class="tab-pane fade" id="nav-cameras" role="tabpanel">
+                                    <div class="table-responsive" style="max-height: 200px; overflow-y: auto;">
+                                        <table class="table table-sm table-striped small mb-0">
+                                            <thead><tr><th>Name</th><th>Path</th><th>Status</th></tr></thead>
+                                            <tbody>
+                                                ${cameras.map(c => `<tr><td>${c.name}</td><td>${c.path}</td><td><span class="badge bg-${c.status === 'ready' ? 'success' : 'danger'}">${c.status}</span></td></tr>`).join('')}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            ` : ''}
+
                         </div>
                     </div>
                     ` : `
@@ -440,25 +511,22 @@ class MachineManagement {
                         </div>
                     </div>
 
-                    <!-- Components Overview -->
+                    <!-- Components Overview (Summarized) -->
                     <div class="card">
-                        <div class="card-header"><h6 class="mb-0">Components</h6></div>
+                        <div class="card-header"><h6 class="mb-0">Components Summary</h6></div>
                         <div class="card-body">
                             <div class="d-flex flex-wrap gap-1">
-                                <span class="badge bg-label-primary" data-bs-toggle="tooltip" title="Jetson Orin Nano">
-                                    <i class="ti tabler-cpu"></i> Edge Device
+                                <span class="badge bg-label-primary" data-bs-toggle="tooltip" title="Edge Controller">
+                                    <i class="ti tabler-cpu"></i> ${edgeDevice?.type || 'Edge'}
                                 </span>
-                                <span class="badge bg-label-info" data-bs-toggle="tooltip" title="CSI Camera">
-                                    <i class="ti tabler-camera"></i> Camera
+                                <span class="badge bg-label-${cameras.length > 0 ? 'info' : 'secondary'}" data-bs-toggle="tooltip" title="Cameras">
+                                    <i class="ti tabler-camera"></i> ${cameras.length} Cam
                                 </span>
-                                <span class="badge bg-label-secondary" data-bs-toggle="tooltip" title="LCD Touch Screen">
-                                    <i class="ti tabler-device-tablet"></i> LCD
+                                <span class="badge bg-label-${sensors.length > 0 ? 'success' : 'secondary'}" data-bs-toggle="tooltip" title="Sensors">
+                                    <i class="ti tabler-radar"></i> ${sensors.length} Sensors
                                 </span>
-                                <span class="badge bg-label-warning" data-bs-toggle="tooltip" title="ESP32 Controller">
-                                    <i class="ti tabler-circuit-board"></i> ESP32
-                                </span>
-                                <span class="badge bg-label-success" data-bs-toggle="tooltip" title="Sensors">
-                                    <i class="ti tabler-radar"></i> Sensors
+                                <span class="badge bg-label-${actuators.length > 0 ? 'warning' : 'secondary'}" data-bs-toggle="tooltip" title="Actuators">
+                                    <i class="ti tabler-engine"></i> ${actuators.length} Acts
                                 </span>
                             </div>
                         </div>
@@ -731,10 +799,22 @@ class MachineManagement {
         }
     }
 
-    getCapacityColor(percentage) {
-        if (percentage >= 80) return 'progress-bar-danger';
-        if (percentage >= 50) return 'progress-bar-warning';
-        return 'progress-bar-success';
+    getCapacityStyles(percentage) {
+        const cap = percentage || 0;
+        let color = '#4CAF50'; // Green
+        let bg = '#f0fdf4';
+        let pulseClass = '';
+
+        if (cap > 85) {
+            color = '#EF5350'; // Soft Red
+            bg = '#fef2f2';
+            pulseClass = 'capacity-pulse';
+        } else if (cap > 60) {
+            color = '#FFB74D'; // Amber
+            bg = '#fffbeb';
+        }
+
+        return { color, bg, pulseClass, percentage: cap };
     }
 
     getLastSeen(lastSeen) {

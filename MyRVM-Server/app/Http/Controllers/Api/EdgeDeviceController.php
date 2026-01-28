@@ -1107,10 +1107,11 @@ class EdgeDeviceController extends Controller
              return response()->json(['status' => 'error', 'message' => 'Machine auth failed'], 401);
         }
 
-        // Update RVM Machine last_ping
+        // Update RVM Machine last_ping and capacity
         $machine->update([
             'last_ping' => now(),
-            'status' => 'online'
+            'status' => 'online',
+            'capacity_percentage' => $request->bin_capacity ?? $machine->capacity_percentage
         ]);
 
         // Update Edge Device status/metrics

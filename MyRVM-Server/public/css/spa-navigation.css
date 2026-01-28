@@ -400,3 +400,24 @@
 .modal-backdrop {
     z-index: 1050 !important;
 }
+
+/* Pulse animation for critical bin levels (>= 90%) */
+.capacity-pulse {
+    animation: capacity-pulse-glow 2s infinite;
+    box-shadow: 0 0 0 0 rgba(239, 83, 80, 0.4);
+}
+
+@keyframes capacity-pulse-glow {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(239, 83, 80, 0.4);
+    }
+    70% {
+        transform: scale(1.02);
+        box-shadow: 0 0 0 10px rgba(239, 83, 80, 0);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(239, 83, 80, 0);
+    }
+}

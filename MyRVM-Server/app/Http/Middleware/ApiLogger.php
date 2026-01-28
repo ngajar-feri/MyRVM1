@@ -20,7 +20,7 @@ class ApiLogger
         $response = $next($request);
         $duration = microtime(true) - $startTime;
 
-        Log::channel('daily')->info('API Request:', [
+        Log::info('API Request:', [
             'ip' => $request->ip(),
             'method' => $request->method(),
             'url' => $request->fullUrl(),

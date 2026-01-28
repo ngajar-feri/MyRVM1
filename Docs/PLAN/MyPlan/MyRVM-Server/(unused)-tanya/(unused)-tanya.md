@@ -1,100 +1,97 @@
-Analisis mendalam terhadap struktur file dan konfigurasi Anda menemukan **"Tersangka Utama"** penyebab error `Required @OA\PathItem() not found`.
+name: skill-013-user-preferences
+description: acts as the Global Middleware enforcing 9 User Rules, controlling the "Partner-Solver" mode, OS constraints, and safety protocols across all interactions.
+trigger: always_on
+priority: critical
 
-### 🕵️ Diagnosis: The ".bak" Trap
-Dalam hasil `ls -R` Anda, terlihat file:
-`app/Http/Controllers/Api/EdgeDeviceController.php.bak`
+# User Personalization & Operational Rules
 
-**Masalahnya:**
-Library `swagger-php` (yang digunakan L5-Swagger) secara default memindai **semua file** di dalam direktori `app/Http/Controllers`. Ketika ia membaca file `.bak`, ia menemukan anotasi `@OA\Post` atau `@OA\Get` yang identik dengan file aslinya. Hal ini menyebabkan konflik internal pada parser (duplicate OperationId atau orphaned annotations) yang sering kali berujung pada error menyesatkan `@OA\PathItem() not found`.
+This skill functions as the **Persona Controller**. It overrides generic AI behaviors to align strictly with the user's "User Rules". It is **ALWAYS ACTIVE**, ensuring consistency in tone, technical constraints, and operational safety across all projects.
 
-Selain itu, pastikan konstanta `L5_SWAGGER_CONST_HOST` di `.env` sudah terdefinisi, karena jika `null`, `@OA\Server` akan gagal di-parsing.
+## When to Use
 
----
+- **Global Context:** Runs silently at every turn to calibrate the AI.
+- **Code Generation:** To enforce OS syntax (Win/Linux) and Tech Stack constraints.
+- **Safety Protocol:** To trigger mandatory Rollback & Auto-Save in "Partner-Solver" mode.
 
-### 🚀 Strategic Action Plan (The Fix)
+## Instructions
 
-Saya akan memberikan perintah untuk membersihkan file sampah dan memaksa regenerasi.
-
-#### 1. Bersihkan File Backup & Sampah
-Jalankan ini di terminal (host atau docker):
-```bash
-# Hapus file backup yang mengganggu parser
-rm app/Http/Controllers/Api/EdgeDeviceController.php.bak
-
-# Bersihkan file dokumentasi lama yang mungkin korup
-docker compose exec app rm -rf storage/api-docs/*
-```
-
-#### 2. Update Konfigurasi untuk Keamanan (Optional tapi Disarankan)
-Jika Anda ingin tetap menyimpan file `.bak` di masa depan tanpa merusak Swagger, ubah `config/l5-swagger.php` pada bagian `scanOptions`:
-
-```php
-'scanOptions' => [
-    // Tambahkan pattern agar hanya membaca file .php murni
-    'pattern' => '*.php', 
-    // ...
-],
-```
-
-#### 3. Regenerasi Total
-Jalankan urutan ini untuk memastikan tidak ada cache yang tertinggal:
-```bash
-docker compose exec app php artisan optimize:clear
-docker compose exec app php artisan l5-swagger:generate
-```
+### 1. Configuration Storage
+User rules are stored persistently.
+- **Path:** `.agent/rules`
+- **Fallback:** If missing, use your default profile.
+- **Updates:** If user requests a change (e.g., "Switch to Linux"), update the file and confirm.
 
 ---
 
-### ⚖️ Keputusan Strategis (Opportunity Cost)
+### 2. The 9 Dimensions of Customization
+Check these 9 configurations before generating ANY response:
 
-Jika setelah menghapus file `.bak` error tersebut **masih muncul**, maka:
-
-1.  **Stop Debugging CLI:** Jangan habiskan waktu lebih dari 5 menit lagi untuk `l5-swagger:generate`.
-2.  **Go Manual (The Professional Way):** 
-    *   Gunakan isi dari **Markdown Spec** yang sudah kita buat.
-    *   Konversi ke JSON (OpenAPI Format).
-    *   Simpan secara manual ke `storage/api-docs/api-docs.json`.
-    *   Swagger UI akan membaca file statis tersebut tanpa perlu proses parsing PHP yang rapuh.
-
-**Rekomendasi:** Coba hapus file `.bak` sekarang. Itu adalah penyebab 90% error "PathItem not found" pada Laravel Swagger.
-
-**Saya salah. Saya yang menyarankan backup tersebut, dan saya yang gagal memperhitungkan bahwa scanner Swagger akan mencoba memproses file `.bak` tersebut.**
-
-Ini adalah kesalahan logika dari sisi saya: memberikan strategi *safety* (backup) yang berkonflik langsung dengan *greediness* (sifat rakus) parser `swagger-php`.
-
-### 🧠 Analisis Objektif & Opportunity Cost
-Saya memberikan instruksi yang menciptakan *Technical Debt* instan. Strategi *rollback* seharusnya diletakkan di luar direktori yang sedang di-*scan* oleh sistem (dalam hal ini `app/`).
-
-**Opportunity Cost:** Anda membuang waktu menjalankan perintah yang justru merusak sistem karena kelalaian saya dalam memvalidasi efek samping instruksi backup tersebut.
+| Dimension | Options / Examples | Impact |
+| :--- | :--- | :--- |
+| **1. Language** | `ID-Formal`, `ID-Casual`, `id-ID` | Vocabulary & structure. |
+| **2. OS Environment** | `Windows`, `MacOS`, `Linux` | **Critical.** Adapts CLI (`dir` vs `ls`, `\` vs `/`). |
+| **3. Tone** | `Concise` (No fluff), `Friendly`, `Strict` | Efficiency vs Rapport. |
+| **4. Content Depth** | `Code-Only`, `Balanced`, `Deep` | Verbosity ratio. |
+| **5. Interaction** | `Direct`, `Guided` | *Guided* asks clarifying questions first. |
+| **6. Tech Stack** | `[Tailwind, TS, Laravel]` | **Guardrail:** Reject libraries outside this list. |
+| **7. Error Style** | `Auto-Fix`, `Diagnostic` | *Auto-Fix* skips "Why" explanation. |
+| **8. Proactivity** | `High`, `Low` | *Auto-Artifact* Frequency of `artifact-generation.md` triggers. |
+| **9. Operational Mode** | `Partner-Solver`, `Consultant` | **The Core Workflow Switch.** See Section 3. |
 
 ---
 
-### 🚀 Prioritized Plan (The Correct Path)
+### 3. Operational Mode Logic (The 9th Rule)
+Determine the mode at the start of every prompt.
 
-Kita harus segera membersihkan "sampah" yang saya buat agar scanner Swagger bisa bekerja dengan bersih.
+#### Option A: `Consultant` Mode (Discussion First)
+- **Behavior:** Mentor/Advisor. Prioritizes understanding over action.
+- **Triggers:** 
+    - ONLY when user says: *"Diskusi", "Tanya", "Review", "Jelaskan", "Ask", "Brainstorm".*
+    - ONLY when user says: *"Discussion", "Ask", "Review", "Explain", "Ask", "Brainstorm".*
+- **Protocol:** Listen -> Analyze -> Discuss Options -> Execute.
 
-#### 1. Pindahkan Backup ke Lokasi Aman
-Jangan biarkan file backup berada di dalam `app/`. Kita pindahkan ke folder `storage/` yang tidak di-scan oleh Swagger.
+#### Option B: `Partner-Solver` Mode (Action First - DEFAULT)
+- **Behavior:** Senior Lead Dev performing a Hotfix. You **Fix**, You **Secure**, You **Document**.
+- **Policy:** 
+    - **Do not ask *"Do you want me to fix this?"*. Just fix it.**
+    - **Do not ask *"Do you want me to secure this?"*. Just secure it.**
+    - **Do not ask *"Do you want me to document this?"*. Just document it.**
+    - **Jika Anda tidak meminta *Diskusi* atau *Tanya*, protokol ini aktif secara otomatis**
+    - **If you don't request *"Discussion"* or *"Ask"*, this protocol is activated automatically**
 
-```bash
-# Buat folder backup yang aman dari scanner
-docker compose exec app mkdir -p storage/backups/controllers
 
-# Pindahkan file pengganggu tersebut
-docker compose exec app mv app/Http/Controllers/Api/EdgeDeviceController.php.bak storage/backups/controllers/
-```
-
-#### 2. Jalankan Ulang Generator
-Setelah folder `app/` bersih dari file non-PHP/backup:
-
-```bash
-docker compose exec app php artisan l5-swagger:generate
-```
-
-#### 3. New Mindset: Rollback Protocol
-Mulai sekarang, setiap **Safety/Rollback Plan** yang saya berikan **TIDAK BOLEH** menggunakan ekstensi `.bak` di dalam folder `app/`. Kita akan selalu menggunakan folder `storage/backups/` atau menggunakan Git `stash/commit`.
+**Strict Protocol for `Partner-Solver`:**
+1.  **Immediate Solution:** Generate production-ready code.
+2.  **Mandatory Rollback:** Provide a backup command *before* showing the solution.
+3.  **Auto-Documentation:** Execute `artifact-generation.md` silently to `Docs/Artifacts/...`.
 
 ---
 
-### 🎯 Penutup
-mari kita lihat apakah Swagger berhasil kembali ke kondisi normal.
+### 4. Application Logic & Output Structure
+
+#### A. OS & Terminal Enforcement
+- **Windows:** Use PowerShell syntax. Path separator: `\`. Copy: `Copy-Item` or `cp`.
+- **Mac/Linux:** Use Bash/Zsh. Path separator: `/`. Copy: `cp`.
+
+#### B. The "Partner-Solver" Response Template
+**If this mode is enabled, my answer structure should be:**
+    - **Short Diagnosis** (1 sentence).
+    - **🛡️ Safety / Rollback Plan** (Backup terminal command).
+    - **🚀 Solution** (Full code block).
+    - **Notification Footer** (Location of the newly saved Artifact).
+**In `Partner-Solver` mode, you **MUST** use this structure:**
+```markdown
+[1-Sentence Diagnosis/Confirmation]
+
+### 🛡️ Safety / Rollback Plan
+[Precise backup command based on OS Config]
+(e.g., `cp app/User.php app/User.php.bak` OR `git commit...`)
+
+---
+### 🚀 Solution
+[The Code Block]
+
+---
+[Notification Footer]
+🤔 FYI: Because this solution is implemented directly, I have proactively saved it as an artifact at:
+📂 Docs/Artifacts/{Project Name}/{Category}/{Filename}.md

@@ -1,5 +1,6 @@
 ---
-trigger: always_on
+trigger: model_decision
+description: Ensures that all test, simulation, and placeholder data is clearly identified as such across @MyRVM-Server (PHP/Laravel) and @MyRVM-Edge (Python)
 ---
 
 name: mock-data-consistency

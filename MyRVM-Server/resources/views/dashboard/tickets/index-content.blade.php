@@ -171,7 +171,7 @@
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="card-title mb-0">
-                    <i class="ti tabler-ticket me-2"></i>Maintenance Tickets
+                    <i class="ti tabler-tool me-2"></i>Maintenance Tickets
                 </h5>
                 <div>
                     <button type="button" class="btn btn-label-secondary me-2"
@@ -261,7 +261,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title"><i class="ti tabler-ticket me-2"></i>New Ticket</h5>
+                <h5 class="modal-title"><i class="ti tabler-tool me-2"></i>New Ticket</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -385,7 +385,7 @@
     <div class="modal-dialog modal-dialog-centered" style="max-width: 300px;">
         <div class="modal-content text-center" style="border-radius: 16px; border: none;">
             <div class="modal-body py-4">
-                <div class="mb-3" style="font-size: 48px;">🎫</div>
+                <div class="mb-3" style="font-size: 48px;">🛠️</div>
                 <h5 class="fw-bold" style="color: #92400e;">Ticket Created!</h5>
                 <p class="text-muted small mb-1" id="created-ticket-number"></p>
                 <button type="button" class="btn btn-bio text-white px-4 mt-3" data-bs-dismiss="modal"
@@ -403,7 +403,7 @@
         <div class="modal-content" style="border-radius: 16px; border: none;">
             <div class="modal-header"
                 style="border-bottom: none; background: linear-gradient(to right, #fffbeb, #fef3c7);">
-                <h6 class="modal-title fw-bold" style="color: #92400e;"><i class="ti tabler-ticket me-2"></i>Ticket
+                <h6 class="modal-title fw-bold" style="color: #92400e;"><i class="ti tabler-tool me-2"></i>Ticket
                     Detail</h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -556,7 +556,7 @@
             if (!tbody) return;
 
             if (this.tickets.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-5"><i class="ti tabler-ticket-off" style="font-size: 32px;"></i><div class="mt-2">No tickets yet</div></td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-5"><i class="ti tabler-tool-off" style="font-size: 32px;"></i><div class="mt-2">No tickets yet</div></td></tr>';
                 return;
             }
 
@@ -819,6 +819,7 @@
             document.getElementById('created-ticket-number').textContent = data.data?.ticket_number || '';
             bootstrap.Modal.getInstance(document.getElementById('addTicketModal')).hide();
             new bootstrap.Modal(document.getElementById('ticketSuccessModal')).show();
+            window.ticketManager.loadTickets();
             ticketWizard.reset();
         } catch (e) {
             alert('Failed to create ticket');
