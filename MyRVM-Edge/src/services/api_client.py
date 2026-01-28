@@ -122,9 +122,9 @@ class RvmApiClient:
             print(f"[!] Sync Error: {str(e)}")
             return False
 
-    def heartbeat(self, bin_capacity=0):
+    def heartbeat(self, bin_capacity=0, discovery_report=None):
         """
-        Sends heartbeat with health metrics and bin capacity.
+        Sends heartbeat with health metrics, bin capacity, and hardware discovery.
         """
         endpoint = f"{self.base_url}/edge/heartbeat"
         try:
@@ -132,7 +132,8 @@ class RvmApiClient:
                 "hardware_id": self.device_id,
                 "status": "online",
                 "health_metrics": self._get_health_metrics(),
-                "bin_capacity": bin_capacity 
+                "bin_capacity": bin_capacity,
+                "discovery": discovery_report
             }
             # Heartbeat is lightweight, short timeout
             response = self.session.post(endpoint, json=payload, timeout=5)

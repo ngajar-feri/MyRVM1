@@ -24,11 +24,16 @@ class SensorDriver(BaseDriver):
             
         GPIO.setmode(GPIO.BCM)
         if self.sensor_type == "ultrasonic":
-            GPIO.setup(self.pins['trigger'], GPIO.OUT)
-            GPIO.setup(self.pins['echo'], GPIO.IN)
-            GPIO.output(self.pins['trigger'], GPIO.LOW)
+            # Access nested 'pins' dict for ultrasonic
+            p = self.pins.get('pins', {})
+            GPIO.setup(p.get('trigger'), GPIO.OUT)
+            GPIO.setup(p.get('echo'), GPIO.IN)
+            GPIO.output(p.get('trigger'), GPIO.LOW)
         elif self.sensor_type == "proximity":
-            GPIO.setup(self.pins['pin'], GPIO.IN)
+            # Access 'pin' directly or from 'pins' dict
+            p_pin = self.pins.get('pin') or self.pins.get('pins', {}).get('pin')
+            if p_pin:
+                GPIO.setup(p_pin, GPIO.IN)
             
         return super().initialize()
 
@@ -38,21 +43,28 @@ class SensorDriver(BaseDriver):
             return None
 
         if self.sensor_type == "ultrasonic":
+            p = self.pins.get('pins', {})
+            trigger_pin = p.get('trigger')
+            echo_pin = p.get('echo')
+            
+            if not trigger_pin or not echo_pin:
+                return None
+
             # Pulse trigger
-            GPIO.output(self.pins['trigger'], GPIO.HIGH)
+            GPIO.output(trigger_pin, GPIO.HIGH)
             time.sleep(0.00001)
-            GPIO.output(self.pins['trigger'], GPIO.LOW)
+            GPIO.output(trigger_pin, GPIO.LOW)
 
             start_time = time.time()
             stop_time = time.time()
 
             # Record echo start/stop
             timeout = time.time() + 0.1
-            while GPIO.input(self.pins['echo']) == 0:
+            while GPIO.input(echo_pin) == 0:
                 start_time = time.time()
                 if start_time > timeout: return None
                 
-            while GPIO.input(self.pins['echo']) == 1:
+            while GPIO.input(echo_pin) == 1:
                 stop_time = time.time()
                 if stop_time > timeout: return None
 

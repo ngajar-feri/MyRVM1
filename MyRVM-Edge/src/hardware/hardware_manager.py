@@ -3,6 +3,7 @@ import os
 from .motor_driver import StepperDriver
 from .sensor_driver import SensorDriver
 from .peripheral_driver import PeripheralDriver
+from .hardware_probe import HardwareProbe
 
 class HardwareManager:
     """
@@ -44,6 +45,19 @@ class HardwareManager:
 
     def get_driver(self, name):
         return self.drivers.get(name)
+
+    def get_discovery_report(self):
+        """
+        Runs a dynamic probe and compares it with the configured intent.
+        """
+        probe = HardwareProbe()
+        reality = probe.probe_all()
+        
+        return {
+            "reality": reality,
+            "configured_count": len(self.drivers),
+            "healthy_count": sum(1 for d in self.drivers.values() if d.is_initialized)
+        }
 
     def cleanup(self):
         for driver in self.drivers.values():

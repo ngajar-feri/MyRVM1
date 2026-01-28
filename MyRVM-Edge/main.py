@@ -154,13 +154,20 @@ def main():
                     bin_level = max(0, min(100, int((50 - distance) / 45 * 100)))
                     print(f"[.] Bin Distance: {distance} cm -> {bin_level}% full")
             
-            print("[.] Heartbeat...")
-            if client.heartbeat(bin_capacity=bin_level):
+            # Dynamic Hardware Probe
+            discovery = hw.get_discovery_report()
+            
+            print("[.] Heartbeat with Discovery...")
+            if client.heartbeat(bin_capacity=bin_level, discovery_report=discovery):
                 pass # Success
             else:
                 print("[!] Heartbeat failed to send.")
+
+            if "--once" in sys.argv:
+                print("[*] --once flag detected. Exiting loop.")
+                break
             
-            # TODO: Check for pending commands from server?
+            time.sleep(30)
     except KeyboardInterrupt:
         print("\n[!] Shutting down...")
         hw.cleanup()
