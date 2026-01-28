@@ -1,5 +1,12 @@
 import os
 import subprocess
+
+# Force Jetson model name for Orin Nano compatibility if automatic detection fails
+if os.path.exists('/proc/device-tree/model'):
+    with open('/proc/device-tree/model', 'r') as f:
+        if 'Orin Nano' in f.read():
+            os.environ['JETSON_MODEL_NAME'] = 'JETSON_ORIN_NANO'
+
 try:
     import RPi.GPIO as GPIO
 except ImportError:
