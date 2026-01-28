@@ -50,8 +50,8 @@ async def handler(websocket, path):
         clients.remove(websocket)
 
 async def start_server():
-    server = await websockets.serve(handler, "localhost", 8888)
-    logger.info("Local WebSocket Bridge started on ws://localhost:8888")
+    server = await websockets.serve(handler, "localhost", 8002)
+    logger.info("Local WebSocket Bridge started on ws://localhost:8002")
     await server.wait_closed()
 
 if __name__ == "__main__":

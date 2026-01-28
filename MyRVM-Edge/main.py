@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 sys.path.append(os.path.dirname(__file__))
 
 from src.services.api_client import RvmApiClient
+from src.hardware.hardware_manager import HardwareManager
 
 # Constants
 BASE_DIR = Path(__file__).parent
@@ -125,7 +126,12 @@ def main():
             
     print(f"[*] Handshake Success! Kiosk URL: {config.get('kiosk', {}).get('url')}")
             
-    # 6. Main Loop
+    # 6. Initialize Hardware
+    print("[*] Initializing Hardware Drivers...")
+    hw = HardwareManager()
+    hw.initialize_all()
+    
+    # 7. Main Loop
     print("[*] Starting Local WebSocket Bridge provided by RVM-Edge...")
     local_ws_process = subprocess.Popen(
         [sys.executable, "src/network/ws_local.py"],
@@ -136,8 +142,20 @@ def main():
     try:
         while True:
             time.sleep(10)
+            
+            # Read real bin capacity if driver exists
+            bin_driver = hw.get_driver('bin_ultrasonic')
+            bin_level = 0
+            if bin_driver:
+                distance = bin_driver.read()
+                if distance:
+                    # Logic: Smaller distance = fuller bin.
+                    # Assume 50cm is empty, 5cm is full.
+                    bin_level = max(0, min(100, int((50 - distance) / 45 * 100)))
+                    print(f"[.] Bin Distance: {distance} cm -> {bin_level}% full")
+            
             print("[.] Heartbeat...")
-            if client.heartbeat():
+            if client.heartbeat(bin_capacity=bin_level):
                 pass # Success
             else:
                 print("[!] Heartbeat failed to send.")
@@ -145,6 +163,7 @@ def main():
             # TODO: Check for pending commands from server?
     except KeyboardInterrupt:
         print("\n[!] Shutting down...")
+        hw.cleanup()
         local_ws_process.terminate()
         local_ws_process.wait()
 

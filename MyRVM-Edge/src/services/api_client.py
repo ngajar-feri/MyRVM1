@@ -122,21 +122,17 @@ class RvmApiClient:
             print(f"[!] Sync Error: {str(e)}")
             return False
 
-    def heartbeat(self):
+    def heartbeat(self, bin_capacity=0):
         """
         Sends heartbeat with health metrics and bin capacity.
         """
         endpoint = f"{self.base_url}/edge/heartbeat"
         try:
-            # Simulation: Get bin capacity from sensor or mock
-            # In a real scenario, this would poll 'bin_ultrasonic' via GPIO
-            mock_capacity = 45 # Mock 45% full
-            
             payload = {
                 "hardware_id": self.device_id,
                 "status": "online",
                 "health_metrics": self._get_health_metrics(),
-                "bin_capacity": mock_capacity 
+                "bin_capacity": bin_capacity 
             }
             # Heartbeat is lightweight, short timeout
             response = self.session.post(endpoint, json=payload, timeout=5)
