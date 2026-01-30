@@ -12,7 +12,7 @@ composer.lock
 composer.json
 
 # Edge Dependencies & Environment (Remote)
-.agent/*
+.agent/
 venv/
 __pycache__/
 *.pyc
