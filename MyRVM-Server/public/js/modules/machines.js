@@ -1361,6 +1361,39 @@ const machineWizard = {
     }
 };
 
+// Manual Command Handlers (Manual Update / Restart)
+document.addEventListener('click', async (e) => {
+    const btnUpdate = e.target.closest('.btn-manual-update');
+    const btnRestart = e.target.closest('.btn-restart-edge');
+    
+    if (!btnUpdate && !btnRestart) return;
+    
+    const id = btnUpdate ? btnUpdate.dataset.id : btnRestart.dataset.id;
+    const action = btnUpdate ? 'GIT_PULL' : 'RESTART';
+    const label = btnUpdate ? 'Git Pull' : 'Restart';
+
+    try {
+        const response = await fetch(`/api/v1/edge/devices/${id}/command`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ action })
+        });
+        
+        const result = await response.json();
+        if (result.status === 'success') {
+            machineManagement.showSuccess(`Perintah ${label} berhasil dikirim ke antrean! Perangkat akan mengeksekusi pada heartbeat berikutnya.`);
+        } else {
+            machineManagement.showError(`Gagal mengirim perintah: ${result.message}`);
+        }
+    } catch (error) {
+        machineManagement.showError(`Error: ${error.message}`);
+    }
+});
+
 // Reset wizard when modal is hidden
 document.addEventListener('hidden.bs.modal', (e) => {
     if (e.target?.id === 'addMachineModal') {

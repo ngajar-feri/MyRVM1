@@ -131,12 +131,14 @@ class RvmApiClient:
     def heartbeat(self, bin_capacity=0, discovery_report=None):
         """
         Sends heartbeat with health metrics, bin capacity, and hardware discovery.
+        Returns potential commands from server.
         """
         endpoint = f"{self.base_url}/edge/heartbeat"
         try:
             payload = {
                 "hardware_id": self.device_id,
                 "status": "online",
+                "version": self.version,
                 "health_metrics": self._get_health_metrics(),
                 "bin_capacity": bin_capacity,
                 "discovery": discovery_report,
@@ -147,12 +149,14 @@ class RvmApiClient:
             response = self.session.post(endpoint, json=payload, timeout=5)
             response.raise_for_status()
             
-            # Silent success (don't spam logs unless debug)
-            # print(f"[.] Heartbeat OK") 
-            return True
+            data = response.json()
+            if data.get('status') == 'success' and 'commands' in data:
+                return data['commands']
+            
+            return []
         except Exception as e:
             print(f"[!] Heartbeat Error: {str(e)}")
-            return False
+            return []
 
     # ========== Helper Methods ==========
 

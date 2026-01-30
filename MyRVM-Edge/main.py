@@ -174,11 +174,10 @@ def main():
             discovery = hw.get_discovery_report()
             
             print("[.] Heartbeat with Discovery...")
-            if client.heartbeat(bin_capacity=bin_level, discovery_report=discovery):
-                pass # Success
-            else:
-                print("[!] Heartbeat failed to send.")
-
+            commands = client.heartbeat(bin_capacity=bin_level, discovery_report=discovery)
+            if commands:
+                handle_commands(commands)
+            
             if "--once" in sys.argv:
                 print("[*] --once flag detected. Exiting loop.")
                 break

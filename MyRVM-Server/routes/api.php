@@ -132,6 +132,7 @@ Route::middleware('auth:sanctum')->prefix('v1')->group(function () {
         Route::put('/devices/{id}', [EdgeDeviceController::class, 'update']); // Update device
         Route::delete('/devices/{id}', [EdgeDeviceController::class, 'destroy']); // Soft delete
         Route::post('/devices/{id}/restore', [EdgeDeviceController::class, 'restore']); // Restore from trash
+        Route::post('/devices/{id}/command', [EdgeDeviceController::class, 'sendCommand']); // Manual command (Pull/Restart)
         Route::post('/devices/{id}/regenerate-key', [EdgeDeviceController::class, 'regenerateApiKey']); // New API key
         Route::get('/download-config/{deviceId}', [EdgeDeviceController::class, 'downloadConfig']); // Download config
     });

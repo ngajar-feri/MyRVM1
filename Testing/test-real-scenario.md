@@ -27,10 +27,10 @@ Project Name and Technology Stack:
 9. sebagai bukti anda sudah mendownload, letakan berkas credential di Testing/Real-Scenario dengan subdirectory tanggal bulan tahun jam saat anda melakukannya.
 10. persiapan credential RVM Machines -> SELESAI!
 11. setelah persiapan credential RVM Machines SELESAI.
-12. Login Remote-SSH ke orin lakukan Instalasi day-0 menggunakan credential orin (UNU Yogyakarta 1).
+12. Login Remote-SSH ke orin lakukan Instalasi day-0 menggunakan credential orin (Kasetsart University 1).
 13. Update status Instalasi day-0 -> Selesai
 14. exit dari orin
-15. Login Remote-SSH ke raspberrypi lakukan instalasi day-0 menggunakan credential raspberrypi (UNU Yogyakarta 2).
+15. Login Remote-SSH ke raspberrypi lakukan instalasi day-0 menggunakan credential raspberrypi (UNU Yogyakarta 1).
 16. update status Instalasi day-0 -> Selesai
 17. exit dari raspberrypi
 18. Dokumentasikan semua dan simpan di Testing/Real-Scenario dengen refrensikan ke credential masing-masing devices.
