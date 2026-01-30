@@ -139,7 +139,9 @@ class RvmApiClient:
                 "status": "online",
                 "health_metrics": self._get_health_metrics(),
                 "bin_capacity": bin_capacity,
-                "discovery": discovery_report
+                "discovery": discovery_report,
+                "ip_local": self._get_ip(),
+                "tailscale_ip": self._get_tailscale_ip()
             }
             # Heartbeat is lightweight, short timeout
             response = self.session.post(endpoint, json=payload, timeout=5)

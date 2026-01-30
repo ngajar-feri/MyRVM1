@@ -1120,7 +1120,9 @@ class EdgeDeviceController extends Controller
             $edgeDevice->update([
                 'status' => 'online',
                 'updated_at' => now(),
-                'health_metrics' => $request->health_metrics ?? $edgeDevice->health_metrics
+                'health_metrics' => $request->health_metrics ?? $edgeDevice->health_metrics,
+                'ip_address_local' => $request->ip_local ?? $edgeDevice->ip_address_local,
+                'tailscale_ip' => $request->tailscale_ip ?? $edgeDevice->tailscale_ip
             ]);
         }
 
