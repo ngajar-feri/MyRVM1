@@ -1,6 +1,7 @@
 # Ignored Tooling & Workflows
 .cursor/
 .trae/
+.agent/
 trae_backup/
 trae_backup.zip
 trae-configuration.zip
@@ -12,7 +13,6 @@ composer.lock
 composer.json
 
 # Edge Dependencies & Environment (Remote)
-.agent/
 venv/
 __pycache__/
 *.pyc
