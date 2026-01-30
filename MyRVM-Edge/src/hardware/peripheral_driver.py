@@ -28,11 +28,17 @@ class PeripheralDriver(BaseDriver):
     def initialize(self):
         if GPIO and self.pins:
             GPIO.setwarnings(False)
-            GPIO.setmode(GPIO.BCM)
+            try:
+                GPIO.setmode(GPIO.BCM)
+            except Exception:
+                pass
             # Support for simple LED control
-            if 'pin' in self.pins:
-                GPIO.setup(self.pins['pin'], GPIO.OUT)
-                GPIO.output(self.pins['pin'], GPIO.LOW)
+            try:
+                if 'pin' in self.pins:
+                    GPIO.setup(self.pins['pin'], GPIO.OUT)
+                    GPIO.output(self.pins['pin'], GPIO.LOW)
+            except Exception as e:
+                self.logger.error(f"GPIO Setup Error ({self.name}): {e}")
         return super().initialize()
 
     def set_led(self, state):

@@ -23,18 +23,26 @@ class SensorDriver(BaseDriver):
             return False
             
         GPIO.setwarnings(False)
-        GPIO.setmode(GPIO.BCM)
-        if self.sensor_type == "ultrasonic":
-            # Access nested 'pins' dict for ultrasonic
-            p = self.pins.get('pins', {})
-            GPIO.setup(p.get('trigger'), GPIO.OUT)
-            GPIO.setup(p.get('echo'), GPIO.IN)
-            GPIO.output(p.get('trigger'), GPIO.LOW)
-        elif self.sensor_type == "proximity":
-            # Access 'pin' directly or from 'pins' dict
-            p_pin = self.pins.get('pin') or self.pins.get('pins', {}).get('pin')
-            if p_pin:
-                GPIO.setup(p_pin, GPIO.IN)
+        try:
+            GPIO.setmode(GPIO.BCM)
+        except Exception:
+            pass # Ignore mode setting errors if already set
+
+        try:
+            if self.sensor_type == "ultrasonic":
+                # Access nested 'pins' dict for ultrasonic
+                p = self.pins.get('pins', {})
+                GPIO.setup(p.get('trigger'), GPIO.OUT)
+                GPIO.setup(p.get('echo'), GPIO.IN)
+                GPIO.output(p.get('trigger'), GPIO.LOW)
+            elif self.sensor_type == "proximity":
+                # Access 'pin' directly or from 'pins' dict
+                p_pin = self.pins.get('pin') or self.pins.get('pins', {}).get('pin')
+                if p_pin:
+                    GPIO.setup(p_pin, GPIO.IN)
+        except Exception as e:
+            print(f"[!] GPIO Setup Error ({self.name}): {e}")
+            # Continue execution even if GPIO fails, to allow handshake to persist
             
         return super().initialize()
 

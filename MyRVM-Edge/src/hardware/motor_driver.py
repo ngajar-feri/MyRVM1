@@ -45,19 +45,26 @@ class StepperDriver(BaseDriver):
             return False
             
         GPIO.setwarnings(False)
-        GPIO.setmode(GPIO.BCM)
-        if self.model == "nema17":
-            # TB6600 needs Step, Dir, Enable
-            GPIO.setup(self.pins['step'], GPIO.OUT)
-            GPIO.setup(self.pins['dir'], GPIO.OUT)
-            if 'enable' in self.pins:
-                GPIO.setup(self.pins['enable'], GPIO.OUT)
-                GPIO.output(self.pins['enable'], GPIO.LOW) # Often Active LOW
-        else:
-            # 28BYJ-48 needs 4 phase pins
-            for pin in self.pins.values():
-                GPIO.setup(pin, GPIO.OUT)
-                GPIO.output(pin, GPIO.LOW)
+        try:
+            GPIO.setmode(GPIO.BCM)
+        except Exception:
+            pass
+
+        try:
+            if self.model == "nema17":
+                # TB6600 needs Step, Dir, Enable
+                GPIO.setup(self.pins['step'], GPIO.OUT)
+                GPIO.setup(self.pins['dir'], GPIO.OUT)
+                if 'enable' in self.pins:
+                    GPIO.setup(self.pins['enable'], GPIO.OUT)
+                    GPIO.output(self.pins['enable'], GPIO.LOW) # Often Active LOW
+            else:
+                # 28BYJ-48 needs 4 phase pins
+                for pin in self.pins.values():
+                    GPIO.setup(pin, GPIO.OUT)
+                    GPIO.output(pin, GPIO.LOW)
+        except Exception as e:
+            self.logger.error(f"GPIO Setup Error ({self.name}): {e}")
                 
         return super().initialize()
 
