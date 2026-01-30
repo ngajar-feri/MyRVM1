@@ -22,6 +22,7 @@ class SensorDriver(BaseDriver):
         if GPIO is None:
             return False
             
+        GPIO.setwarnings(False)
         GPIO.setmode(GPIO.BCM)
         if self.sensor_type == "ultrasonic":
             # Access nested 'pins' dict for ultrasonic

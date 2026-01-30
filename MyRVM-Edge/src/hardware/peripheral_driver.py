@@ -27,6 +27,7 @@ class PeripheralDriver(BaseDriver):
 
     def initialize(self):
         if GPIO and self.pins:
+            GPIO.setwarnings(False)
             GPIO.setmode(GPIO.BCM)
             # Support for simple LED control
             if 'pin' in self.pins:

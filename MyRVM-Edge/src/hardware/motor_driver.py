@@ -44,6 +44,7 @@ class StepperDriver(BaseDriver):
             self.logger.error("GPIO library not found. Running in simulation mode.")
             return False
             
+        GPIO.setwarnings(False)
         GPIO.setmode(GPIO.BCM)
         if self.model == "nema17":
             # TB6600 needs Step, Dir, Enable
