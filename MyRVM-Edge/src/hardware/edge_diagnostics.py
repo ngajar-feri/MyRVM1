@@ -3,6 +3,8 @@ import socket
 import subprocess
 import time
 import platform
+import os
+import uuid
 try:
     import requests
 except ImportError:
@@ -327,7 +329,5 @@ class EdgeDiagnostics:
 
 if __name__ == "__main__":
     # Self-test when run directly
-    import os
-    import uuid
     diag = EdgeDiagnostics()
     print(json.dumps(diag.get_specs(), indent=4))
