@@ -56,10 +56,10 @@ class EdgeDiagnostics:
         specs["hardware_info"] = self._get_hardware_info()
 
         # 9: Diagnostics
-        specs["diagnostics"] = self.run_diagnostics(specs["hardware_info"])
+        specs["diagnostics"] = self._run_diagnostics()
 
         # 10: Health Metrics
-        specs["health_metrics"] = self.get_health_metrics()
+        specs["health_metrics"] = self._get_health_metrics()
 
         return specs
 
@@ -228,86 +228,100 @@ class EdgeDiagnostics:
         """
         Merges auto-detection with static map (if available).
         """
-        detected = self.probe.probe_all()
+        # Null-safe detection call
+        try:
+            detected = self.probe.probe_all()
+        except Exception:
+            # Emergency structural fallback
+            detected = {"cameras": [], "i2c_devices": [], "serial_ports": [], "storage": []}
         
         info = {
             "summary": "Hardware Auto-Detection Report",
             "detected_cameras": detected.get("cameras", []),
             "detected_i2c": detected.get("i2c_devices", []),
             "detected_serial": detected.get("serial_ports", []),
-            "detected_mcu": [p for p in detected.get("serial_ports", []) if "USB" in p or "ACM" in p]
+            "detected_mcu": [p for p in detected.get("serial_ports", []) if "USB" in (p.get("alias") or "") or "ACM" in (p.get("alias") or "")]
         }
         return info
 
     def _run_diagnostics(self):
         """
-        Run real hardware diagnostics.
+        Run real hardware diagnostics with prioritized results.
+        Returns standardized Status/Reason objects.
         """
         results = {
             "timestamp": datetime.datetime.now().isoformat(),
-            "network_check": self._check_network(),
-            "disk_check": self._check_disk(),
-            "camera_check": "Skipped (Requires Camera Access)", # Placeholder removal: State clearly if not implemented logic
-            "sensor_check": "Skipped (Requires Sensor Driver)",
-            "mcu_check": self._check_mcu()
+            "network": self._check_network(),
+            "disk": self._check_disk(),
+            "camera": {"status": "Not Detected", "details": []},
+            "sensor": {"status": "Fail", "error": "Driver not loaded"},
+            "mcu": self._check_mcu()
         }
         
-        # Real Camera probe if HardwareProbe is available
+        # Real Camera probe
         if hasattr(self, 'probe'):
              cams = self.probe.discovery_results.get("cameras", [])
-             results["camera_check"] = "Pass" if cams else "No Cameras Detected"
-
+             if cams:
+                 results["camera"] = {"status": "Pass", "count": len(cams), "details": cams}
+        
         return results
 
     def _check_network(self):
-        """Ping check for internet connectivity."""
+        """Standard network check with socket fallback for ICMP-restricted zones."""
+        # Phase 1: ICMP Ping
         try:
-            # Ping Google 8.8.8.8
             subprocess.check_call(["ping", "-c", "1", "-W", "2", "8.8.8.8"], 
                                 stdout=subprocess.DEVNULL, 
                                 stderr=subprocess.DEVNULL)
-            return "Pass"
-        except subprocess.CalledProcessError:
-            return "Fail (No Internet)"
-        except Exception:
-            return "Error"
+            return {"status": "Pass", "method": "ICMP"}
+        except (subprocess.CalledProcessError, Exception):
+            pass
+
+        # Phase 2: Socket Connect (Fallback)
+        try:
+            socket.create_connection(("8.8.8.8", 53), timeout=3).close()
+            return {"status": "Pass", "method": "TCP/UDP"}
+        except Exception as e:
+            return {"status": "Fail", "error": str(e)}
 
     def _check_disk(self):
-        """Check if root disk has space."""
-        try:
-            if self.psutil:
-                usage = self.psutil.disk_usage('/')
-                if usage.percent > 90:
-                    return f"Warning (Low Space: {usage.percent}%)"
-                return "Pass"
-            return "N/A (psutil missing)"
-        except Exception:
-            return "Error"
+        """Check if root disk has space via psutil with safe return."""
+        if psutil:
+            try:
+                usage = psutil.disk_usage('/')
+                status = "Pass" if usage.percent < 95 else "Critical"
+                return {"status": status, "usage_percent": usage.percent}
+            except Exception as e:
+                return {"status": "Error", "details": str(e)}
+        return {"status": "Unknown", "error": "psutil missing"}
 
     def _check_mcu(self):
-        """Check if MCU is detected via serial."""
+        """Check for MCU identification via serial attributes."""
         if hasattr(self, 'probe'):
-            mcus = [p for p in self.probe.discovery_results.get("serial_ports", []) if "USB" in p or "ACM" in p]
-            return "Pass" if mcus else "Fail"
-        return "Unknown"
+            # Look for ACM/USB patterns in serial paths
+            mcus = [p for p in self.probe.discovery_results.get("serial_ports", []) 
+                    if "USB" in (p.get("path") or "") or "ACM" in (p.get("path") or "")]
+            if mcus:
+                return {"status": "Pass", "candidates": mcus}
+        return {"status": "Fail", "error": "No MCU-like serial ports detected"}
 
     def _get_health_metrics(self):
         """
-        Get current system health metrics using psutil.
+        Get current system health metrics with Null Safety.
         """
         metrics = {
-            "cpu_usage_percent": 0.0,
-            "memory_usage_percent": 0.0,
-            "disk_usage_percent": 0.0
+            "cpu_usage_percent": None,
+            "memory_usage_percent": None,
+            "disk_usage_percent": None
         }
         
-        if self.psutil:
+        if psutil:
             try:
-                metrics["cpu_usage_percent"] = self.psutil.cpu_percent(interval=None) # Non-blocking
-                metrics["memory_usage_percent"] = self.psutil.virtual_memory().percent
-                metrics["disk_usage_percent"] = self.psutil.disk_usage('/').percent
+                metrics["cpu_usage_percent"] = psutil.cpu_percent(interval=None)
+                metrics["memory_usage_percent"] = psutil.virtual_memory().percent
+                metrics["disk_usage_percent"] = psutil.disk_usage('/').percent
             except Exception:
-                pass # Keep defaults 0.0 on error to allow serialization
+                pass
         
         return metrics
 
