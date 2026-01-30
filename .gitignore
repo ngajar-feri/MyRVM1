@@ -25,3 +25,5 @@ secrets.env
 
 # Project Documentation
 Docs/
+Docs/02_Architecture/Hardware_Driver_Specs.md
+Docs/05_Deployment/Edge_Service_Setup.md
