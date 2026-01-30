@@ -341,7 +341,15 @@ class MachineManagement {
                                 <h6 class="mb-0 me-2" style="color: #065f46;"><i class="ti tabler-cpu me-2"></i>Edge Device</h6>
                                 <div class="spinner-grow text-success spinner-grow-sm" role="status" style="width: 0.5rem; height: 0.5rem;" title="Live Updates Active"></div>
                             </div>
-                            <span class="badge badge-status-${edgeDevice.status || 'offline'}">${edgeDevice.status || 'offline'}</span>
+                            <div class="d-flex align-items-center gap-2">
+                                <button class="btn btn-xs btn-primary btn-manual-update" data-id="${machine.id}" style="font-size: 0.65rem; padding: 2px 8px;">
+                                    <i class="ti tabler-refresh me-1"></i> Update
+                                </button>
+                                <button class="btn btn-xs btn-outline-warning btn-restart-edge" data-id="${machine.id}" style="font-size: 0.65rem; padding: 2px 8px;">
+                                    <i class="ti tabler-power me-1"></i> Restart
+                                </button>
+                                <span class="badge badge-status-${edgeDevice.status || 'offline'}">${edgeDevice.status || 'offline'}</span>
+                            </div>
                         </div>
                         <div class="card-body">
                             <div class="row g-3 mb-3">
@@ -641,8 +649,19 @@ class MachineManagement {
                         ${edgeDevice ? `
                         <div class="card mb-3" style="border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.2); background: linear-gradient(to bottom right, #f0fdf4, #ffffff);">
                             <div class="card-header d-flex justify-content-between align-items-center" style="border-bottom: 1px solid rgba(16, 185, 129, 0.1); background: transparent;">
-                                <h6 class="mb-0" style="color: #065f46;"><i class="ti tabler-cpu me-2"></i>Edge Device (Auto via Handshake)</h6>
-                                <span class="badge badge-status-${edgeDevice.status || 'offline'}">${edgeDevice.status || 'offline'}</span>
+                                <div class="d-flex align-items-center">
+                                    <h6 class="mb-0" style="color: #065f46;"><i class="ti tabler-cpu me-2"></i>Edge Device (Auto via Handshake)</h6>
+                                    <div class="spinner-grow text-success spinner-grow-sm ms-2" role="status" style="width: 0.5rem; height: 0.5rem;" title="Live Updates Active"></div>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <button class="btn btn-xs btn-primary btn-manual-update" data-id="${machine.id}" style="font-size: 0.65rem; padding: 2px 8px;">
+                                        <i class="ti tabler-refresh me-1"></i> Update
+                                    </button>
+                                    <button class="btn btn-xs btn-outline-warning btn-restart-edge" data-id="${machine.id}" style="font-size: 0.65rem; padding: 2px 8px;">
+                                        <i class="ti tabler-power me-1"></i> Restart
+                                    </button>
+                                    <span class="badge badge-status-${edgeDevice.status || 'offline'}">${edgeDevice.status || 'offline'}</span>
+                                </div>
                             </div>
                             <div class="card-body">
                                 <div class="row g-3">
