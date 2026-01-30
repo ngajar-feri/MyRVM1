@@ -862,7 +862,6 @@ class EdgeDeviceController extends Controller
             'health_metrics' => $validated['health_metrics'] ?? $edgeDevice->health_metrics,
             // Store hardware_info → hardware_config column
             'hardware_config' => $validated['hardware_info'] ?? $edgeDevice->hardware_config,
-            'hardware_config' => $validated['hardware_info'] ?? $edgeDevice->hardware_config,
             'system_info' => $validated['system'] ?? $edgeDevice->system_info,
             'diagnostics_log' => $validated['diagnostics'] ?? $edgeDevice->diagnostics_log,
             'status' => 'online',
@@ -1119,18 +1118,55 @@ class EdgeDeviceController extends Controller
         // Update Edge Device status/metrics
         $edgeDevice = EdgeDevice::where('rvm_machine_id', $machine->id)->first();
         if ($edgeDevice) {
-            $edgeDevice->update([
+            $updateData = [
                 'status' => 'online',
                 'updated_at' => now(),
                 'health_metrics' => $request->health_metrics ?? $edgeDevice->health_metrics,
                 'ip_address_local' => $request->ip_local ?? $edgeDevice->ip_address_local,
                 'tailscale_ip' => $request->tailscale_ip ?? $edgeDevice->tailscale_ip
-            ]);
+            ];
+
+            // Update firmware version if provided
+            if ($request->has('version')) {
+                $updateData['firmware_version'] = $request->version;
+            }
+
+            $edgeDevice->update($updateData);
         }
+
+        // Pull pending commands from cache
+        $commands = Cache::pull("edge_cmd_{$machine->id}", []);
 
         return response()->json([
             'status' => 'success',
-            'server_time' => now()->toIso8601String()
+            'server_time' => now()->toIso8601String(),
+            'commands' => $commands
+        ]);
+    }
+
+    /**
+     * Queue a command for an Edge device (Called from Dashboard).
+     */
+    public function sendCommand(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'action' => 'required|string|in:GIT_PULL,RESTART'
+        ]);
+
+        $machine = RvmMachine::findOrFail($id);
+        
+        // Store command in cache for 10 minutes
+        $cacheKey = "edge_cmd_{$machine->id}";
+        $commands = Cache::get($cacheKey, []);
+        $commands[] = [
+            'action' => $validated['action'],
+            'timestamp' => now()->toIso8601String()
+        ];
+        Cache::put($cacheKey, $commands, 600);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Command {$validated['action']} queued for device {$machine->name}."
         ]);
     }
 
