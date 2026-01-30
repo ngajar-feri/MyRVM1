@@ -736,7 +736,7 @@ class EdgeDeviceController extends Controller
      *                  @OA\Property(property="disk_usage_percent", type="number", example=12.8),
      *                  @OA\Property(property="cpu_temperature", type="number", example=45.0)
      *              ),
-     *              @OA\Property(property="config", type="object", description="Hardware configuration",
+     *              @OA\Property(property="hardware_info", type="object", description="Hardware configuration",
      *                  @OA\Property(property="cameras", type="array", @OA\Items(type="object")),
      *                  @OA\Property(property="sensors", type="array", @OA\Items(type="object")),
      *                  @OA\Property(property="actuators", type="array", @OA\Items(type="object")),
