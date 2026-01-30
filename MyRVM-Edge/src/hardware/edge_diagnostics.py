@@ -117,14 +117,85 @@ class EdgeDiagnostics:
         return "Not Connected"
 
     def _get_system_info(self):
-        return {
-            "os": platform.system(),
-            "release": platform.release(),
-            "version": platform.version(),
-            "machine": platform.machine(),
-            "processor": platform.processor(),
-            "python_version": platform.python_version()
+        """
+        Gather system software information.
+        1. jetpack_version
+        2. firmware_version
+        3. python_version
+        4. ai_models
+        """
+        info = {
+            "python_version": platform.python_version(),
+            "firmware_version": "v2.1.0-beta", # Defaults for now, but should ideally come from a version file
+            "jetpack_version": "Unknown",
+            "ai_models": []
         }
+
+        # 1. JetPack Version Detection
+        try:
+            if os.path.exists('/etc/nv_tegra_release'):
+                with open('/etc/nv_tegra_release', 'r') as f:
+                    content = f.read().strip()
+                    # Content format: # R35 (release), REVISION: 4.1, GCID: 33958178, BOARD: t186ref, EABI: aarch64, DATE: Tue Aug  1 19:57:35 UTC 2023
+                    # Extract Rxx.x
+                    parts = content.split(',')
+                    if len(parts) >= 2:
+                        release = parts[0].replace('# ', '').strip()
+                        revision = parts[1].replace('REVISION: ', '').strip()
+                        info["jetpack_version"] = f"{release}.{revision}"
+                    else:
+                        info["jetpack_version"] = content
+            elif os.path.exists('/proc/device-tree/model'):
+                with open('/proc/device-tree/model', 'r') as f:
+                     model = f.read().strip().replace('\x00', '')
+                     if "Raspberry Pi" in model:
+                         info["jetpack_version"] = "N/A (Raspberry Pi)"
+                     else:
+                         info["jetpack_version"] = "N/A (Generic)"
+            else:
+                info["jetpack_version"] = "N/A (Non-Jetson)"
+        except Exception:
+            info["jetpack_version"] = "Error Detecting"
+
+        # 2. AI Models Detection
+        # Check for models directory or config
+        try:
+             # Assume models are in specific directory relative to this file
+             models_dir = os.path.join(os.path.dirname(__file__), '../../models')
+             config_path = os.path.join(os.path.dirname(__file__), '../../config/config.json')
+             
+             models_list = []
+             if os.path.exists(config_path):
+                 with open(config_path, 'r') as f:
+                     config = json.load(f)
+                     if "ai_models" in config:
+                         models_list = config["ai_models"]
+            
+             if not models_list and os.path.exists(models_dir):
+                 # Auto-detect .pt files if no config
+                 for file in os.listdir(models_dir):
+                     if file.endswith(".pt") or file.endswith(".engine"):
+                         models_list.append({
+                             "model_name": file,
+                             "model_version": "auto-detected",
+                             "hash": "unknown",
+                             "last_update": datetime.datetime.fromtimestamp(os.path.getmtime(os.path.join(models_dir, file))).isoformat()
+                         })
+             
+             if not models_list:
+                 models_list.append({
+                     "model_name": "none",
+                     "model_version": "0.0.0",
+                     "hash": "00000000",
+                     "last_update": datetime.datetime.now().isoformat()
+                 })
+
+             info["ai_models"] = models_list
+
+        except Exception as e:
+            info["ai_models"] = [{"error": str(e)}]
+        
+        return info
 
     def _detect_controller_type(self):
         """Detects if running on Nvidia Jetson or Raspberry Pi."""
@@ -135,15 +206,14 @@ class EdgeDiagnostics:
                     return "NVIDIA Jetson"
                 if "Raspberry Pi" in model:
                     return "Raspberry Pi"
-                return model # Return actual model string if known
+                return model 
         except FileNotFoundError:
-            pass # Not a device tree system (e.g. desktop)
+            pass 
         
-        # Fallback based on architecture
         machine = platform.machine()
         if "aarch64" in machine or "arm" in machine:
              return "Generic ARM Edge Device"
-        return "Generic x86 Host" # Likely dev laptop
+        return "Generic x86 Host"
 
     def _get_hardware_info(self):
         """
@@ -151,15 +221,11 @@ class EdgeDiagnostics:
         """
         detected = self.probe.probe_all()
         
-        # In the future, we could merge this with self.hw_manager.drivers
-        # For now, we return the raw detected reality + summary
-        
         info = {
             "summary": "Hardware Auto-Detection Report",
             "detected_cameras": detected.get("cameras", []),
             "detected_i2c": detected.get("i2c_devices", []),
             "detected_serial": detected.get("serial_ports", []),
-            # MCU detection via USB-Serial matching (heuristic)
             "detected_mcu": [p for p in detected.get("serial_ports", []) if "USB" in p or "ACM" in p]
         }
         return info

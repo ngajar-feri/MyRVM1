@@ -36,32 +36,38 @@ class RvmApiClient:
         """
         endpoint = f"{self.base_url}/edge/handshake"
         
-        # Build full payload per spec
-        payload = {
-            # 1. Identity (Required)
-            "hardware_id": self.device_id,
-            "name": self.name,
+        # Use centralized EdgeDiagnostics to build payload
+        try:
+            from ..hardware.edge_diagnostics import EdgeDiagnostics
+            # Initialize with reference to self for hardware_map if needed, 
+            # though EdgeDiagnostics currently operates independently or with its own probe.
+            # We can pass hardware_manager if we had one instantiated, but for now it's standalone.
+            diag = EdgeDiagnostics()
             
-            # 2. Network & Location (Auto Detect)
-            "ip_local": self._get_ip(),
-            "ip_vpn": self._get_tailscale_ip(),
-            "timezone": self._get_timezone(),
+            # Get full specs which matches the 1-10 structure
+            payload = diag.get_specs()
             
-            # 3. System Info (Auto Detect)
-            "system": self._get_system_info(),
+            # Overwrite name/id if strictly managed by client (optional, but good for consistency)
+            payload["hardware_id"] = self.device_id
+            payload["name"] = self.name
             
-            # Legacy flat fields (backward compatibility)
-            "controller_type": controller_type,
+            # Ensure controller_type matches what is passed if logic differs, 
+            # but diagnostics handles it better usually.
+            # payload["controller_type"] = controller_type # Let diagnostics detect it
             
-            # 4. Hardware Info (Auto Detect + Static Map)
-            "hardware_info": self._get_hardware_info(),
-            
-            # 5. Diagnostics
-            "diagnostics": self._run_diagnostics(),
-            
-            # Health Metrics
-            "health_metrics": self._get_health_metrics(),
-        }
+        except ImportError:
+             print("[!] EdgeDiagnostics module not found, falling back to legacy payload")
+             payload = {
+                # Legacy fallback
+                "hardware_id": self.device_id,
+                "name": self.name,
+                "ip_local": self._get_ip(),
+                "controller_type": controller_type,
+                "status": "fallback"
+            }
+        except Exception as e:
+             print(f"[!] Error building handshake payload: {e}")
+             return False, None
         
         try:
             print(f"[*] Handshaking with {endpoint}...")
