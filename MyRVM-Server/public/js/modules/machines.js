@@ -1392,15 +1392,12 @@ document.addEventListener('click', async (e) => {
     const label = btnUpdate ? 'Git Pull' : 'Restart';
 
     try {
-        const response = await fetch(`/api/v1/edge/devices/${id}/command`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify({ action })
-        });
+        const response = await apiHelper.post(`/api/v1/edge/devices/${id}/command`, { action });
+        
+        if (!response || !response.ok) {
+            const errorData = response ? await response.json() : { message: 'Network error' };
+            throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        }
         
         const result = await response.json();
         if (result.status === 'success') {
