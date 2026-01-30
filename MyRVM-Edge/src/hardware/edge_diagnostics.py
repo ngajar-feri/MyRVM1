@@ -4,6 +4,10 @@ import subprocess
 import time
 import platform
 try:
+    import requests
+except ImportError:
+    requests = None
+try:
     import psutil
 except ImportError:
     psutil = None
@@ -43,7 +47,7 @@ class EdgeDiagnostics:
             "name": platform.node(),
             "ip_local": self._get_local_ip(),
             "ip_vpn": self._get_vpn_ip(),
-            "timezone": str(datetime.datetime.now().astimezone().tzinfo),
+            "timezone": self._get_remote_timezone(),
             "system": self._get_system_info(),
             "controller_type": self._detect_controller_type(),
         }
@@ -58,6 +62,22 @@ class EdgeDiagnostics:
         specs["health_metrics"] = self.get_health_metrics()
 
         return specs
+
+    def _get_remote_timezone(self):
+        """
+        Determines timezone based on Public IP using ipapi.co.
+        Falls back to system timezone if API fails.
+        """
+        try:
+            if requests:
+                # Using ipapi.co/json/ to ensure JSON response
+                response = requests.get('https://ipapi.co/json/', timeout=5).json()
+                return response.get('timezone', 'Unknown')
+            else:
+                return str(datetime.datetime.now().astimezone().tzinfo) + " (requests missing)"
+        except Exception as e:
+            # Fallback to local system timezone
+            return str(datetime.datetime.now().astimezone().tzinfo)
 
     def _get_device_id(self):
         """Generates a unique ID based on MAC address or Machine ID."""
