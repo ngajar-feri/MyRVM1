@@ -25,3 +25,7 @@ secrets.env
 
 # Project Documentation
 Docs/
+
+# Sub-Repositories (Multi-repo)
+MyRVM-Server/
+MyRVM-Edge/
