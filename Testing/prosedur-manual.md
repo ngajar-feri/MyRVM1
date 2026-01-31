@@ -1,26 +1,24 @@
 Berikut adalah cara melakukannya secara manual (untuk referensi Anda di masa mendatang):
 
-### 1. Manajemen Service (Stop/Start)
-Gunakan perintah ini untuk mengelola status service di Raspberry Pi:
+### 1. Manajemen Service (Script ON/OFF/RESTART)
+Untuk memudahkan, gunakan script `manage_service.sh` yang sudah tersedia di folder proyek:
 
-**Untuk Menghentikan (Stop):**
 ```bash
-sudo systemctl stop myrvm-edge myrvm-updater
-sudo systemctl disable myrvm-edge myrvm-updater
+cd /home/myrobot/myrvm-edge-new
+./manage_service.sh {on|off|restart|status}
 ```
 
-**Untuk Menjalankan Kembali (Start):**
-```bash
-sudo systemctl enable myrvm-edge myrvm-updater
-sudo systemctl start myrvm-edge myrvm-updater
-```
+**Contoh Penggunaan:**
+- **Nyalakan:** `./manage_service.sh on`
+- **Matikan:** `./manage_service.sh off`
+- **Restart:** `./manage_service.sh restart`
+- **Cek Status:** `./manage_service.sh status`
 
-**Untuk Mengecek Status:**
-```bash
-sudo systemctl status myrvm-edge
-```
+---
 
-### 2. Cara Membersihkan Total (Wipe Out)
+### 2. Manajemen Service (Manual Systemctl)
+Jika script tidak tersedia, gunakan perintah manual:
+
 Setelah bersih, gunakan langkah ini untuk instalasi segar:
 ```bash
 # Clone repositori terbaru
