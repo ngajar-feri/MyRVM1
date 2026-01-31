@@ -19,7 +19,6 @@ show_menu() {
     echo -e "1) ${GREEN}Sync ALL (Edge + Server + Root)${NC}"
     echo -e "2) ${BLUE}Sync EDGE Only${NC}"
     echo -e "3) ${YELLOW}Sync SERVER Only${NC}"
-    echo -e "4) ${NC}Sync ROOT Only${NC}"
     echo -e "q) Exit"
     echo -e "${CYAN}=======================================${NC}"
 }
@@ -38,12 +37,6 @@ run_sync() {
         3)
             ./sync_server.sh "$msg"
             ;;
-        4)
-            echo -e "${BLUE}=== Syncing MyRVM1 (Root) ===${NC}"
-            git add .
-            git commit -m "${msg:-"Sync Root: $(date +'%Y-%m-%d %H:%M:%S')"}"
-            git push origin master
-            ;;
     esac
     echo -e "\n${GREEN}Proses selesai. Tekan [Enter] untuk kembali ke menu...${NC}"
     read -r
@@ -51,9 +44,9 @@ run_sync() {
 
 while true; do
     show_menu
-    read -p "Pilih opsi [1-4 atau q]: " opt
+    read -p "Pilih opsi [1-3 atau q]: " opt
     case $opt in
-        1|2|3|4)
+        1|2|3)
             run_sync "$opt"
             ;;
         q|Q)
