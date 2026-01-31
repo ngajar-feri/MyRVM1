@@ -1,20 +1,26 @@
 Berikut adalah cara melakukannya secara manual (untuk referensi Anda di masa mendatang):
 
-### 1. Cara Membersihkan Total (Wipe Out)
-Jalankan perintah ini di Terminal Raspi untuk menghapus semua jejak proyek dan service:
+### 1. Manajemen Service (Stop/Start)
+Gunakan perintah ini untuk mengelola status service di Raspberry Pi:
+
+**Untuk Menghentikan (Stop):**
 ```bash
-# Hentikan dan matikan service
 sudo systemctl stop myrvm-edge myrvm-updater
 sudo systemctl disable myrvm-edge myrvm-updater
-
-# Hapus file service sistem
-sudo rm -f /etc/systemd/system/myrvm-edge.service /etc/systemd/system/myrvm-updater.service /etc/systemd/system/myrvm-updater.timer
-sudo systemctl daemon-reload
-
-# Hapus folder proyek
-rm -rf /home/raspi1/myrvm-edge-new
 ```
-### 2. Cara Instalasi Ulang dari Nol
+
+**Untuk Menjalankan Kembali (Start):**
+```bash
+sudo systemctl enable myrvm-edge myrvm-updater
+sudo systemctl start myrvm-edge myrvm-updater
+```
+
+**Untuk Mengecek Status:**
+```bash
+sudo systemctl status myrvm-edge
+```
+
+### 2. Cara Membersihkan Total (Wipe Out)
 Setelah bersih, gunakan langkah ini untuk instalasi segar:
 ```bash
 # Clone repositori terbaru
